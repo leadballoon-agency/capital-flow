@@ -1,9 +1,19 @@
 {
-  "name": "mdx-telegram-webhook",
+  "name": "mdx-capital-flow",
   "version": "1.0.0",
-  "description": "TradingView to Telegram webhook for MDX Capital Flow signals",
+  "description": "TradingView to Telegram webhook and daily reports for MDX Capital Flow",
   "private": true,
+  "type": "module",
   "engines": {
     "node": ">=18"
+  },
+  "scripts": {
+    "report": "node scripts/generate-report.js"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.52.0",
+    "dotenv": "^17.2.3",
+    "form-data": "^4.0.0",
+    "node-fetch": "^3.3.2"
   }
 }
