@@ -81,7 +81,7 @@ async function analyzeChart(imagePath, reportDate) {
 
   const response = await client.messages.create({
     model: 'claude-sonnet-4-20250514',
-    max_tokens: 1500,
+    max_tokens: 1800,
     messages: [
       {
         role: 'user',
@@ -110,6 +110,7 @@ Look at:
 2. **Price Action** - Read the ACTUAL current price from the chart
 3. **Keltner Channels** - Price position relative to bands (overbought/oversold/neutral)
 4. **Signal Dots** - Any recent buy/sell signals visible on chart
+5. **D/W/M Opens** - Look for horizontal lines labeled with Daily, Weekly, Monthly opens (may show as "D Open", "W Open", "M Open" or similar). Read the exact price from each label and determine if current price is ABOVE or BELOW each level.
 
 Generate a concise daily market report in this EXACT format (use these emojis and headers):
 
@@ -141,8 +142,23 @@ Generate a concise daily market report in this EXACT format (use these emojis an
 • Resistance: $XX,XXX (based on Keltner upper band or recent highs visible on chart)
 • Support: $XX,XXX (based on Keltner lower band or recent lows visible on chart)
 
+<b>📍 OPEN LEVELS:</b>
+• Daily: $XX,XXX — [✅ Holding / ❌ Lost] — [context]
+• Weekly: $XX,XXX — [✅ Holding / ❌ Lost] — [context]
+• Monthly: $XX,XXX — [✅ Holding / ❌ Lost] — [context]
+
 <i>Not financial advice. Trade at your own risk.</i>
 #BTC #CapitalFlow #MDX
+
+OPEN LEVELS INTERPRETATION:
+- ✅ Holding Daily = bullish intraday momentum, buyers defending today's start
+- ❌ Lost Daily = bearish intraday, sellers control today
+- ✅ Holding Weekly = bullish weekly structure, institutions long this week
+- ❌ Lost Weekly = bearish weekly, distribution occurring
+- ✅ Holding Monthly = bullish monthly bias, trend continuation
+- ❌ Lost Monthly = bearish monthly, potential reversal
+
+If D/W/M open lines are not visible on the chart, write "Not visible" for that level.
 
 IMPORTANT: Only report values you can actually see in the image. Read the price scale on the right side of the chart carefully. Current BTC price in Dec 2025 is approximately $90,000-$100,000.`
           }
