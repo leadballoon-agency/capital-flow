@@ -1,0 +1,9 @@
+{
+  "name": "mdx-telegram-webhook",
+  "version": "1.0.0",
+  "description": "TradingView to Telegram webhook for MDX Capital Flow signals",
+  "private": true,
+  "engines": {
+    "node": ">=18"
+  }
+}
