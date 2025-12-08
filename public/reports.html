@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Daily Reports | MDX Capital Flow</title>
+  <meta name="description" content="Daily BTC market analysis powered by MDX Capital Flow indicator. Charts, signals, and institutional-grade capital flow insights.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --orange: #ff6b00;
+      --orange-light: #ff8533;
+      --orange-glow: rgba(255, 107, 0, 0.3);
+      --dark: #0a0a0a;
+      --dark-card: #111111;
+      --dark-border: #1a1a1a;
+      --gray: #888888;
+      --gray-light: #aaaaaa;
+      --green: #00ff88;
+      --red: #ff4444;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--dark);
+      color: #fff;
+      line-height: 1.7;
+    }
+
+    /* Navigation */
+    nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      padding: 1rem 2rem;
+      background: rgba(10, 10, 10, 0.95);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--dark-border);
+    }
+
+    .nav-content {
+      max-width: 800px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-weight: 700;
+      font-size: 1.25rem;
+      text-decoration: none;
+      color: #fff;
+    }
+
+    .logo-icon {
+      width: 32px;
+      height: 32px;
+      background: linear-gradient(135deg, var(--orange), var(--orange-light));
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 0.875rem;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 1.5rem;
+      align-items: center;
+    }
+
+    .nav-links a {
+      color: var(--gray-light);
+      text-decoration: none;
+      font-size: 0.875rem;
+      transition: color 0.2s;
+    }
+
+    .nav-links a:hover,
+    .nav-links a.active {
+      color: #fff;
+    }
+
+    /* Main Content */
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 7rem 1.5rem 4rem;
+    }
+
+    /* Header */
+    .page-header {
+      margin-bottom: 3rem;
+      padding-bottom: 2rem;
+      border-bottom: 1px solid var(--dark-border);
+    }
+
+    .page-header h1 {
+      font-size: 2.5rem;
+      font-weight: 800;
+      margin-bottom: 0.5rem;
+    }
+
+    .page-header p {
+      color: var(--gray-light);
+      font-size: 1.1rem;
+    }
+
+    /* Report Card */
+    .report-card {
+      background: var(--dark-card);
+      border: 1px solid var(--dark-border);
+      border-radius: 16px;
+      overflow: hidden;
+      margin-bottom: 2rem;
+      transition: border-color 0.3s;
+    }
+
+    .report-card:hover {
+      border-color: rgba(255, 107, 0, 0.3);
+    }
+
+    .report-image {
+      width: 100%;
+      aspect-ratio: 16/9;
+      object-fit: cover;
+      border-bottom: 1px solid var(--dark-border);
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+
+    .report-image:hover {
+      opacity: 0.9;
+    }
+
+    .report-content {
+      padding: 1.5rem;
+    }
+
+    .report-meta {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .report-date {
+      color: var(--gray);
+      font-size: 0.875rem;
+    }
+
+    .report-signal {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.375rem;
+      padding: 0.25rem 0.75rem;
+      border-radius: 50px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    .signal-bullish {
+      background: rgba(0, 255, 136, 0.1);
+      color: var(--green);
+      border: 1px solid rgba(0, 255, 136, 0.3);
+    }
+
+    .signal-bearish {
+      background: rgba(255, 68, 68, 0.1);
+      color: var(--red);
+      border: 1px solid rgba(255, 68, 68, 0.3);
+    }
+
+    .signal-neutral {
+      background: rgba(255, 200, 0, 0.1);
+      color: #ffc800;
+      border: 1px solid rgba(255, 200, 0, 0.3);
+    }
+
+    .report-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+    }
+
+    .report-body {
+      color: var(--gray-light);
+      font-size: 0.9375rem;
+    }
+
+    .report-body b {
+      color: #fff;
+    }
+
+    .report-section {
+      margin-bottom: 1rem;
+    }
+
+    .report-section-title {
+      color: var(--orange);
+      font-weight: 600;
+      margin-bottom: 0.25rem;
+    }
+
+    .report-footer {
+      margin-top: 1.5rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--dark-border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .report-tags {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .tag {
+      background: var(--dark);
+      color: var(--gray);
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.75rem;
+    }
+
+    .telegram-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.375rem;
+      color: var(--orange);
+      text-decoration: none;
+      font-size: 0.875rem;
+      font-weight: 500;
+    }
+
+    .telegram-link:hover {
+      text-decoration: underline;
+    }
+
+    /* Indicator Showcase */
+    .showcase-section {
+      margin-top: 4rem;
+      padding-top: 3rem;
+      border-top: 1px solid var(--dark-border);
+    }
+
+    .showcase-section h2 {
+      font-size: 1.75rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+    }
+
+    .showcase-section > p {
+      color: var(--gray-light);
+      margin-bottom: 2rem;
+    }
+
+    .showcase-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 1rem;
+    }
+
+    .showcase-item {
+      background: var(--dark-card);
+      border: 1px solid var(--dark-border);
+      border-radius: 12px;
+      overflow: hidden;
+      transition: border-color 0.3s;
+    }
+
+    .showcase-item:hover {
+      border-color: rgba(255, 107, 0, 0.3);
+    }
+
+    .showcase-item img {
+      width: 100%;
+      aspect-ratio: 4/3;
+      object-fit: cover;
+      cursor: pointer;
+    }
+
+    .showcase-item p {
+      padding: 0.75rem 1rem;
+      font-size: 0.875rem;
+      color: var(--gray-light);
+    }
+
+    /* Lightbox */
+    .lightbox {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.95);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+    }
+
+    .lightbox.active {
+      display: flex;
+    }
+
+    .lightbox img {
+      max-width: 100%;
+      max-height: 100%;
+      border-radius: 8px;
+    }
+
+    .lightbox-close {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      background: none;
+      border: none;
+      color: #fff;
+      font-size: 2rem;
+      cursor: pointer;
+      opacity: 0.7;
+      transition: opacity 0.2s;
+    }
+
+    .lightbox-close:hover {
+      opacity: 1;
+    }
+
+    /* Empty State */
+    .empty-state {
+      text-align: center;
+      padding: 4rem 2rem;
+      background: var(--dark-card);
+      border: 1px solid var(--dark-border);
+      border-radius: 16px;
+    }
+
+    .empty-state h3 {
+      font-size: 1.25rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .empty-state p {
+      color: var(--gray);
+    }
+
+    /* Footer */
+    footer {
+      padding: 3rem 2rem;
+      border-top: 1px solid var(--dark-border);
+      text-align: center;
+      margin-top: 4rem;
+    }
+
+    .footer-links {
+      display: flex;
+      justify-content: center;
+      gap: 2rem;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+    }
+
+    .footer-links a {
+      color: var(--gray);
+      text-decoration: none;
+      font-size: 0.875rem;
+    }
+
+    .copyright {
+      color: var(--gray);
+      font-size: 0.8125rem;
+    }
+
+    .mdx-link {
+      color: var(--orange);
+      text-decoration: none;
+    }
+
+    /* Responsive */
+    @media (max-width: 640px) {
+      .nav-links {
+        gap: 1rem;
+      }
+
+      .page-header h1 {
+        font-size: 2rem;
+      }
+
+      .report-title {
+        font-size: 1.25rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Navigation -->
+  <nav>
+    <div class="nav-content">
+      <a href="/" class="logo">
+        <span class="logo-icon">CF</span>
+        Capital Flow
+      </a>
+      <div class="nav-links">
+        <a href="/">Home</a>
+        <a href="/reports.html" class="active">Reports</a>
+        <a href="https://t.me/fivedaytrader" target="_blank">Telegram</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container">
+    <!-- Page Header -->
+    <div class="page-header">
+      <h1>Daily Reports</h1>
+      <p>BTC market analysis powered by Capital Flow indicator</p>
+    </div>
+
+    <!-- Reports Feed -->
+    <div id="reports-feed">
+      <!-- Report Card - December 8, 2025 -->
+      <article class="report-card">
+        <img
+          src="/Daily 4H BTC Screenshots/BTCUSDT_2025-12-08_10-42-58_b4cdc.png"
+          alt="BTC 4H Chart - December 8, 2025"
+          class="report-image"
+          onclick="openLightbox(this.src)"
+        >
+        <div class="report-content">
+          <div class="report-meta">
+            <span class="report-date">Monday, December 8, 2025</span>
+            <span class="report-signal signal-bullish">Lean Bull 22%</span>
+          </div>
+
+          <h2 class="report-title">BTC Showing Signs of Recovery</h2>
+
+          <div class="report-body">
+            <div class="report-section">
+              <div class="report-section-title">MACRO (2/4 aligned)</div>
+              DXY: 31% — Dollar weakness supportive for risk assets<br>
+              VIX: 54% — Elevated fear levels creating contrarian opportunity<br>
+              GOLD: 46% — Neutral precious metals flow<br>
+              US10Y: 46% — Yields moderating
+            </div>
+
+            <div class="report-section">
+              <div class="report-section-title">CRYPTO LEADERS (2/2 aligned)</div>
+              BTC Flow: 49% — Balanced institutional flow<br>
+              ETH Flow: 48% — Nearly neutral positioning
+            </div>
+
+            <div class="report-section">
+              <div class="report-section-title">SECTORS (1/2 aligned)</div>
+              BTC.D: 50% — Bitcoin maintaining dominance<br>
+              TOTAL3: 61% — Altcoins showing relative strength
+            </div>
+
+            <div class="report-section">
+              <div class="report-section-title">ANALYSIS</div>
+              The Capital Flow indicator shows a "LEAN BULL" 22% signal with 3/8 signals active. The combination of dollar weakness and moderate crypto inflows suggests potential for continued upside momentum. Price has recovered from recent lows and is trading within the middle Keltner channel.
+            </div>
+
+            <div class="report-section">
+              <div class="report-section-title">KEY LEVELS</div>
+              Resistance: $98,000-$100,000<br>
+              Support: $92,000-$93,000
+            </div>
+          </div>
+
+          <div class="report-footer">
+            <div class="report-tags">
+              <span class="tag">#BTC</span>
+              <span class="tag">#CapitalFlow</span>
+              <span class="tag">#4H</span>
+            </div>
+            <a href="https://t.me/fivedaytrader" target="_blank" class="telegram-link">
+              View on Telegram →
+            </a>
+          </div>
+        </div>
+      </article>
+
+      <!-- More reports will be added here -->
+    </div>
+
+    <!-- Indicator Showcase -->
+    <section class="showcase-section">
+      <h2>Indicator Showcase</h2>
+      <p>See the Capital Flow indicator in action across different timeframes and market conditions.</p>
+
+      <div class="showcase-grid" id="showcase-grid">
+        <div class="showcase-item">
+          <img
+            src="/Daily 4H BTC Screenshots/BTCUSDT_2025-12-08_10-42-58_b4cdc.png"
+            alt="BTC 4H Chart"
+            onclick="openLightbox(this.src)"
+          >
+          <p>BTC/USDT 4H — Full chart view with Keltner channels</p>
+        </div>
+        <!-- More showcase items will be added as you provide screenshots -->
+      </div>
+    </section>
+  </div>
+
+  <!-- Lightbox -->
+  <div class="lightbox" id="lightbox" onclick="closeLightbox()">
+    <button class="lightbox-close" onclick="closeLightbox()">&times;</button>
+    <img id="lightbox-img" src="" alt="Full size image">
+  </div>
+
+  <!-- Footer -->
+  <footer>
+    <div class="footer-links">
+      <a href="/">Home</a>
+      <a href="/reports.html">Reports</a>
+      <a href="https://t.me/fivedaytrader" target="_blank">Telegram</a>
+      <a href="/privacy.html">Privacy</a>
+      <a href="/disclaimer.html">Disclaimer</a>
+    </div>
+    <p class="copyright">
+      Part of the <a href="https://mdxalgo.com" target="_blank" class="mdx-link">MDX ALGO</a> ecosystem. Built for traders, by traders.
+    </p>
+  </footer>
+
+  <script>
+    function openLightbox(src) {
+      document.getElementById('lightbox-img').src = src;
+      document.getElementById('lightbox').classList.add('active');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeLightbox() {
+      document.getElementById('lightbox').classList.remove('active');
+      document.body.style.overflow = '';
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeLightbox();
+    });
+
+    // Load reports from JSON archive
+    async function loadReports() {
+      try {
+        const response = await fetch('/reports-data.json');
+        if (!response.ok) return; // No archive yet, use static content
+
+        const reports = await response.json();
+        if (reports.length === 0) return;
+
+        const feed = document.getElementById('reports-feed');
+        feed.innerHTML = ''; // Clear static content
+
+        reports.forEach(report => {
+          const signalClass = report.signal === 'bullish' ? 'signal-bullish' :
+                             report.signal === 'bearish' ? 'signal-bearish' : 'signal-neutral';
+          const signalLabel = report.signal === 'bullish' ? 'Bullish' :
+                             report.signal === 'bearish' ? 'Bearish' : 'Neutral';
+
+          const card = document.createElement('article');
+          card.className = 'report-card';
+          card.innerHTML = `
+            <img
+              src="${report.image}"
+              alt="BTC 4H Chart - ${report.date}"
+              class="report-image"
+              onclick="openLightbox(this.src)"
+            >
+            <div class="report-content">
+              <div class="report-meta">
+                <span class="report-date">${report.date}</span>
+                <span class="report-signal ${signalClass}">${signalLabel} ${report.signalValue}</span>
+              </div>
+              <div class="report-body">${report.reportHtml}</div>
+              <div class="report-footer">
+                <div class="report-tags">
+                  <span class="tag">#BTC</span>
+                  <span class="tag">#CapitalFlow</span>
+                  <span class="tag">#4H</span>
+                </div>
+                <a href="https://t.me/fivedaytrader" target="_blank" class="telegram-link">
+                  View on Telegram →
+                </a>
+              </div>
+            </div>
+          `;
+          feed.appendChild(card);
+        });
+      } catch (error) {
+        console.log('Using static report content');
+      }
+    }
+
+    // Load reports on page load
+    loadReports();
+  </script>
+</body>
+</html>

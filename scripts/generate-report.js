@@ -215,6 +215,54 @@ async function sendTelegramReport(imagePath, report) {
   await sendTelegramMessage(report);
 }
 
+// Save report to JSON archive
+function saveReportToArchive(screenshot, chartDate, report) {
+  const archivePath = path.join(__dirname, '../public/reports-data.json');
+
+  // Load existing archive or create new
+  let archive = [];
+  if (fs.existsSync(archivePath)) {
+    archive = JSON.parse(fs.readFileSync(archivePath, 'utf-8'));
+  }
+
+  // Extract signal from report
+  let signal = 'neutral';
+  let signalValue = '0%';
+  if (report.includes('BULLISH') || report.includes('LEAN BULL')) {
+    signal = 'bullish';
+    const match = report.match(/(\d+%)/);
+    if (match) signalValue = match[1];
+  } else if (report.includes('BEARISH') || report.includes('LEAN BEAR')) {
+    signal = 'bearish';
+    const match = report.match(/(\d+%)/);
+    if (match) signalValue = match[1];
+  }
+
+  // Create report entry
+  const entry = {
+    id: Date.now(),
+    date: chartDate,
+    timestamp: new Date().toISOString(),
+    image: `/Daily 4H BTC Screenshots/${screenshot.name}`,
+    signal: signal,
+    signalValue: signalValue,
+    reportHtml: report,
+    reportText: report.replace(/<[^>]*>/g, '') // Strip HTML tags
+  };
+
+  // Add to beginning of archive (newest first)
+  archive.unshift(entry);
+
+  // Keep last 100 reports
+  archive = archive.slice(0, 100);
+
+  // Save
+  fs.writeFileSync(archivePath, JSON.stringify(archive, null, 2));
+  console.log(`📁 Report saved to archive (${archive.length} total reports)`);
+
+  return entry;
+}
+
 // Main execution
 async function main() {
   console.log('🚀 MDX Capital Flow Report Generator\n');
@@ -246,6 +294,9 @@ async function main() {
     console.log('\n📝 Generated Report:\n');
     console.log(report);
     console.log('\n');
+
+    // Save to archive
+    saveReportToArchive(screenshot, chartDate, report);
 
     // Send to Telegram
     console.log('📤 Sending to Telegram...');
