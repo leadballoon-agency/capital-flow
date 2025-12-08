@@ -266,6 +266,144 @@
       margin-top: 0.25rem;
     }
 
+    /* Live Signals Feed */
+    .live-signals {
+      padding: 4rem 2rem;
+      background: linear-gradient(180deg, #080808 0%, var(--dark) 100%);
+      border-top: 1px solid var(--dark-border);
+    }
+
+    .signals-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    .signals-title {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .signals-title h2 {
+      font-size: 1.5rem;
+      font-weight: 700;
+    }
+
+    .live-dot {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.25rem 0.75rem;
+      background: rgba(0, 255, 136, 0.1);
+      border: 1px solid rgba(0, 255, 136, 0.3);
+      border-radius: 50px;
+      font-size: 0.75rem;
+      color: var(--green);
+    }
+
+    .live-dot::before {
+      content: '';
+      width: 6px;
+      height: 6px;
+      background: var(--green);
+      border-radius: 50%;
+      animation: blink 2s ease-in-out infinite;
+    }
+
+    .signals-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      max-height: 400px;
+      overflow-y: auto;
+    }
+
+    .signal-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 1rem;
+      padding: 1rem 1.25rem;
+      background: var(--dark-card);
+      border: 1px solid var(--dark-border);
+      border-radius: 12px;
+      transition: all 0.2s;
+    }
+
+    .signal-item:hover {
+      border-color: rgba(255, 107, 0, 0.3);
+    }
+
+    .signal-item.bullish {
+      border-left: 3px solid var(--green);
+    }
+
+    .signal-item.bearish {
+      border-left: 3px solid var(--red);
+    }
+
+    .signal-item.neutral {
+      border-left: 3px solid #ffaa00;
+    }
+
+    .signal-item.full_send {
+      border-left: 3px solid var(--orange);
+      background: rgba(255, 107, 0, 0.05);
+    }
+
+    .signal-item-icon {
+      font-size: 1.25rem;
+      width: 32px;
+      text-align: center;
+      flex-shrink: 0;
+    }
+
+    .signal-item-content {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .signal-item-message {
+      font-size: 0.9rem;
+      color: var(--gray-light);
+      line-height: 1.5;
+      word-wrap: break-word;
+    }
+
+    .signal-item-time {
+      font-size: 0.75rem;
+      color: var(--gray);
+      margin-top: 0.5rem;
+    }
+
+    .signals-empty {
+      text-align: center;
+      padding: 3rem 2rem;
+      color: var(--gray);
+    }
+
+    .signals-empty-icon {
+      font-size: 2.5rem;
+      margin-bottom: 1rem;
+      opacity: 0.5;
+    }
+
+    .view-all-link {
+      color: var(--orange);
+      text-decoration: none;
+      font-size: 0.875rem;
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+
+    .view-all-link:hover {
+      text-decoration: underline;
+    }
+
     /* Features Section */
     .features {
       padding: 6rem 2rem;
@@ -573,9 +711,9 @@
         Capital Flow
       </a>
       <div class="nav-links">
+        <a href="#live-feed">Live Feed</a>
         <a href="#features">Features</a>
         <a href="#signals">Signals</a>
-        <a href="#roadmap">Roadmap</a>
         <a href="/reports.html">Reports</a>
         <a href="https://mdxalgo.com/?ref=CsMGq" target="_blank">MDX ALGO</a>
         <a href="https://t.me/fivedaytrader" target="_blank" class="nav-cta">Join Telegram</a>
@@ -622,6 +760,28 @@
         <div class="stat">
           <div class="stat-value">24/7</div>
           <div class="stat-label">Live Monitoring</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Recent Signals Feed -->
+  <section class="live-signals" id="live-feed">
+    <div class="container">
+      <div class="signals-header">
+        <div class="signals-title">
+          <h2>Recent Signals</h2>
+          <span class="live-dot">DAILY</span>
+        </div>
+        <a href="https://t.me/fivedaytrader" target="_blank" class="view-all-link">
+          Get real-time alerts on Telegram →
+        </a>
+      </div>
+      <div class="signals-list" id="signals-list">
+        <div class="signals-empty">
+          <div class="signals-empty-icon">📊</div>
+          <p>No recent signals yet</p>
+          <p style="font-size: 0.8rem; margin-top: 0.5rem;">Daily reports will appear here</p>
         </div>
       </div>
     </div>
@@ -842,5 +1002,73 @@
       Trading cryptocurrencies involves substantial risk. Past performance is not indicative of future results. <a href="/disclaimer.html" class="mdx-link">Read full disclaimer</a>.
     </p>
   </footer>
+
+  <script>
+    // Recent Signals Feed - loads from daily reports archive
+    const signalsList = document.getElementById('signals-list');
+
+    function formatDate(dateStr) {
+      const date = new Date(dateStr);
+      return date.toLocaleDateString('en-US', {
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric'
+      });
+    }
+
+    function getSignalIcon(signal) {
+      if (signal === 'bullish') return '🟢';
+      if (signal === 'bearish') return '🔴';
+      return '🟡';
+    }
+
+    function extractSummary(reportText) {
+      // Extract the ANALYSIS section from report
+      const analysisMatch = reportText.match(/ANALYSIS[:\s]*([^⚠️📍]*)/i);
+      if (analysisMatch) {
+        return analysisMatch[1].trim().substring(0, 200) + '...';
+      }
+      // Fallback to first 150 chars
+      return reportText.substring(0, 150) + '...';
+    }
+
+    function renderSignals(reports) {
+      if (!reports || reports.length === 0) {
+        signalsList.innerHTML = `
+          <div class="signals-empty">
+            <div class="signals-empty-icon">📊</div>
+            <p>No recent signals yet</p>
+            <p style="font-size: 0.8rem; margin-top: 0.5rem;">Daily reports will appear here</p>
+          </div>
+        `;
+        return;
+      }
+
+      signalsList.innerHTML = reports.slice(0, 5).map(report => `
+        <div class="signal-item ${report.signal}">
+          <span class="signal-item-icon">${getSignalIcon(report.signal)}</span>
+          <div class="signal-item-content">
+            <div class="signal-item-message">
+              <strong>${report.signal.toUpperCase()} ${report.signalValue}</strong> — ${extractSummary(report.reportText)}
+            </div>
+            <div class="signal-item-time">${formatDate(report.timestamp)}</div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    async function fetchReports() {
+      try {
+        const response = await fetch('/reports-data.json');
+        const reports = await response.json();
+        renderSignals(reports);
+      } catch (error) {
+        console.log('Could not fetch reports:', error);
+      }
+    }
+
+    // Load reports on page load
+    fetchReports();
+  </script>
 </body>
 </html>
