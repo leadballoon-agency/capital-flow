@@ -100,9 +100,14 @@ async function analyzeChart(imagePath, reportDate) {
 
 TODAY'S DATE IS: ${reportDate}
 
+CRITICAL INSTRUCTIONS:
+1. Read the EXACT current price from the chart's price axis (right side) or the price label. BTC is currently trading around $90,000-$100,000 range in late 2025.
+2. Support/Resistance levels MUST be within 5-10% of the current price. If price is ~$92,000, support might be $88,000-$90,000 and resistance $95,000-$98,000.
+3. DO NOT hallucinate prices. If you cannot read the exact price, estimate based on the visible price scale on the right axis.
+
 Look at:
-1. **CAPITAL FLOW PANEL** (top right) - Read the MACRO, CRYPTO, SECTORS values and overall signal (BULLISH/BEARISH/NEUTRAL)
-2. **Price Action** - Current price, recent trend, key levels
+1. **CAPITAL FLOW PANEL** (top right) - Read the MACRO, CRYPTO, SECTORS values and overall signal (BULLISH/BEARISH/NEUTRAL/LEAN BULL/LEAN BEAR)
+2. **Price Action** - Read the ACTUAL current price from the chart
 3. **Keltner Channels** - Price position relative to bands (overbought/oversold/neutral)
 4. **Signal Dots** - Any recent buy/sell signals visible on chart
 
@@ -111,35 +116,35 @@ Generate a concise daily market report in this EXACT format (use these emojis an
 📊 <b>MDX CAPITAL FLOW — DAILY BTC REPORT</b>
 📅 ${reportDate}
 
-<b>🎯 SIGNAL:</b> [BULLISH 🟢 / BEARISH 🔴 / NEUTRAL 🟡]
+<b>🎯 SIGNAL:</b> [Read from panel: BULLISH 🟢 / BEARISH 🔴 / NEUTRAL 🟡 / LEAN BULL 🟢 / LEAN BEAR 🔴] + percentage
 
-<b>💰 PRICE:</b> $XX,XXX (describe position in Keltner bands)
+<b>💰 PRICE:</b> $XX,XXX (read actual price from chart, describe position in Keltner bands)
 
 <b>🌍 MACRO:</b>
-• DXY: [reading] — [interpretation]
-• VIX: [reading] — [interpretation]
-• GOLD: [reading] — [interpretation]
-• YIELDS: [reading] — [interpretation]
+• DXY: [exact %] — [interpretation]
+• VIX: [exact %] — [interpretation]
+• GOLD: [exact %] — [interpretation]
+• YIELDS: [exact %] — [interpretation]
 
 <b>₿ CRYPTO LEADERS:</b>
-• BTC Flow: [reading]
-• ETH Flow: [reading]
+• BTC Flow: [exact %]
+• ETH Flow: [exact %]
 
 <b>📈 SECTORS:</b>
-• BTC.D: [reading] — [majors vs alts interpretation]
-• TOTAL3: [reading]
+• BTC.D: [exact %] — [majors vs alts interpretation]
+• TOTAL3: [exact %]
 
 <b>📝 ANALYSIS:</b>
 [2-3 sentences on what the Capital Flow data suggests for the next 24-48 hours. Be specific about potential scenarios.]
 
-<b>⚠️ KEY LEVELS:</b>
-• Resistance: $XX,XXX
-• Support: $XX,XXX
+<b>⚠️ KEY LEVELS:</b> (must be realistic - within 5-10% of current price)
+• Resistance: $XX,XXX (based on Keltner upper band or recent highs visible on chart)
+• Support: $XX,XXX (based on Keltner lower band or recent lows visible on chart)
 
 <i>Not financial advice. Trade at your own risk.</i>
 #BTC #CapitalFlow #MDX
 
-Keep it factual based on what you see in the chart. If you can't read specific values, describe what you can see.`
+IMPORTANT: Only report values you can actually see in the image. Read the price scale on the right side of the chart carefully. Current BTC price in Dec 2025 is approximately $90,000-$100,000.`
           }
         ]
       }
