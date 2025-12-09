@@ -1,12 +1,13 @@
 // TradingView → Telegram Webhook
 // Vercel Serverless Function
-// Saves signals to Vercel KV for delayed feed display
+// Saves signals to Neon Postgres for delayed feed display
+
+import { neon } from '@neondatabase/serverless';
 
 export default async function handler(req, res) {
   const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
   const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID || '-1001548592148';
-  const KV_REST_API_URL = process.env.KV_REST_API_URL;
-  const KV_REST_API_TOKEN = process.env.KV_REST_API_TOKEN;
+  const DATABASE_URL = process.env.DATABASE_URL;
 
   // GET request = test the connection
   if (req.method === 'GET') {
@@ -14,14 +15,14 @@ export default async function handler(req, res) {
       return res.status(200).json({
         status: 'Webhook active',
         telegram: 'NOT CONFIGURED - Add TELEGRAM_BOT_TOKEN env var',
-        kv: KV_REST_API_URL ? 'Configured' : 'NOT CONFIGURED',
+        database: DATABASE_URL ? 'Configured' : 'NOT CONFIGURED',
         chat_id: TELEGRAM_CHAT_ID
       });
     }
     return res.status(200).json({
       status: 'Webhook active and ready',
       telegram: 'Configured',
-      kv: KV_REST_API_URL ? 'Configured' : 'NOT CONFIGURED',
+      database: DATABASE_URL ? 'Configured' : 'NOT CONFIGURED',
       chat_id: TELEGRAM_CHAT_ID
     });
   }
@@ -88,13 +89,13 @@ export default async function handler(req, res) {
       });
     }
 
-    // Save signal to KV store for delayed feed (if KV is configured)
-    if (KV_REST_API_URL && KV_REST_API_TOKEN) {
+    // Save signal to Neon database (if configured)
+    if (DATABASE_URL) {
       try {
-        await saveSignalToKV(signalData, KV_REST_API_URL, KV_REST_API_TOKEN);
-        console.log('Signal saved to KV');
-      } catch (kvError) {
-        console.error('KV save error (non-fatal):', kvError.message);
+        await saveSignalToNeon(signalData, DATABASE_URL);
+        console.log('Signal saved to database');
+      } catch (dbError) {
+        console.error('Database save error (non-fatal):', dbError.message);
       }
     }
 
@@ -159,7 +160,6 @@ function parseSignalMessage(message) {
   }
 
   return {
-    id: `sig_${Date.now()}`,
     timestamp: now,
     message: message,
     signalType,
@@ -169,42 +169,33 @@ function parseSignalMessage(message) {
   };
 }
 
-// Save signal to Vercel KV
-async function saveSignalToKV(signalData, kvUrl, kvToken) {
-  // Get existing signals
-  const getResponse = await fetch(`${kvUrl}/get/signals`, {
-    headers: {
-      Authorization: `Bearer ${kvToken}`
-    }
-  });
+// Save signal to Neon Postgres
+async function saveSignalToNeon(signalData, databaseUrl) {
+  const sql = neon(databaseUrl);
 
-  let signals = [];
-  if (getResponse.ok) {
-    const data = await getResponse.json();
-    if (data.result) {
-      signals = JSON.parse(data.result);
-    }
-  }
+  // Create table if it doesn't exist
+  await sql`
+    CREATE TABLE IF NOT EXISTS signals (
+      id SERIAL PRIMARY KEY,
+      timestamp TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      message TEXT NOT NULL,
+      signal_type VARCHAR(50),
+      direction VARCHAR(20),
+      timeframe VARCHAR(10),
+      ticker VARCHAR(20)
+    )
+  `;
 
-  // Add new signal at the beginning
-  signals.unshift(signalData);
+  // Insert the signal
+  await sql`
+    INSERT INTO signals (timestamp, message, signal_type, direction, timeframe, ticker)
+    VALUES (${signalData.timestamp}, ${signalData.message}, ${signalData.signalType}, ${signalData.direction}, ${signalData.timeframe}, ${signalData.ticker})
+  `;
 
-  // Keep only last 100 signals (about 3-4 days worth)
-  signals = signals.slice(0, 100);
-
-  // Save back to KV
-  const setResponse = await fetch(`${kvUrl}/set/signals`, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${kvToken}`,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify(JSON.stringify(signals))
-  });
-
-  if (!setResponse.ok) {
-    throw new Error(`KV set failed: ${setResponse.status}`);
-  }
+  // Clean up old signals (keep last 7 days)
+  await sql`
+    DELETE FROM signals WHERE timestamp < NOW() - INTERVAL '7 days'
+  `;
 }
 
 // Helper to get raw body if needed
