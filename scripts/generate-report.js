@@ -71,6 +71,18 @@ function extractDateFromFilename(filename) {
   });
 }
 
+// Get previous report for context
+function getPreviousReport() {
+  const archivePath = path.join(__dirname, '../public/reports-data.json');
+  if (fs.existsSync(archivePath)) {
+    const archive = JSON.parse(fs.readFileSync(archivePath, 'utf-8'));
+    if (archive.length > 0) {
+      return archive[0]; // Most recent report
+    }
+  }
+  return null;
+}
+
 // Analyze screenshot with Claude
 async function analyzeChart(imagePath, reportDate) {
   const client = new Anthropic({ apiKey: ANTHROPIC_API_KEY });
@@ -78,6 +90,12 @@ async function analyzeChart(imagePath, reportDate) {
   const imageData = fs.readFileSync(imagePath);
   const base64Image = imageData.toString('base64');
   const mediaType = imagePath.endsWith('.png') ? 'image/png' : 'image/jpeg';
+
+  // Get previous report for context
+  const prevReport = getPreviousReport();
+  const prevContext = prevReport
+    ? `\n\nPREVIOUS REPORT (${prevReport.date}):\n${prevReport.reportText}\n\nUse the previous report for context - note any changes in signal, open levels regained/lost, or shifts in bias. Reference changes like "Yesterday's LEAN BULL has shifted to NEUTRAL" or "Successfully reclaimed the DO that was lost yesterday".`
+    : '';
 
   const response = await client.messages.create({
     model: 'claude-sonnet-4-20250514',
@@ -168,7 +186,7 @@ OPEN LEVELS INTERPRETATION:
 
 If D/W/M open lines are not visible on the chart, write "Not visible" for that level.
 
-IMPORTANT: Only report values you can actually see in the image. Read the price scale on the right side of the chart carefully. Current BTC price in Dec 2025 is approximately $90,000-$100,000.`
+IMPORTANT: Only report values you can actually see in the image. Read the price scale on the right side of the chart carefully. Current BTC price in Dec 2025 is approximately $90,000-$100,000.${prevContext}`
           }
         ]
       }
