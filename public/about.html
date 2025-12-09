@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>About Capital Flow Filter | Free Crypto Trading Signals</title>
+  <meta name="description" content="Learn how the Capital Flow Filter indicator works and why tracking capital rotation matters for crypto trading.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --orange: #ff6b00;
+      --orange-light: #ff8533;
+      --dark: #0a0a0a;
+      --dark-card: #111111;
+      --dark-border: #1a1a1a;
+      --gray: #888888;
+      --gray-light: #aaaaaa;
+      --green: #00ff88;
+      --red: #ff4466;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--dark);
+      color: #fff;
+      line-height: 1.7;
+    }
+
+    nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      padding: 1rem 2rem;
+      background: rgba(10, 10, 10, 0.95);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--dark-border);
+    }
+
+    .nav-content {
+      max-width: 800px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-weight: 700;
+      font-size: 1.25rem;
+      text-decoration: none;
+      color: #fff;
+    }
+
+    .logo-icon {
+      width: 32px;
+      height: 32px;
+      background: linear-gradient(135deg, var(--orange), var(--orange-light));
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 0.875rem;
+    }
+
+    .back-link {
+      color: var(--gray-light);
+      text-decoration: none;
+      font-size: 0.875rem;
+      transition: color 0.2s;
+    }
+
+    .back-link:hover {
+      color: #fff;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 8rem 2rem 4rem;
+    }
+
+    .beta-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+      background: rgba(255, 107, 0, 0.1);
+      border: 1px solid rgba(255, 107, 0, 0.3);
+      border-radius: 50px;
+      font-size: 0.875rem;
+      color: var(--orange);
+      margin-bottom: 1.5rem;
+    }
+
+    h1 {
+      font-size: 2.5rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+      line-height: 1.2;
+    }
+
+    .subtitle {
+      font-size: 1.25rem;
+      color: var(--gray-light);
+      margin-bottom: 3rem;
+    }
+
+    h2 {
+      font-size: 1.5rem;
+      font-weight: 600;
+      margin-top: 3rem;
+      margin-bottom: 1rem;
+      color: var(--orange);
+    }
+
+    h3 {
+      font-size: 1.125rem;
+      font-weight: 600;
+      margin-top: 2rem;
+      margin-bottom: 0.75rem;
+      color: #fff;
+    }
+
+    p {
+      color: var(--gray-light);
+      margin-bottom: 1rem;
+    }
+
+    ul, ol {
+      color: var(--gray-light);
+      margin-bottom: 1.5rem;
+      padding-left: 1.5rem;
+    }
+
+    li {
+      margin-bottom: 0.5rem;
+    }
+
+    strong {
+      color: #fff;
+    }
+
+    a {
+      color: var(--orange);
+      text-decoration: none;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+
+    .highlight-box {
+      background: var(--dark-card);
+      border: 1px solid var(--dark-border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin: 2rem 0;
+    }
+
+    .highlight-box.beta {
+      border-color: rgba(255, 107, 0, 0.3);
+      background: rgba(255, 107, 0, 0.05);
+    }
+
+    .highlight-box p {
+      margin: 0;
+    }
+
+    .signal-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin: 1.5rem 0;
+    }
+
+    .signal-card {
+      background: var(--dark-card);
+      border: 1px solid var(--dark-border);
+      border-radius: 12px;
+      padding: 1.25rem;
+    }
+
+    .signal-card-header {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 0.5rem;
+      font-weight: 600;
+      color: #fff;
+    }
+
+    .signal-card p {
+      font-size: 0.875rem;
+      margin: 0;
+    }
+
+    .flow-diagram {
+      background: var(--dark-card);
+      border: 1px solid var(--dark-border);
+      border-radius: 12px;
+      padding: 2rem;
+      margin: 2rem 0;
+      text-align: center;
+    }
+
+    .flow-step {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1.25rem;
+      background: var(--dark);
+      border: 1px solid var(--dark-border);
+      border-radius: 8px;
+      margin: 0.5rem;
+      font-size: 0.875rem;
+    }
+
+    .flow-arrow {
+      color: var(--orange);
+      font-size: 1.5rem;
+      margin: 0 0.5rem;
+    }
+
+    .cta-section {
+      background: linear-gradient(135deg, rgba(255, 107, 0, 0.1), rgba(255, 107, 0, 0.05));
+      border: 1px solid rgba(255, 107, 0, 0.2);
+      border-radius: 16px;
+      padding: 2.5rem;
+      margin: 3rem 0;
+      text-align: center;
+    }
+
+    .cta-section h3 {
+      margin-top: 0;
+      font-size: 1.5rem;
+    }
+
+    .cta-buttons {
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-top: 1.5rem;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.875rem 1.5rem;
+      border-radius: 8px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: all 0.2s;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--orange), var(--orange-light));
+      color: #fff;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      text-decoration: none;
+    }
+
+    .btn-secondary {
+      background: var(--dark-card);
+      border: 1px solid var(--dark-border);
+      color: #fff;
+    }
+
+    .btn-secondary:hover {
+      border-color: var(--orange);
+      text-decoration: none;
+    }
+
+    .feedback-section {
+      background: var(--dark-card);
+      border: 1px solid var(--dark-border);
+      border-radius: 16px;
+      padding: 2rem;
+      margin: 3rem 0;
+    }
+
+    .feedback-section h3 {
+      margin-top: 0;
+    }
+
+    footer {
+      padding: 3rem 2rem;
+      border-top: 1px solid var(--dark-border);
+      text-align: center;
+      margin-top: 4rem;
+    }
+
+    .footer-links {
+      display: flex;
+      justify-content: center;
+      gap: 2rem;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+    }
+
+    .footer-links a {
+      color: var(--gray);
+      font-size: 0.875rem;
+    }
+
+    .copyright {
+      color: var(--gray);
+      font-size: 0.8125rem;
+    }
+
+    @media (max-width: 600px) {
+      h1 {
+        font-size: 2rem;
+      }
+
+      .flow-diagram {
+        padding: 1.5rem 1rem;
+      }
+
+      .flow-step {
+        display: block;
+        margin: 0.5rem 0;
+      }
+
+      .flow-arrow {
+        display: block;
+        margin: 0.5rem 0;
+      }
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="nav-content">
+      <a href="/" class="logo">
+        <span class="logo-icon">CF</span>
+        Capital Flow
+      </a>
+      <a href="/" class="back-link">← Back to Home</a>
+    </div>
+  </nav>
+
+  <div class="container">
+    <span class="beta-badge">🚀 Beta Release</span>
+    <h1>Understanding Capital Flow</h1>
+    <p class="subtitle">Why tracking where money moves is the edge most traders are missing</p>
+
+    <div class="highlight-box beta">
+      <p><strong>This project is currently in beta.</strong> We're actively developing and improving the Capital Flow Filter. Your feedback is invaluable in helping us build something truly useful for the trading community. If you have suggestions, find bugs, or want to share how you're using the signals, please reach out via our <a href="https://t.me/fivedaytrader" target="_blank">Telegram channel</a>.</p>
+    </div>
+
+    <h2>The Problem with Traditional Analysis</h2>
+    <p>Most traders focus on price action alone. They draw lines, spot patterns, and try to predict where price will go next. But here's what they're missing: <strong>price follows money</strong>.</p>
+    <p>Before a big move happens, capital starts flowing. Institutions don't just wake up and buy — they rotate capital from one asset class to another based on risk appetite, macro conditions, and sector strength. By the time price "breaks out," the smart money is already positioned.</p>
+
+    <h2>What is Capital Flow?</h2>
+    <p>Capital flow analysis tracks where money is moving across different asset classes and market sectors. Instead of just looking at Bitcoin's price, we ask: <strong>Where is capital rotating right now?</strong></p>
+
+    <div class="signal-grid">
+      <div class="signal-card">
+        <div class="signal-card-header">🌍 Macro Flow</div>
+        <p>Is money flowing into risk assets or safe havens? We track DXY, VIX, Gold, and Yields.</p>
+      </div>
+      <div class="signal-card">
+        <div class="signal-card-header">₿ Crypto Leaders</div>
+        <p>Are BTC and ETH seeing inflows? Leaders move first, alts follow.</p>
+      </div>
+      <div class="signal-card">
+        <div class="signal-card-header">📈 Sector Rotation</div>
+        <p>Is money favoring majors (BTC dominance) or rotating into alts (TOTAL3)?</p>
+      </div>
+      <div class="signal-card">
+        <div class="signal-card-header">🎯 Confluence</div>
+        <p>When all signals align, conviction is highest. 8/8 alignment is rare and powerful.</p>
+      </div>
+    </div>
+
+    <h2>How the Capital Flow Filter Works</h2>
+    <p>The indicator aggregates data from 8 different sources across multiple timeframes, then weights and combines them into a single, actionable signal:</p>
+
+    <div class="flow-diagram">
+      <span class="flow-step">📊 Macro Data</span>
+      <span class="flow-step">₿ Crypto Data</span>
+      <span class="flow-step">📈 Sector Data</span>
+      <br>
+      <span class="flow-arrow">↓</span>
+      <br>
+      <span class="flow-step">Multi-Timeframe Analysis</span>
+      <br>
+      <span class="flow-arrow">↓</span>
+      <br>
+      <span class="flow-step">Correlation Weighting</span>
+      <br>
+      <span class="flow-arrow">↓</span>
+      <br>
+      <span class="flow-step" style="background: linear-gradient(135deg, var(--orange), var(--orange-light)); border: none;">🎯 Capital Flow Signal</span>
+    </div>
+
+    <h3>The Data Sources</h3>
+    <ul>
+      <li><strong>DXY (Dollar Index)</strong> — When the dollar weakens, risk assets like crypto typically benefit</li>
+      <li><strong>VIX (Volatility Index)</strong> — Low VIX = risk-on sentiment, high VIX = fear in the market</li>
+      <li><strong>Gold</strong> — Safe haven flows; money leaving gold often flows into risk assets</li>
+      <li><strong>US 10Y Yields</strong> — Rising yields can pressure risk assets; falling yields support them</li>
+      <li><strong>BTC Flow</strong> — Direct measurement of Bitcoin capital movement</li>
+      <li><strong>ETH Flow</strong> — Ethereum often leads altcoin rotations</li>
+      <li><strong>BTC Dominance</strong> — High dominance = majors favored; falling = alt season potential</li>
+      <li><strong>TOTAL3</strong> — Total altcoin market cap excluding BTC/ETH; measures alt sector strength</li>
+    </ul>
+
+    <h3>Signal Strength</h3>
+    <p>The indicator produces a normalized score from -100% to +100%:</p>
+    <ul>
+      <li><strong style="color: var(--green);">Full Send (70%+)</strong> — Strongest conviction, all systems go</li>
+      <li><strong style="color: var(--green);">Bullish (50%+)</strong> — Standard bullish signal</li>
+      <li><strong style="color: var(--green);">Lean Bull (20%+)</strong> — Early bullish indication</li>
+      <li><strong>Neutral</strong> — Mixed signals, no clear direction</li>
+      <li><strong style="color: var(--red);">Lean Bear (-20%)</strong> — Early bearish indication</li>
+      <li><strong style="color: var(--red);">Bearish (-50%)</strong> — Standard bearish signal</li>
+      <li><strong style="color: var(--red);">Full Send (-70%)</strong> — Strongest bearish conviction</li>
+    </ul>
+
+    <h2>Why This Matters for Your Trading</h2>
+
+    <h3>1. Trade with the Flow, Not Against It</h3>
+    <p>When capital is flowing into risk assets across all sectors, fighting that tide is swimming upstream. The Capital Flow Filter helps you align your trades with institutional money movement.</p>
+
+    <h3>2. Better Risk Management</h3>
+    <p>Knowing the macro environment helps you size positions appropriately. Full confluence? Consider larger size. Mixed signals? Trade smaller or sit out.</p>
+
+    <h3>3. Earlier Entries and Exits</h3>
+    <p>Capital often starts rotating before price confirms. The indicator can give you a heads up that conditions are shifting, allowing you to position ahead of the crowd.</p>
+
+    <h3>4. Avoid Manipulation Traps</h3>
+    <p>The indicator includes manipulation detection — identifying unusual volume patterns, wick hunting, and spoofing. When the market is playing games, you'll know.</p>
+
+    <h2>Daily Reports</h2>
+    <p>Every day, we analyze the BTC 4H chart and publish a comprehensive Capital Flow report covering:</p>
+    <ul>
+      <li>Current signal and strength</li>
+      <li>Macro conditions (DXY, VIX, Gold, Yields)</li>
+      <li>Crypto leader flows (BTC, ETH)</li>
+      <li>Sector rotation analysis</li>
+      <li>Key support and resistance levels</li>
+      <li>Daily, Weekly, and Monthly open analysis</li>
+      <li>Actionable analysis for the next 24-48 hours</li>
+    </ul>
+    <p>Reports are posted to our <a href="https://t.me/fivedaytrader" target="_blank">Telegram channel</a> and archived on this website.</p>
+
+    <div class="cta-section">
+      <h3>Join the Community</h3>
+      <p style="color: var(--gray-light);">Get daily signals, real-time alerts, and connect with other traders using Capital Flow analysis.</p>
+      <div class="cta-buttons">
+        <a href="https://t.me/fivedaytrader" target="_blank" class="btn btn-primary">
+          Join Telegram
+        </a>
+        <a href="/reports.html" class="btn btn-secondary">
+          View Reports
+        </a>
+      </div>
+    </div>
+
+    <div class="feedback-section">
+      <h3>We Want Your Feedback</h3>
+      <p>This project is in active development and we're building it for traders like you. Here's how you can help:</p>
+      <ul>
+        <li><strong>Bug reports</strong> — Something not working? Let us know</li>
+        <li><strong>Feature requests</strong> — What would make this more useful for you?</li>
+        <li><strong>Signal feedback</strong> — How are the signals performing for your trading style?</li>
+        <li><strong>Use cases</strong> — Tell us how you're incorporating Capital Flow into your strategy</li>
+      </ul>
+      <p>Reach out via <a href="https://t.me/fivedaytrader" target="_blank">Telegram</a> — we read every message.</p>
+    </div>
+
+    <h2>About This Project</h2>
+    <p>The Capital Flow Filter is a <strong>free, independent indicator</strong> created by a trader, for traders. It's inspired by capital flow concepts but built from scratch with a focus on practical, actionable signals.</p>
+    <p>This project is not affiliated with any paid signal service or trading group. The indicator and daily reports are provided free of charge. We believe good trading tools should be accessible to everyone.</p>
+    <p>If you're interested in professional-grade trading tools and education, we recommend checking out <a href="https://mdxalgo.com/?ref=CsMGq" target="_blank">MDX ALGO</a> — a comprehensive trading suite that inspired some of the concepts behind this indicator.</p>
+
+    <div class="highlight-box">
+      <p><strong>Disclaimer:</strong> This is not financial advice. Trading cryptocurrencies involves substantial risk. The Capital Flow Filter is a tool to aid your analysis, not a guarantee of profits. Always do your own research and never risk more than you can afford to lose. <a href="/disclaimer.html">Read full disclaimer</a>.</p>
+    </div>
+  </div>
+
+  <footer>
+    <div class="footer-links">
+      <a href="/">Home</a>
+      <a href="/about.html">About</a>
+      <a href="/reports.html">Reports</a>
+      <a href="/privacy.html">Privacy Policy</a>
+      <a href="/disclaimer.html">Disclaimer</a>
+      <a href="https://mdxalgo.com/?ref=CsMGq" target="_blank">MDX ALGO</a>
+    </div>
+    <p class="copyright" style="max-width: 500px; margin: 0 auto 1rem; font-size: 0.7rem;">
+      <strong style="color: var(--orange);">Disclosure:</strong> Capital Flow Filter is a free, independent indicator. Not affiliated with MDX ALGO. Affiliate links used.
+    </p>
+    <p class="copyright">
+      Built by traders, for traders.
+    </p>
+  </footer>
+</body>
+</html>
