@@ -100,17 +100,25 @@ async function analyzeChart(imagePath, reportDate) {
 
 TODAY'S DATE IS: ${reportDate}
 
-CRITICAL INSTRUCTIONS:
-1. Read the EXACT current price from the chart's price axis (right side) or the price label. BTC is currently trading around $90,000-$100,000 range in late 2025.
-2. Support/Resistance levels MUST be within 5-10% of the current price. If price is ~$92,000, support might be $88,000-$90,000 and resistance $95,000-$98,000.
-3. DO NOT hallucinate prices. If you cannot read the exact price, estimate based on the visible price scale on the right axis.
+CRITICAL INSTRUCTIONS - READ CAREFULLY:
+1. The GREEN price label on the RIGHT AXIS shows current price (around $90,500 area today)
+2. Open level labels on chart:
+   - "DO" = Today's Daily Open (current day)
+   - Light blue lines with brackets like "(1)" "(2)" = Previous daily opens (days back)
+   - "WO" = Weekly Open
+   - "Dec" or "MO" = Monthly Open (December)
+   - "Q1" = Quarterly Open, "YO" = Yearly Open
+3. If current price is BELOW a level line, you have LOST that level (bearish)
+4. If current price is ABOVE a level line, you are HOLDING that level (bullish)
+5. GREEN horizontal zones = Support levels, RED horizontal zones = Resistance levels
+6. DO NOT make up prices - only report what you can actually see on the chart
 
 Look at:
-1. **CAPITAL FLOW PANEL** (top right) - Read the MACRO, CRYPTO, SECTORS values and overall signal (BULLISH/BEARISH/NEUTRAL/LEAN BULL/LEAN BEAR)
-2. **Price Action** - Read the ACTUAL current price from the chart
-3. **Keltner Channels** - Price position relative to bands (overbought/oversold/neutral)
+1. **CAPITAL FLOW PANEL** (top right) - Read the MACRO, CRYPTO, SECTORS values and overall signal (BULLISH/BEARISH/NEUTRAL/LEAN BULL/LEAN BEAR) with percentage
+2. **Price Action** - Read the ACTUAL current price from the GREEN label on right axis
+3. **Support/Resistance Zones** - GREEN horizontal zones = Support, RED horizontal zones = Resistance. Read prices from labels.
 4. **Signal Dots** - Any recent buy/sell signals visible on chart
-5. **D/W/M Opens** - Look for horizontal lines labeled with Daily, Weekly, Monthly opens (may show as "D Open", "W Open", "M Open" or similar). Read the exact price from each label and determine if current price is ABOVE or BELOW each level.
+5. **Open Levels** - Look for horizontal lines labeled "DO" (Daily Open), "WO" (Weekly Open), "MO" (Monthly Open), also "Q1" (Quarterly), "YO" (Yearly Open). Compare current price to each - if price is ABOVE the line = Holding, if price is BELOW the line = Lost
 
 Generate a concise daily market report in this EXACT format (use these emojis and headers):
 
@@ -138,9 +146,9 @@ Generate a concise daily market report in this EXACT format (use these emojis an
 <b>📝 ANALYSIS:</b>
 [2-3 sentences on what the Capital Flow data suggests for the next 24-48 hours. Be specific about potential scenarios.]
 
-<b>⚠️ KEY LEVELS:</b> (must be realistic - within 5-10% of current price)
-• Resistance: $XX,XXX (based on Keltner upper band or recent highs visible on chart)
-• Support: $XX,XXX (based on Keltner lower band or recent lows visible on chart)
+<b>⚠️ KEY LEVELS:</b>
+• Resistance: $XX,XXX (read from RED horizontal zones on chart)
+• Support: $XX,XXX (read from GREEN horizontal zones on chart)
 
 <b>📍 OPEN LEVELS:</b>
 • Daily: $XX,XXX — [✅ Holding / ❌ Lost] — [context]
