@@ -75,6 +75,57 @@ async function fetchFearGreed() {
   }
 }
 
+// Fetch Long/Short Ratio from Binance Futures API
+async function fetchLongShortRatio() {
+  try {
+    const fetch = (await import('node-fetch')).default;
+    const response = await fetch(
+      'https://fapi.binance.com/futures/data/globalLongShortAccountRatio?symbol=BTCUSDT&period=4h&limit=1'
+    );
+    const data = await response.json();
+
+    if (!data || !data[0]) {
+      throw new Error('Invalid L/S response');
+    }
+
+    const lsData = data[0];
+    const longPct = parseFloat(lsData.longAccount) * 100;
+    const shortPct = parseFloat(lsData.shortAccount) * 100;
+
+    // Determine crowding status
+    let crowding, label;
+    if (longPct >= 65) {
+      crowding = 'crowded_long';
+      label = 'Retail Very Long';
+    } else if (longPct >= 60) {
+      crowding = 'crowded_long';
+      label = 'Retail Long';
+    } else if (shortPct >= 65) {
+      crowding = 'crowded_short';
+      label = 'Retail Very Short';
+    } else if (shortPct >= 60) {
+      crowding = 'crowded_short';
+      label = 'Retail Short';
+    } else {
+      crowding = 'balanced';
+      label = 'Balanced';
+    }
+
+    return {
+      longPct: Math.round(longPct * 10) / 10,
+      shortPct: Math.round(shortPct * 10) / 10,
+      crowding,
+      label,
+      is_crowded_long: longPct >= 60,
+      is_crowded_short: shortPct >= 60,
+      is_extreme: longPct >= 65 || shortPct >= 65
+    };
+  } catch (error) {
+    console.error('⚠️ Could not fetch Long/Short Ratio:', error.message);
+    return null;
+  }
+}
+
 // Find the most recent screenshot
 function findLatestScreenshot(dir) {
   const screenshotDir = dir || path.join(__dirname, '../public/Daily 4H BTC Screenshots');
@@ -133,7 +184,7 @@ function getPreviousReport() {
 }
 
 // Analyze screenshot with Claude
-async function analyzeChart(imagePath, reportDate, fearGreedData) {
+async function analyzeChart(imagePath, reportDate, fearGreedData, longShortData) {
   const client = new Anthropic({ apiKey: ANTHROPIC_API_KEY });
 
   const imageData = fs.readFileSync(imagePath);
@@ -161,6 +212,23 @@ IMPORTANT F&G INTERPRETATION:
 Include the F&G Index in your report using this format:
 <b>😨 FEAR & GREED:</b> ${fearGreedData.value} — ${fearGreedData.classification} ${fearGreedData.emoji}
 • Signal Alignment: [✅ Confirms / ⚠️ Diverges] Capital Flow — [brief interpretation]`
+    : '';
+
+  // Long/Short Ratio context
+  const lsContext = longShortData
+    ? `\n\nLONG/SHORT RATIO (from Binance Futures):
+• ${longShortData.longPct}% Long / ${longShortData.shortPct}% Short
+• Retail Position: ${longShortData.label}
+
+IMPORTANT L/S INTERPRETATION (contrarian indicator):
+- If Capital Flow is BULLISH and Retail is SHORT (<40% long) = STRONG confirmation (smart money accumulating)
+- If Capital Flow is BULLISH and Retail is LONG (>60% long) = Caution (crowded trade, watch for pullback)
+- If Capital Flow is BEARISH and Retail is LONG (>60% long) = STRONG confirmation (distribution phase)
+- If Capital Flow is BEARISH and Retail is SHORT (<40% long) = Caution (possible capitulation bottom)
+
+Include the L/S Ratio in your report using this format:
+<b>📊 LONG/SHORT:</b> ${longShortData.longPct}% Long / ${longShortData.shortPct}% Short
+• Retail Position: ${longShortData.label} — [✅ Confirms / ⚠️ Diverges] Capital Flow`
     : '';
 
   const response = await client.messages.create({
@@ -230,6 +298,9 @@ Generate a concise daily market report in this EXACT format (use these emojis an
 <b>😨 FEAR & GREED:</b> [value] — [classification] [emoji]
 • Signal Alignment: [✅ Confirms / ⚠️ Diverges] Capital Flow — [interpretation]
 
+<b>📊 LONG/SHORT:</b> [X]% Long / [X]% Short
+• Retail Position: [status] — [✅ Confirms / ⚠️ Diverges] Capital Flow
+
 <b>📝 ANALYSIS:</b>
 [2-3 sentences on what the Capital Flow data suggests for the next 24-48 hours. Be specific about potential scenarios.]
 
@@ -255,7 +326,7 @@ OPEN LEVELS INTERPRETATION:
 
 If D/W/M open lines are not visible on the chart, write "Not visible" for that level.
 
-IMPORTANT: Only report values you can actually see in the image. Read the price scale on the right side of the chart carefully. Current BTC price in Dec 2025 is approximately $90,000-$100,000.${prevContext}${fngContext}`
+IMPORTANT: Only report values you can actually see in the image. Read the price scale on the right side of the chart carefully. Current BTC price in Dec 2025 is approximately $90,000-$100,000.${prevContext}${fngContext}${lsContext}`
           }
         ]
       }
@@ -332,7 +403,7 @@ async function sendTelegramReport(imagePath, report) {
 }
 
 // Save report to JSON archive
-function saveReportToArchive(screenshot, chartDate, report, fearGreedData) {
+function saveReportToArchive(screenshot, chartDate, report, fearGreedData, longShortData) {
   const archivePath = path.join(__dirname, '../public/reports-data.json');
 
   // Load existing archive or create new
@@ -368,6 +439,11 @@ function saveReportToArchive(screenshot, chartDate, report, fearGreedData) {
       value: fearGreedData.value,
       classification: fearGreedData.classification,
       emoji: fearGreedData.emoji
+    } : null,
+    longShort: longShortData ? {
+      longPct: longShortData.longPct,
+      shortPct: longShortData.shortPct,
+      label: longShortData.label
     } : null
   };
 
@@ -413,20 +489,29 @@ async function main() {
     console.log('😨 Fetching Fear & Greed Index...');
     const fearGreedData = await fetchFearGreed();
     if (fearGreedData) {
-      console.log(`   ${fearGreedData.emoji} F&G: ${fearGreedData.value} (${fearGreedData.classification})\n`);
+      console.log(`   ${fearGreedData.emoji} F&G: ${fearGreedData.value} (${fearGreedData.classification})`);
     } else {
-      console.log('   ⚠️ F&G data unavailable, continuing without it\n');
+      console.log('   ⚠️ F&G data unavailable, continuing without it');
+    }
+
+    // Fetch Long/Short Ratio
+    console.log('📊 Fetching Long/Short Ratio...');
+    const longShortData = await fetchLongShortRatio();
+    if (longShortData) {
+      console.log(`   L/S: ${longShortData.longPct}% Long / ${longShortData.shortPct}% Short (${longShortData.label})\n`);
+    } else {
+      console.log('   ⚠️ L/S data unavailable, continuing without it\n');
     }
 
     // Analyze with Claude
     console.log('🤖 Analyzing chart with Claude...');
-    const report = await analyzeChart(screenshot.path, chartDate, fearGreedData);
+    const report = await analyzeChart(screenshot.path, chartDate, fearGreedData, longShortData);
     console.log('\n📝 Generated Report:\n');
     console.log(report);
     console.log('\n');
 
     // Save to archive
-    saveReportToArchive(screenshot, chartDate, report, fearGreedData);
+    saveReportToArchive(screenshot, chartDate, report, fearGreedData, longShortData);
 
     // Send to Telegram
     console.log('📤 Sending to Telegram...');
