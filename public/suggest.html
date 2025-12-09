@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Suggest a Feature | MDX Capital Flow</title>
+  <meta name="description" content="Help shape the future of Capital Flow Filter. Submit your ideas and vote on community suggestions.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --orange: #ff6b00;
+      --orange-light: #ff8533;
+      --orange-glow: rgba(255, 107, 0, 0.3);
+      --dark: #0a0a0a;
+      --dark-card: #111111;
+      --dark-border: #1a1a1a;
+      --dark-hover: #161616;
+      --gray: #888888;
+      --gray-light: #aaaaaa;
+      --gray-dark: #666666;
+      --green: #00ff88;
+      --green-dim: rgba(0, 255, 136, 0.1);
+      --red: #ff4444;
+      --yellow: #ffc800;
+      --blue: #4a9eff;
+      --purple: #a855f7;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--dark);
+      color: #fff;
+      line-height: 1.6;
+    }
+
+    /* Navigation */
+    nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      padding: 1rem 2rem;
+      background: rgba(10, 10, 10, 0.95);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--dark-border);
+    }
+
+    .nav-content {
+      max-width: 900px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-weight: 700;
+      font-size: 1.25rem;
+      text-decoration: none;
+      color: #fff;
+    }
+
+    .logo-icon {
+      width: 32px;
+      height: 32px;
+      background: linear-gradient(135deg, var(--orange), var(--orange-light));
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 0.875rem;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 1.5rem;
+      align-items: center;
+    }
+
+    .nav-links a {
+      color: var(--gray-light);
+      text-decoration: none;
+      font-size: 0.875rem;
+      transition: color 0.2s;
+    }
+
+    .nav-links a:hover {
+      color: #fff;
+    }
+
+    /* Main Content */
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 7rem 1.5rem 4rem;
+    }
+
+    /* Header */
+    .page-header {
+      text-align: center;
+      margin-bottom: 3rem;
+    }
+
+    .page-header h1 {
+      font-size: 2.5rem;
+      font-weight: 800;
+      margin-bottom: 0.75rem;
+      background: linear-gradient(135deg, #fff 0%, var(--orange) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .page-header p {
+      color: var(--gray-light);
+      font-size: 1.1rem;
+      max-width: 500px;
+      margin: 0 auto;
+    }
+
+    /* Two Column Layout */
+    .content-grid {
+      display: grid;
+      grid-template-columns: 1fr 1.2fr;
+      gap: 2rem;
+    }
+
+    /* Suggestion Form */
+    .form-card {
+      background: var(--dark-card);
+      border: 1px solid var(--dark-border);
+      border-radius: 16px;
+      padding: 2rem;
+      height: fit-content;
+      position: sticky;
+      top: 6rem;
+    }
+
+    .form-header {
+      margin-bottom: 1.5rem;
+    }
+
+    .form-header h2 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      margin-bottom: 0.25rem;
+    }
+
+    .form-header p {
+      color: var(--gray);
+      font-size: 0.875rem;
+    }
+
+    .form-group {
+      margin-bottom: 1.25rem;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 0.8125rem;
+      font-weight: 600;
+      color: var(--gray-light);
+      margin-bottom: 0.5rem;
+    }
+
+    .form-label .required {
+      color: var(--orange);
+    }
+
+    /* Category Pills */
+    .category-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .category-pill {
+      display: flex;
+      align-items: center;
+      gap: 0.375rem;
+      padding: 0.5rem 0.875rem;
+      background: var(--dark);
+      border: 1px solid var(--dark-border);
+      border-radius: 50px;
+      font-size: 0.8125rem;
+      color: var(--gray-light);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .category-pill:hover {
+      border-color: var(--gray);
+      color: #fff;
+    }
+
+    .category-pill.selected {
+      background: var(--orange);
+      border-color: var(--orange);
+      color: #fff;
+    }
+
+    .category-pill input {
+      display: none;
+    }
+
+    .category-icon {
+      font-size: 0.875rem;
+    }
+
+    /* Text Inputs */
+    .text-input {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      background: var(--dark);
+      border: 1px solid var(--dark-border);
+      border-radius: 8px;
+      font-size: 0.9375rem;
+      color: #fff;
+      font-family: inherit;
+      transition: all 0.2s;
+    }
+
+    .text-input:focus {
+      outline: none;
+      border-color: var(--orange);
+      box-shadow: 0 0 0 3px var(--orange-glow);
+    }
+
+    .text-input::placeholder {
+      color: var(--gray-dark);
+    }
+
+    textarea.text-input {
+      min-height: 120px;
+      resize: vertical;
+    }
+
+    .char-count {
+      text-align: right;
+      font-size: 0.75rem;
+      color: var(--gray);
+      margin-top: 0.375rem;
+    }
+
+    /* Submit Button */
+    .submit-btn {
+      width: 100%;
+      padding: 0.875rem 1.5rem;
+      background: linear-gradient(135deg, var(--orange), var(--orange-light));
+      border: none;
+      border-radius: 8px;
+      font-size: 0.9375rem;
+      font-weight: 600;
+      color: #fff;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .submit-btn:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 20px var(--orange-glow);
+    }
+
+    .submit-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* Success Message */
+    .success-message {
+      display: none;
+      padding: 1.25rem;
+      background: var(--green-dim);
+      border: 1px solid rgba(0, 255, 136, 0.3);
+      border-radius: 12px;
+      text-align: center;
+    }
+
+    .success-message.show {
+      display: block;
+    }
+
+    .success-icon {
+      font-size: 2rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .success-message h3 {
+      color: var(--green);
+      font-size: 1.125rem;
+      margin-bottom: 0.25rem;
+    }
+
+    .success-message p {
+      color: var(--gray-light);
+      font-size: 0.875rem;
+    }
+
+    /* Suggestions List */
+    .suggestions-section h2 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .suggestions-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .suggestion-card {
+      background: var(--dark-card);
+      border: 1px solid var(--dark-border);
+      border-radius: 12px;
+      padding: 1.25rem;
+      transition: all 0.2s;
+    }
+
+    .suggestion-card:hover {
+      border-color: rgba(255, 255, 255, 0.1);
+    }
+
+    .suggestion-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 1rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .suggestion-title {
+      font-size: 0.9375rem;
+      font-weight: 600;
+      color: #fff;
+      line-height: 1.4;
+    }
+
+    .suggestion-status {
+      flex-shrink: 0;
+      padding: 0.25rem 0.625rem;
+      border-radius: 50px;
+      font-size: 0.6875rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+
+    .suggestion-status.in_progress {
+      background: rgba(74, 158, 255, 0.15);
+      color: var(--blue);
+    }
+
+    .suggestion-status.planned {
+      background: rgba(168, 85, 247, 0.15);
+      color: var(--purple);
+    }
+
+    .suggestion-status.under_review {
+      background: rgba(255, 200, 0, 0.15);
+      color: var(--yellow);
+    }
+
+    .suggestion-status.completed {
+      background: var(--green-dim);
+      color: var(--green);
+    }
+
+    .suggestion-description {
+      font-size: 0.8125rem;
+      color: var(--gray-light);
+      line-height: 1.5;
+      margin-bottom: 0.75rem;
+    }
+
+    .suggestion-meta {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      font-size: 0.75rem;
+      color: var(--gray);
+    }
+
+    .suggestion-category {
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+
+    .suggestion-votes {
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+
+    /* Empty State */
+    .empty-state {
+      text-align: center;
+      padding: 3rem 2rem;
+      background: var(--dark-card);
+      border: 1px solid var(--dark-border);
+      border-radius: 12px;
+    }
+
+    .empty-state-icon {
+      font-size: 2.5rem;
+      margin-bottom: 1rem;
+      opacity: 0.5;
+    }
+
+    .empty-state h3 {
+      font-size: 1.125rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .empty-state p {
+      color: var(--gray);
+      font-size: 0.875rem;
+    }
+
+    /* Footer */
+    footer {
+      padding: 3rem 2rem;
+      border-top: 1px solid var(--dark-border);
+      text-align: center;
+      margin-top: 4rem;
+    }
+
+    .footer-links {
+      display: flex;
+      justify-content: center;
+      gap: 2rem;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+    }
+
+    .footer-links a {
+      color: var(--gray);
+      text-decoration: none;
+      font-size: 0.875rem;
+      transition: color 0.2s;
+    }
+
+    .footer-links a:hover {
+      color: #fff;
+    }
+
+    .copyright {
+      color: var(--gray);
+      font-size: 0.8125rem;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .content-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .form-card {
+        position: static;
+      }
+
+      .page-header h1 {
+        font-size: 2rem;
+      }
+
+      .category-pills {
+        justify-content: center;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Navigation -->
+  <nav>
+    <div class="nav-content">
+      <a href="/" class="logo">
+        <span class="logo-icon">CF</span>
+        Capital Flow
+      </a>
+      <div class="nav-links">
+        <a href="/">Home</a>
+        <a href="/reports.html">Reports</a>
+        <a href="/about.html">About</a>
+        <a href="https://t.me/fivedaytrader" target="_blank">Telegram</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container">
+    <!-- Page Header -->
+    <div class="page-header">
+      <h1>Shape the Future</h1>
+      <p>Your ideas help make Capital Flow better for everyone. Submit suggestions and see what's coming next.</p>
+    </div>
+
+    <div class="content-grid">
+      <!-- Suggestion Form -->
+      <div class="form-card">
+        <div class="form-header">
+          <h2>Submit a Suggestion</h2>
+          <p>All ideas welcome - big or small</p>
+        </div>
+
+        <form id="suggestion-form">
+          <div class="form-group">
+            <label class="form-label">Category <span class="required">*</span></label>
+            <div class="category-pills">
+              <label class="category-pill">
+                <input type="radio" name="category" value="indicator" required>
+                <span class="category-icon">📊</span>
+                Indicator
+              </label>
+              <label class="category-pill">
+                <input type="radio" name="category" value="alert">
+                <span class="category-icon">🔔</span>
+                Alerts
+              </label>
+              <label class="category-pill">
+                <input type="radio" name="category" value="website">
+                <span class="category-icon">🌐</span>
+                Website
+              </label>
+              <label class="category-pill">
+                <input type="radio" name="category" value="signal_type">
+                <span class="category-icon">📈</span>
+                Signal Type
+              </label>
+              <label class="category-pill">
+                <input type="radio" name="category" value="bug">
+                <span class="category-icon">🐛</span>
+                Bug
+              </label>
+              <label class="category-pill">
+                <input type="radio" name="category" value="other">
+                <span class="category-icon">💡</span>
+                Other
+              </label>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="title">Title <span class="required">*</span></label>
+            <input type="text" id="title" name="title" class="text-input" placeholder="Brief summary of your idea" maxlength="200" required>
+            <div class="char-count"><span id="title-count">0</span>/200</div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="description">Description</label>
+            <textarea id="description" name="description" class="text-input" placeholder="Explain your suggestion in more detail. What problem does it solve? How would it work?" maxlength="2000"></textarea>
+            <div class="char-count"><span id="desc-count">0</span>/2000</div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="email">Email (optional)</label>
+            <input type="email" id="email" name="email" class="text-input" placeholder="Get notified when your suggestion is reviewed">
+          </div>
+
+          <button type="submit" class="submit-btn" id="submit-btn">Submit Suggestion</button>
+        </form>
+
+        <div class="success-message" id="success-message">
+          <div class="success-icon">✓</div>
+          <h3>Thanks for your input!</h3>
+          <p>Your suggestion has been submitted and will be reviewed soon.</p>
+        </div>
+      </div>
+
+      <!-- Suggestions List -->
+      <div class="suggestions-section">
+        <h2>📋 Community Roadmap</h2>
+        <div class="suggestions-list" id="suggestions-list">
+          <div class="empty-state">
+            <div class="empty-state-icon">💡</div>
+            <h3>Loading suggestions...</h3>
+            <p>Fetching the community roadmap</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer>
+    <div class="footer-links">
+      <a href="/">Home</a>
+      <a href="/reports.html">Reports</a>
+      <a href="/about.html">About</a>
+      <a href="https://t.me/fivedaytrader" target="_blank">Telegram</a>
+      <a href="https://mdxalgo.com/?ref=CsMGq" target="_blank">MDX ALGO</a>
+    </div>
+    <p class="copyright">Built by traders, for traders.</p>
+  </footer>
+
+  <script>
+    // Category pill selection
+    document.querySelectorAll('.category-pill').forEach(pill => {
+      pill.addEventListener('click', () => {
+        document.querySelectorAll('.category-pill').forEach(p => p.classList.remove('selected'));
+        pill.classList.add('selected');
+      });
+    });
+
+    // Character counters
+    document.getElementById('title').addEventListener('input', (e) => {
+      document.getElementById('title-count').textContent = e.target.value.length;
+    });
+
+    document.getElementById('description').addEventListener('input', (e) => {
+      document.getElementById('desc-count').textContent = e.target.value.length;
+    });
+
+    // Form submission
+    document.getElementById('suggestion-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const form = e.target;
+      const submitBtn = document.getElementById('submit-btn');
+      const successMessage = document.getElementById('success-message');
+
+      const formData = {
+        category: form.category.value,
+        title: form.title.value,
+        description: form.description.value,
+        email: form.email.value
+      };
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Submitting...';
+
+      try {
+        const response = await fetch('/api/suggestions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(formData)
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+          form.style.display = 'none';
+          successMessage.classList.add('show');
+        } else {
+          alert(result.error || 'Something went wrong. Please try again.');
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Submit Suggestion';
+        }
+      } catch (error) {
+        alert('Network error. Please try again.');
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Submit Suggestion';
+      }
+    });
+
+    // Status labels
+    const statusLabels = {
+      'in_progress': 'In Progress',
+      'planned': 'Planned',
+      'under_review': 'Under Review',
+      'completed': 'Completed'
+    };
+
+    // Category icons
+    const categoryIcons = {
+      'indicator': '📊',
+      'alert': '🔔',
+      'website': '🌐',
+      'signal_type': '📈',
+      'bug': '🐛',
+      'other': '💡'
+    };
+
+    // Format date
+    function formatDate(dateStr) {
+      const date = new Date(dateStr);
+      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    }
+
+    // Render suggestions
+    function renderSuggestions(suggestions) {
+      const list = document.getElementById('suggestions-list');
+
+      if (!suggestions || suggestions.length === 0) {
+        list.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-state-icon">💡</div>
+            <h3>Be the First!</h3>
+            <p>No public suggestions yet. Submit yours and help shape the roadmap.</p>
+          </div>
+        `;
+        return;
+      }
+
+      list.innerHTML = suggestions.map(s => `
+        <div class="suggestion-card">
+          <div class="suggestion-header">
+            <div class="suggestion-title">${escapeHtml(s.title)}</div>
+            <span class="suggestion-status ${s.status}">${statusLabels[s.status] || s.status}</span>
+          </div>
+          ${s.description ? `<div class="suggestion-description">${escapeHtml(s.description).substring(0, 150)}${s.description.length > 150 ? '...' : ''}</div>` : ''}
+          <div class="suggestion-meta">
+            <span class="suggestion-category">${categoryIcons[s.category] || '💡'} ${s.category}</span>
+            <span class="suggestion-votes">👍 ${s.votes}</span>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // Escape HTML
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // Fetch suggestions
+    async function fetchSuggestions() {
+      try {
+        const response = await fetch('/api/suggestions');
+        const data = await response.json();
+        renderSuggestions(data.suggestions);
+      } catch (error) {
+        console.log('Error fetching suggestions:', error);
+        document.getElementById('suggestions-list').innerHTML = `
+          <div class="empty-state">
+            <div class="empty-state-icon">💡</div>
+            <h3>Roadmap Coming Soon</h3>
+            <p>Be the first to submit a suggestion!</p>
+          </div>
+        `;
+      }
+    }
+
+    // Load suggestions on page load
+    fetchSuggestions();
+  </script>
+</body>
+</html>
