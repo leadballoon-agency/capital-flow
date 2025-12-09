@@ -128,7 +128,7 @@ async function fetchLongShortRatio() {
 
 // Find the most recent screenshot
 function findLatestScreenshot(dir) {
-  const screenshotDir = dir || path.join(__dirname, '../public/Daily 4H BTC Screenshots');
+  const screenshotDir = dir || path.join(__dirname, '../public/charts');
 
   if (!fs.existsSync(screenshotDir)) {
     throw new Error(`Screenshot directory not found: ${screenshotDir}`);
@@ -430,7 +430,7 @@ function saveReportToArchive(screenshot, chartDate, report, fearGreedData, longS
     id: Date.now(),
     date: chartDate,
     timestamp: new Date().toISOString(),
-    image: `/Daily 4H BTC Screenshots/${screenshot.name}`,
+    image: `/charts/${screenshot.name}`,
     signal: signal,
     signalValue: signalValue,
     reportHtml: report,
