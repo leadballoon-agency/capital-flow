@@ -26,6 +26,55 @@ const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID || '-1001548592148';
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
 
+// Fetch Fear & Greed Index from Alternative.me
+async function fetchFearGreed() {
+  try {
+    const fetch = (await import('node-fetch')).default;
+    const response = await fetch('https://api.alternative.me/fng/?limit=1');
+    const data = await response.json();
+
+    if (!data.data || !data.data[0]) {
+      throw new Error('Invalid F&G response');
+    }
+
+    const fng = data.data[0];
+    const value = parseInt(fng.value);
+    const classification = fng.value_classification;
+
+    // Determine emoji and color context
+    let emoji, level;
+    if (value <= 25) {
+      emoji = '😱';
+      level = 'extreme_fear';
+    } else if (value <= 45) {
+      emoji = '😨';
+      level = 'fear';
+    } else if (value <= 55) {
+      emoji = '😐';
+      level = 'neutral';
+    } else if (value <= 75) {
+      emoji = '😀';
+      level = 'greed';
+    } else {
+      emoji = '🤑';
+      level = 'extreme_greed';
+    }
+
+    return {
+      value,
+      classification,
+      emoji,
+      level,
+      is_fear: value < 50,
+      is_greed: value >= 50,
+      is_extreme: value <= 25 || value >= 75
+    };
+  } catch (error) {
+    console.error('⚠️ Could not fetch Fear & Greed Index:', error.message);
+    return null;
+  }
+}
+
 // Find the most recent screenshot
 function findLatestScreenshot(dir) {
   const screenshotDir = dir || path.join(__dirname, '../public/Daily 4H BTC Screenshots');
@@ -84,7 +133,7 @@ function getPreviousReport() {
 }
 
 // Analyze screenshot with Claude
-async function analyzeChart(imagePath, reportDate) {
+async function analyzeChart(imagePath, reportDate, fearGreedData) {
   const client = new Anthropic({ apiKey: ANTHROPIC_API_KEY });
 
   const imageData = fs.readFileSync(imagePath);
@@ -95,6 +144,23 @@ async function analyzeChart(imagePath, reportDate) {
   const prevReport = getPreviousReport();
   const prevContext = prevReport
     ? `\n\nPREVIOUS REPORT (${prevReport.date}):\n${prevReport.reportText}\n\nUse the previous report for context - note any changes in signal, open levels regained/lost, or shifts in bias. Reference changes like "Yesterday's LEAN BULL has shifted to NEUTRAL" or "Successfully reclaimed the DO that was lost yesterday".`
+    : '';
+
+  // Fear & Greed context
+  const fngContext = fearGreedData
+    ? `\n\nFEAR & GREED INDEX (from Alternative.me):
+• Value: ${fearGreedData.value} (${fearGreedData.classification})
+• ${fearGreedData.emoji} ${fearGreedData.is_extreme ? 'EXTREME ' : ''}${fearGreedData.is_fear ? 'FEAR' : 'GREED'}
+
+IMPORTANT F&G INTERPRETATION:
+- If Capital Flow is BULLISH and F&G shows FEAR = STRONG confirmation (contrarian buy opportunity)
+- If Capital Flow is BULLISH and F&G shows GREED = Caution (crowded trade, watch for pullback)
+- If Capital Flow is BEARISH and F&G shows GREED = STRONG confirmation (distribution/sell signal)
+- If Capital Flow is BEARISH and F&G shows FEAR = Caution (possible capitulation bottom)
+
+Include the F&G Index in your report using this format:
+<b>😨 FEAR & GREED:</b> ${fearGreedData.value} — ${fearGreedData.classification} ${fearGreedData.emoji}
+• Signal Alignment: [✅ Confirms / ⚠️ Diverges] Capital Flow — [brief interpretation]`
     : '';
 
   const response = await client.messages.create({
@@ -161,6 +227,9 @@ Generate a concise daily market report in this EXACT format (use these emojis an
 • BTC.D: [exact %] — [majors vs alts interpretation]
 • TOTAL3: [exact %]
 
+<b>😨 FEAR & GREED:</b> [value] — [classification] [emoji]
+• Signal Alignment: [✅ Confirms / ⚠️ Diverges] Capital Flow — [interpretation]
+
 <b>📝 ANALYSIS:</b>
 [2-3 sentences on what the Capital Flow data suggests for the next 24-48 hours. Be specific about potential scenarios.]
 
@@ -186,7 +255,7 @@ OPEN LEVELS INTERPRETATION:
 
 If D/W/M open lines are not visible on the chart, write "Not visible" for that level.
 
-IMPORTANT: Only report values you can actually see in the image. Read the price scale on the right side of the chart carefully. Current BTC price in Dec 2025 is approximately $90,000-$100,000.${prevContext}`
+IMPORTANT: Only report values you can actually see in the image. Read the price scale on the right side of the chart carefully. Current BTC price in Dec 2025 is approximately $90,000-$100,000.${prevContext}${fngContext}`
           }
         ]
       }
@@ -263,7 +332,7 @@ async function sendTelegramReport(imagePath, report) {
 }
 
 // Save report to JSON archive
-function saveReportToArchive(screenshot, chartDate, report) {
+function saveReportToArchive(screenshot, chartDate, report, fearGreedData) {
   const archivePath = path.join(__dirname, '../public/reports-data.json');
 
   // Load existing archive or create new
@@ -294,7 +363,12 @@ function saveReportToArchive(screenshot, chartDate, report) {
     signal: signal,
     signalValue: signalValue,
     reportHtml: report,
-    reportText: report.replace(/<[^>]*>/g, '') // Strip HTML tags
+    reportText: report.replace(/<[^>]*>/g, ''), // Strip HTML tags
+    fearGreed: fearGreedData ? {
+      value: fearGreedData.value,
+      classification: fearGreedData.classification,
+      emoji: fearGreedData.emoji
+    } : null
   };
 
   // Add to beginning of archive (newest first)
@@ -335,15 +409,24 @@ async function main() {
     const chartDate = extractDateFromFilename(screenshot.name);
     console.log(`📅 Chart date: ${chartDate}\n`);
 
+    // Fetch Fear & Greed Index
+    console.log('😨 Fetching Fear & Greed Index...');
+    const fearGreedData = await fetchFearGreed();
+    if (fearGreedData) {
+      console.log(`   ${fearGreedData.emoji} F&G: ${fearGreedData.value} (${fearGreedData.classification})\n`);
+    } else {
+      console.log('   ⚠️ F&G data unavailable, continuing without it\n');
+    }
+
     // Analyze with Claude
     console.log('🤖 Analyzing chart with Claude...');
-    const report = await analyzeChart(screenshot.path, chartDate);
+    const report = await analyzeChart(screenshot.path, chartDate, fearGreedData);
     console.log('\n📝 Generated Report:\n');
     console.log(report);
     console.log('\n');
 
     // Save to archive
-    saveReportToArchive(screenshot, chartDate, report);
+    saveReportToArchive(screenshot, chartDate, report, fearGreedData);
 
     // Send to Telegram
     console.log('📤 Sending to Telegram...');

@@ -476,6 +476,88 @@
       opacity: 0.5;
     }
 
+    /* Fear & Greed Section */
+    .fng-section {
+      padding: 4rem 2rem;
+      background: var(--dark);
+      border-top: 1px solid var(--dark-border);
+    }
+
+    .fng-grid {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 3rem;
+      align-items: center;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    .fng-info h3 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      margin-bottom: 0.75rem;
+      color: #fff;
+    }
+
+    .fng-info p {
+      color: var(--gray-light);
+      font-size: 0.9375rem;
+      line-height: 1.6;
+      margin-bottom: 1rem;
+    }
+
+    .fng-info ul {
+      list-style: none;
+      padding: 0;
+      margin: 0 0 1rem 0;
+    }
+
+    .fng-info li {
+      color: var(--gray-light);
+      font-size: 0.875rem;
+      padding: 0.375rem 0;
+      padding-left: 1.5rem;
+      position: relative;
+    }
+
+    .fng-info li::before {
+      content: '→';
+      position: absolute;
+      left: 0;
+      color: var(--orange);
+    }
+
+    .fng-info strong {
+      color: #fff;
+    }
+
+    .fng-source {
+      font-size: 0.75rem;
+      color: var(--gray);
+    }
+
+    .fng-source a {
+      color: var(--orange);
+      text-decoration: none;
+    }
+
+    .fng-source a:hover {
+      text-decoration: underline;
+    }
+
+    @media (max-width: 768px) {
+      .fng-grid {
+        grid-template-columns: 1fr;
+        text-align: center;
+      }
+
+      .fng-info ul {
+        text-align: left;
+        max-width: 300px;
+        margin: 0 auto 1rem;
+      }
+    }
+
     .view-all-link {
       color: var(--orange);
       text-decoration: none;
@@ -851,6 +933,25 @@
     </div>
   </section>
 
+  <!-- Fear & Greed Widget Section -->
+  <section class="fng-section">
+    <div class="container">
+      <div class="fng-grid">
+        <div id="fng-widget"></div>
+        <div class="fng-info">
+          <h3>Market Sentiment</h3>
+          <p>The Fear & Greed Index measures crypto market sentiment. When combined with Capital Flow signals:</p>
+          <ul>
+            <li><strong>Bullish + Fear</strong> = Strong buy signal (contrarian)</li>
+            <li><strong>Bearish + Greed</strong> = Strong sell signal (distribution)</li>
+            <li><strong>Signal + Divergence</strong> = Watch for reversal</li>
+          </ul>
+          <p class="fng-source">Data: <a href="https://alternative.me/crypto/fear-and-greed-index/" target="_blank">Alternative.me</a></p>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <!-- Delayed Signals Feed -->
   <section class="live-signals" id="live-feed">
     <div class="container">
@@ -1178,6 +1279,9 @@
     // Load delayed signals on page load
     fetchDelayedSignals();
   </script>
+
+  <!-- Fear & Greed Widget -->
+  <script src="/js/fear-greed-widget.js"></script>
 
   <!-- Suggestion Widget -->
   <script src="/js/suggest-widget.js"></script>
