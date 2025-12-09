@@ -253,7 +253,7 @@ Include the L/S Ratio in your report using this format:
 TODAY'S DATE IS: ${reportDate}
 
 CRITICAL INSTRUCTIONS - READ CAREFULLY:
-1. The GREEN price label on the RIGHT AXIS shows current price (around $90,500 area today)
+1. READ THE PRICE FROM THE OHLC IN THE CHART HEADER (top left, after the symbol name). Format is: O | H | L | C (Open | High | Low | Close). The CLOSE price (4th/last value) is the CURRENT PRICE. Example: "90,384.54 | 92,879.82 | 92,004.73 | 92,699.99" means current price = $92,699.99. READ THESE EXACT NUMBERS
 2. Open level labels on chart:
    - "DO" = Today's Daily Open (current day)
    - Light blue lines with brackets like "(1)" "(2)" = Previous daily opens (days back)
@@ -326,7 +326,7 @@ OPEN LEVELS INTERPRETATION:
 
 If D/W/M open lines are not visible on the chart, write "Not visible" for that level.
 
-IMPORTANT: Only report values you can actually see in the image. Read the price scale on the right side of the chart carefully. Current BTC price in Dec 2025 is approximately $90,000-$100,000.${prevContext}${fngContext}${lsContext}`
+IMPORTANT: Only report values you can actually see in the image. Read the EXACT price from the chart header (shows current candle OHLC) or the green price label on the right axis. Do NOT guess - read the actual numbers shown.${prevContext}${fngContext}${lsContext}`
           }
         ]
       }
