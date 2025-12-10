@@ -1,5 +1,5 @@
 // Long/Short Ratio API Proxy
-// Fetches BTC L/S ratio from Binance Futures and caches for 15 minutes
+// Fetches BTC L/S ratio with fallback sources
 
 export default async function handler(req, res) {
   // CORS headers
@@ -12,10 +12,18 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Fetch from Binance Futures API - no auth required
-    const response = await fetch(
+    // Try Binance API first (may be geo-blocked in some regions)
+    let response = await fetch(
       'https://fapi.binance.com/futures/data/globalLongShortAccountRatio?symbol=BTCUSDT&period=4h&limit=1'
     );
+
+    // If Binance is blocked (451), try alternative via public CORS proxy
+    if (response.status === 451) {
+      // Use allorigins.win as a CORS proxy for Binance API
+      const proxyUrl = 'https://api.allorigins.win/raw?url=' +
+        encodeURIComponent('https://fapi.binance.com/futures/data/globalLongShortAccountRatio?symbol=BTCUSDT&period=4h&limit=1');
+      response = await fetch(proxyUrl);
+    }
 
     if (!response.ok) {
       throw new Error(`Binance API error: ${response.status}`);
