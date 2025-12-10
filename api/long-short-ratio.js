@@ -1,15 +1,23 @@
 // Long/Short Ratio API Proxy
 // Fetches BTC L/S ratio from OKX (primary) with Binance fallback
+// Supports period query param: 5m, 1H, 1D (default: 1H)
 
 export default async function handler(req, res) {
   // CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET');
-  res.setHeader('Cache-Control', 's-maxage=900, stale-while-revalidate'); // 15 min cache
+  res.setHeader('Cache-Control', 's-maxage=300, stale-while-revalidate'); // 5 min cache
 
   if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
+
+  // Get period from query param, default to 1H
+  const { period = '1H' } = req.query;
+
+  // Validate period - OKX supports: 5m, 1H, 1D
+  const validPeriods = ['5m', '1H', '1D'];
+  const okxPeriod = validPeriods.includes(period) ? period : '1H';
 
   try {
     let ratio, longPct, shortPct, timestamp;
@@ -18,7 +26,7 @@ export default async function handler(req, res) {
     // Try OKX API first (not geo-blocked in US)
     try {
       const okxResponse = await fetch(
-        'https://www.okx.com/api/v5/rubik/stat/contracts/long-short-account-ratio?ccy=BTC&period=1H'
+        `https://www.okx.com/api/v5/rubik/stat/contracts/long-short-account-ratio?ccy=BTC&period=${okxPeriod}`
       );
 
       if (okxResponse.ok) {
@@ -102,6 +110,7 @@ export default async function handler(req, res) {
 
     return res.status(200).json({
       symbol: 'BTCUSDT',
+      period: okxPeriod,
       longPct: Math.round(longPct * 10) / 10,    // e.g., 66.2
       shortPct: Math.round(shortPct * 10) / 10,  // e.g., 33.8
       ratio: Math.round(ratio * 100) / 100,       // e.g., 1.96

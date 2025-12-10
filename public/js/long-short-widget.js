@@ -25,9 +25,14 @@
     .ls-header {
       display: flex;
       align-items: center;
-      justify-content: center;
-      gap: 0.5rem;
+      justify-content: space-between;
       margin-bottom: 1.25rem;
+    }
+
+    .ls-header-left {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
     }
 
     .ls-title {
@@ -36,6 +41,35 @@
       color: #888;
       text-transform: uppercase;
       letter-spacing: 0.05em;
+    }
+
+    .ls-timeframe-selector {
+      display: flex;
+      gap: 0.25rem;
+    }
+
+    .ls-timeframe-btn {
+      background: #1a1a1a;
+      border: 1px solid #333;
+      color: #666;
+      padding: 0.25rem 0.5rem;
+      font-size: 0.625rem;
+      font-weight: 600;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-transform: uppercase;
+    }
+
+    .ls-timeframe-btn:hover {
+      border-color: #555;
+      color: #888;
+    }
+
+    .ls-timeframe-btn.active {
+      background: rgba(255, 107, 0, 0.15);
+      border-color: var(--accent, #ff6b00);
+      color: var(--accent, #ff6b00);
     }
 
     .ls-bar-container {
@@ -186,12 +220,22 @@
   const container = document.getElementById('ls-widget');
   if (!container) return;
 
+  // Track current period
+  let currentPeriod = '1H';
+
   // Create widget HTML
   container.innerHTML = `
     <div class="ls-widget">
       <div class="ls-header">
-        <span class="ls-emoji">📊</span>
-        <span class="ls-title">Long/Short Ratio</span>
+        <div class="ls-header-left">
+          <span class="ls-emoji">📊</span>
+          <span class="ls-title">Long/Short Ratio</span>
+        </div>
+        <div class="ls-timeframe-selector">
+          <button class="ls-timeframe-btn" data-period="5m">5m</button>
+          <button class="ls-timeframe-btn active" data-period="1H">1H</button>
+          <button class="ls-timeframe-btn" data-period="1D">1D</button>
+        </div>
       </div>
       <div class="ls-bar-container">
         <div class="ls-bar-labels">
@@ -306,10 +350,10 @@
     alignmentEl.innerHTML = `<span>${alignmentIcon}</span><span>${alignmentText}</span>`;
   }
 
-  // Fetch L/S data
-  async function fetchLS() {
+  // Fetch L/S data for a specific period
+  async function fetchLS(period = currentPeriod) {
     try {
-      const response = await fetch('/api/long-short-ratio');
+      const response = await fetch(`/api/long-short-ratio?period=${period}`);
       const data = await response.json();
 
       // Try to get latest signal from reports
@@ -326,15 +370,32 @@
 
       updateWidget(data, signal);
 
-      // Schedule next update (every 15 minutes)
-      setTimeout(fetchLS, 15 * 60 * 1000);
-
     } catch (error) {
       console.error('Error fetching L/S:', error);
       document.getElementById('ls-status').innerHTML = '<span>—</span><span>Error loading</span>';
     }
   }
 
-  // Initial fetch
+  // Handle timeframe button clicks
+  function setupTimeframeButtons() {
+    const buttons = container.querySelectorAll('.ls-timeframe-btn');
+    buttons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        // Update active state
+        buttons.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+
+        // Fetch data for new period
+        currentPeriod = btn.dataset.period;
+        fetchLS(currentPeriod);
+      });
+    });
+  }
+
+  // Initial setup
+  setupTimeframeButtons();
   fetchLS();
+
+  // Auto-refresh every 5 minutes
+  setInterval(() => fetchLS(currentPeriod), 5 * 60 * 1000);
 })();
