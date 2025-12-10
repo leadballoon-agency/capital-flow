@@ -21,6 +21,9 @@
       padding: 1.5rem;
       text-align: center;
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      min-height: 280px;
+      display: flex;
+      flex-direction: column;
     }
 
     .fng-header {

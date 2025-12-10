@@ -20,6 +20,10 @@
       border-radius: 16px;
       padding: 1.5rem;
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      min-height: 280px;
     }
 
     .ls-header {
@@ -74,6 +78,10 @@
 
     .ls-bar-container {
       margin-bottom: 1rem;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
     }
 
     .ls-bar-labels {
