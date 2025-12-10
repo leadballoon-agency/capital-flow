@@ -761,6 +761,19 @@
       font-size: 0.9375rem;
     }
 
+    .feature-card-image {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .feature-image {
+      width: 100%;
+      max-width: 280px;
+      margin: 0 auto 1rem;
+      border-radius: 8px;
+      border: 1px solid var(--dark-border);
+    }
+
     /* Signal Types */
     .signals {
       padding: 6rem 2rem;
@@ -797,6 +810,167 @@
     .signal-info p {
       font-size: 0.8125rem;
       color: var(--gray);
+    }
+
+    /* Daily Reports */
+    .daily-reports {
+      padding: 6rem 2rem;
+      background: linear-gradient(180deg, #080808 0%, #0a0a0a 100%);
+    }
+
+    .reports-content {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 3rem;
+      align-items: center;
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+
+    .reports-text h3 {
+      font-size: 1.5rem;
+      margin-bottom: 1rem;
+      color: #fff;
+    }
+
+    .reports-text p {
+      color: var(--gray-light);
+      margin-bottom: 1.5rem;
+      line-height: 1.6;
+    }
+
+    .reports-features {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .reports-features span {
+      background: rgba(255, 136, 0, 0.1);
+      border: 1px solid rgba(255, 136, 0, 0.3);
+      color: var(--orange);
+      padding: 0.4rem 0.8rem;
+      border-radius: 6px;
+      font-size: 0.8125rem;
+    }
+
+    .report-card {
+      display: block;
+      background: var(--dark-card);
+      border: 1px solid var(--dark-border);
+      border-radius: 16px;
+      overflow: hidden;
+      text-decoration: none;
+      transition: all 0.3s;
+    }
+
+    .report-card:hover {
+      border-color: rgba(255, 107, 0, 0.5);
+      transform: translateY(-4px);
+      box-shadow: 0 12px 40px rgba(255, 107, 0, 0.15);
+    }
+
+    .report-card-image {
+      position: relative;
+      width: 100%;
+      height: 200px;
+      overflow: hidden;
+      background: #0a0a0a;
+    }
+
+    .report-card-image img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center;
+    }
+
+    .report-card-badge {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      padding: 0.35rem 0.75rem;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      background: rgba(234, 179, 8, 0.9);
+      color: #000;
+    }
+
+    .report-card-badge.bullish {
+      background: rgba(34, 197, 94, 0.9);
+      color: #000;
+    }
+
+    .report-card-badge.bearish {
+      background: rgba(239, 68, 68, 0.9);
+      color: #fff;
+    }
+
+    .report-card-content {
+      padding: 1.25rem;
+    }
+
+    .report-card-date {
+      color: var(--orange);
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .report-card-title {
+      color: #fff;
+      font-size: 1.125rem;
+      font-weight: 600;
+      margin: 0.5rem 0;
+    }
+
+    .report-card-meta {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: var(--gray);
+      font-size: 0.8125rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .report-card-divider {
+      opacity: 0.3;
+    }
+
+    .report-card-excerpt {
+      color: var(--gray-light);
+      font-size: 0.875rem;
+      line-height: 1.5;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      margin: 0;
+    }
+
+    .view-reports-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: var(--orange);
+      text-decoration: none;
+      font-weight: 600;
+      transition: gap 0.2s;
+    }
+
+    .view-reports-btn:hover {
+      gap: 0.75rem;
+    }
+
+    @media (max-width: 768px) {
+      .reports-content {
+        grid-template-columns: 1fr;
+        gap: 2rem;
+      }
     }
 
     /* Roadmap */
@@ -1179,6 +1353,12 @@
           <p>Analyzes BTC.D and TOTAL3 to detect capital rotation between majors and altcoins.</p>
         </div>
 
+        <div class="feature-card feature-card-image">
+          <img src="/images/Lean-Bull-flow-divergence.png" alt="Capital Flow Table showing Lean Bull with Flow Divergence" class="feature-image">
+          <h3>Flow Divergence Detection</h3>
+          <p>Alerts when price action diverges from capital flow, signaling potential reversals or traps.</p>
+        </div>
+
         <div class="feature-card">
           <div class="feature-icon">🚨</div>
           <h3>Manipulation Detection</h3>
@@ -1266,6 +1446,52 @@
             <p>Liquidity grab in progress</p>
           </div>
         </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Daily Reports -->
+  <section class="daily-reports" id="daily-reports">
+    <div class="container">
+      <div class="section-header">
+        <h2>Daily Market Reports</h2>
+        <p>In-depth BTC analysis with Capital Flow insights, published daily.</p>
+      </div>
+
+      <div class="reports-content">
+        <div class="reports-text">
+          <h3>Comprehensive 4H Analysis</h3>
+          <p>Each report combines Capital Flow signals with key price levels, market sentiment, and actionable trade setups. Get the full picture before you trade.</p>
+          <div class="reports-features">
+            <span>Capital Flow Signal</span>
+            <span>Key Levels</span>
+            <span>Fear & Greed</span>
+            <span>L/S Ratio</span>
+          </div>
+          <a href="/reports.html" class="view-reports-btn">
+            View All Reports
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M5 12h14M12 5l7 7-7 7"/>
+            </svg>
+          </a>
+        </div>
+
+        <a href="/reports.html" class="report-card" id="latest-report-card">
+          <div class="report-card-image">
+            <img src="" alt="BTC 4H Chart" id="report-card-img">
+            <span class="report-card-badge" id="report-card-signal">--</span>
+          </div>
+          <div class="report-card-content">
+            <span class="report-card-date" id="report-card-date">Loading...</span>
+            <h4 class="report-card-title">Daily BTC Report</h4>
+            <div class="report-card-meta">
+              <span id="report-card-price">--</span>
+              <span class="report-card-divider">|</span>
+              <span id="report-card-fg">F&G: --</span>
+            </div>
+            <p class="report-card-excerpt" id="report-card-excerpt">Loading latest report...</p>
+          </div>
+        </a>
       </div>
     </div>
   </section>
@@ -1446,6 +1672,55 @@
 
     // Load delayed signals on page load
     fetchDelayedSignals();
+
+    // Daily Reports Preview - Blog Card Style
+    async function loadLatestReport() {
+      try {
+        const response = await fetch('/reports-data.json');
+        const reports = await response.json();
+
+        if (reports && reports.length > 0) {
+          const latest = reports[0];
+
+          // Update chart image
+          if (latest.image) {
+            document.getElementById('report-card-img').src = latest.image;
+          }
+
+          // Update date
+          document.getElementById('report-card-date').textContent = latest.date;
+
+          // Update signal badge
+          const signalEl = document.getElementById('report-card-signal');
+          const signal = latest.signal.toLowerCase();
+          const signalText = latest.signal.toUpperCase() + (latest.signalValue ? ' ' + latest.signalValue : '');
+          signalEl.textContent = signalText;
+          signalEl.className = 'report-card-badge ' + (signal.includes('bullish') ? 'bullish' : signal.includes('bearish') ? 'bearish' : '');
+
+          // Extract BTC price from reportText
+          const priceMatch = latest.reportText.match(/PRICE:\s*\$([0-9,]+)/);
+          const btcPrice = priceMatch ? '$' + priceMatch[1] : '--';
+          document.getElementById('report-card-price').textContent = btcPrice;
+
+          // Fear & Greed
+          if (latest.fearGreed) {
+            document.getElementById('report-card-fg').textContent = 'F&G: ' + latest.fearGreed.value + ' ' + latest.fearGreed.emoji;
+          }
+
+          // Extract analysis section for excerpt
+          const analysisMatch = latest.reportText.match(/ANALYSIS:\s*\n([^\n]+)/);
+          const excerpt = analysisMatch
+            ? analysisMatch[1].substring(0, 100) + '...'
+            : 'Daily BTC analysis with Capital Flow insights.';
+          document.getElementById('report-card-excerpt').textContent = excerpt;
+        }
+      } catch (error) {
+        console.log('Could not load latest report:', error);
+        document.getElementById('report-card-excerpt').textContent = 'Check out our daily market analysis reports.';
+      }
+    }
+
+    loadLatestReport();
   </script>
 
   <!-- Sentiment Widgets -->
