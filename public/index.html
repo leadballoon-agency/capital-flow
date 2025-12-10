@@ -1591,6 +1591,12 @@
   </footer>
 
   <script>
+    // Scroll to top on page load/reload
+    if ('scrollRestoration' in history) {
+      history.scrollRestoration = 'manual';
+    }
+    window.scrollTo(0, 0);
+
     // Delayed Signals Feed - shows signals from 24+ hours ago
     const signalsFeed = document.getElementById('signals-feed');
 
