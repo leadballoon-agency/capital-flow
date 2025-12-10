@@ -1,5 +1,5 @@
 // Long/Short Ratio API Proxy
-// Fetches BTC L/S ratio with fallback sources
+// Fetches BTC L/S ratio from OKX (primary) with Binance fallback
 
 export default async function handler(req, res) {
   // CORS headers
@@ -12,35 +12,59 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Try Binance API first (may be geo-blocked in some regions)
-    let response = await fetch(
-      'https://fapi.binance.com/futures/data/globalLongShortAccountRatio?symbol=BTCUSDT&period=4h&limit=1'
-    );
+    let ratio, longPct, shortPct, timestamp;
+    let source = 'okx';
 
-    // If Binance is blocked (451), try alternative via public CORS proxy
-    if (response.status === 451) {
-      // Use allorigins.win as a CORS proxy for Binance API
-      const proxyUrl = 'https://api.allorigins.win/raw?url=' +
-        encodeURIComponent('https://fapi.binance.com/futures/data/globalLongShortAccountRatio?symbol=BTCUSDT&period=4h&limit=1');
-      response = await fetch(proxyUrl);
+    // Try OKX API first (not geo-blocked in US)
+    try {
+      const okxResponse = await fetch(
+        'https://www.okx.com/api/v5/rubik/stat/contracts/long-short-account-ratio?ccy=BTC&period=1H'
+      );
+
+      if (okxResponse.ok) {
+        const okxData = await okxResponse.json();
+        if (okxData.code === '0' && okxData.data && okxData.data.length > 0) {
+          // OKX returns [timestamp, ratio] pairs, latest first
+          const latestEntry = okxData.data[0];
+          timestamp = parseInt(latestEntry[0]);
+          ratio = parseFloat(latestEntry[1]);
+
+          // Convert ratio to percentages: ratio = long/short
+          // If ratio is 1.71, that means for every 1 short, there are 1.71 longs
+          // longPct = ratio / (ratio + 1) * 100
+          // shortPct = 1 / (ratio + 1) * 100
+          longPct = (ratio / (ratio + 1)) * 100;
+          shortPct = (1 / (ratio + 1)) * 100;
+        } else {
+          throw new Error('Invalid OKX response');
+        }
+      } else {
+        throw new Error(`OKX API error: ${okxResponse.status}`);
+      }
+    } catch (okxError) {
+      // Fallback to Binance API (may be geo-blocked)
+      source = 'binance';
+      const binanceResponse = await fetch(
+        'https://fapi.binance.com/futures/data/globalLongShortAccountRatio?symbol=BTCUSDT&period=4h&limit=1'
+      );
+
+      if (!binanceResponse.ok) {
+        throw new Error(`Binance API error: ${binanceResponse.status}`);
+      }
+
+      const binanceData = await binanceResponse.json();
+
+      if (!binanceData || !binanceData[0]) {
+        throw new Error('Invalid response from Binance');
+      }
+
+      const lsData = binanceData[0];
+      // Parse percentages (API returns as decimal strings like "0.6622")
+      longPct = parseFloat(lsData.longAccount) * 100;
+      shortPct = parseFloat(lsData.shortAccount) * 100;
+      ratio = parseFloat(lsData.longShortRatio);
+      timestamp = lsData.timestamp;
     }
-
-    if (!response.ok) {
-      throw new Error(`Binance API error: ${response.status}`);
-    }
-
-    const data = await response.json();
-
-    if (!data || !data[0]) {
-      throw new Error('Invalid response from Binance');
-    }
-
-    const lsData = data[0];
-
-    // Parse percentages (API returns as decimal strings like "0.6622")
-    const longPct = parseFloat(lsData.longAccount) * 100;
-    const shortPct = parseFloat(lsData.shortAccount) * 100;
-    const ratio = parseFloat(lsData.longShortRatio);
 
     // Determine crowding status
     let crowding, crowdingLevel, emoji;
@@ -85,7 +109,8 @@ export default async function handler(req, res) {
       crowdingLevel,
       label,
       emoji,
-      timestamp: lsData.timestamp,
+      timestamp,
+      source,
       // For confirmation logic
       is_crowded_long: longPct >= 60,
       is_crowded_short: shortPct >= 60,
