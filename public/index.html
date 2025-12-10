@@ -575,6 +575,35 @@
       }
     }
 
+    /* Economic Calendar Section */
+    .econ-cal-section {
+      padding: 4rem 2rem;
+      background: var(--dark);
+      border-top: 1px solid var(--dark-border);
+    }
+
+    .econ-cal-header-section {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+
+    .econ-cal-header-section h2 {
+      font-size: 1.75rem;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 0.5rem;
+    }
+
+    .econ-cal-header-section p {
+      color: var(--gray);
+      font-size: 0.9375rem;
+    }
+
+    .econ-cal-container {
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
     /* Indicator Panel Section */
     .indicator-panel-section {
       padding: 4rem 2rem;
@@ -1266,6 +1295,19 @@
     </div>
   </section>
 
+  <!-- Economic Calendar Section -->
+  <section class="econ-cal-section">
+    <div class="container">
+      <div class="econ-cal-header-section">
+        <h2>Economic Calendar</h2>
+        <p>High-impact events that move markets - interest rate decisions, CPI, employment data</p>
+      </div>
+      <div class="econ-cal-container">
+        <div id="econ-cal-widget"></div>
+      </div>
+    </div>
+  </section>
+
   <!-- Live Indicator Panel -->
   <section class="indicator-panel-section">
     <div class="container">
@@ -1732,6 +1774,7 @@
   <!-- Sentiment Widgets -->
   <script src="/js/fear-greed-widget.js"></script>
   <script src="/js/long-short-widget.js"></script>
+  <script src="/js/economic-calendar-widget.js"></script>
 
   <!-- Suggestion Widget -->
   <script src="/js/suggest-widget.js"></script>
