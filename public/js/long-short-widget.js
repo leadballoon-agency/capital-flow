@@ -1,6 +1,6 @@
 /**
  * Long/Short Ratio Widget
- * Horizontal bar showing retail positioning with crowding warnings
+ * Shows 1H vs 1D comparison with trend direction
  *
  * Usage: Add <script src="/js/long-short-widget.js"></script> and
  *        <div id="ls-widget"></div> where you want the widget
@@ -20,7 +20,6 @@
       border-radius: 16px;
       padding: 1.5rem;
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-      text-align: center;
       display: flex;
       flex-direction: column;
       min-height: 280px;
@@ -47,63 +46,44 @@
       letter-spacing: 0.05em;
     }
 
-    .ls-timeframe-selector {
-      display: flex;
-      gap: 0.25rem;
-    }
-
-    .ls-timeframe-btn {
-      background: #1a1a1a;
-      border: 1px solid #333;
-      color: #666;
-      padding: 0.25rem 0.5rem;
+    .ls-source {
       font-size: 0.625rem;
-      font-weight: 600;
-      border-radius: 4px;
-      cursor: pointer;
-      transition: all 0.2s;
+      color: #555;
       text-transform: uppercase;
     }
 
-    .ls-timeframe-btn:hover {
-      border-color: #555;
-      color: #888;
-    }
-
-    .ls-timeframe-btn.active {
-      background: rgba(255, 107, 0, 0.15);
-      border-color: var(--accent, #ff6b00);
-      color: var(--accent, #ff6b00);
-    }
-
-    .ls-bar-container {
-      margin-bottom: 1rem;
+    .ls-bars-container {
       flex: 1;
       display: flex;
       flex-direction: column;
-      justify-content: center;
+      gap: 0.75rem;
     }
 
-    .ls-bar-labels {
+    .ls-bar-row {
       display: flex;
-      justify-content: space-between;
-      margin-bottom: 0.5rem;
+      align-items: center;
+      gap: 0.75rem;
     }
 
-    .ls-bar-label {
+    .ls-period-label {
       font-size: 0.75rem;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
+      font-weight: 700;
+      color: #666;
+      width: 28px;
+      flex-shrink: 0;
     }
 
-    .ls-bar-label.long { color: #00cc44; }
-    .ls-bar-label.short { color: #ff4444; }
+    .ls-bar-wrapper {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
 
     .ls-bar {
-      height: 24px;
+      height: 20px;
       background: #1a1a1a;
-      border-radius: 12px;
+      border-radius: 10px;
       overflow: hidden;
       display: flex;
       position: relative;
@@ -112,60 +92,95 @@
     .ls-bar-long {
       height: 100%;
       background: linear-gradient(90deg, #00cc44, #00ff88);
-      transition: width 1s ease-out;
+      transition: width 0.8s ease-out;
       display: flex;
       align-items: center;
-      justify-content: flex-start;
-      padding-left: 0.75rem;
+      justify-content: flex-end;
+      padding-right: 0.5rem;
     }
 
     .ls-bar-short {
       height: 100%;
       background: linear-gradient(90deg, #ff6644, #ff4444);
-      transition: width 1s ease-out;
+      transition: width 0.8s ease-out;
       display: flex;
       align-items: center;
-      justify-content: flex-end;
-      padding-right: 0.75rem;
+      justify-content: flex-start;
+      padding-left: 0.5rem;
     }
 
     .ls-bar-pct {
-      font-size: 0.75rem;
+      font-size: 0.625rem;
       font-weight: 700;
       color: #fff;
       text-shadow: 0 1px 2px rgba(0,0,0,0.5);
     }
 
     .ls-bar-pct.hidden {
-      display: none;
+      visibility: hidden;
     }
 
-    .ls-values {
-      display: flex;
-      justify-content: space-between;
-      margin-top: 0.5rem;
+    .ls-value-label {
+      font-size: 0.875rem;
+      font-weight: 700;
+      width: 55px;
+      flex-shrink: 0;
+      text-align: right;
+      white-space: nowrap;
     }
 
-    .ls-value {
-      font-size: 1.5rem;
-      font-weight: 800;
-    }
+    .ls-value-label.long { color: #00cc44; }
 
-    .ls-value.long { color: #00cc44; }
-    .ls-value.short { color: #ff4444; }
-
-    .ls-status {
-      text-align: center;
+    .ls-trend-section {
       margin-top: 1rem;
+      padding-top: 1rem;
+      border-top: 1px solid #222;
+    }
+
+    .ls-trend-badge {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      padding: 0.625rem 1rem;
+      border-radius: 8px;
+      font-size: 0.8125rem;
+      font-weight: 600;
+    }
+
+    .ls-trend-badge.more-long {
+      background: rgba(255, 68, 68, 0.1);
+      color: #ff6666;
+      border: 1px solid rgba(255, 68, 68, 0.2);
+    }
+
+    .ls-trend-badge.more-short {
+      background: rgba(0, 255, 136, 0.1);
+      color: #00ff88;
+      border: 1px solid rgba(0, 255, 136, 0.2);
+    }
+
+    .ls-trend-badge.steady {
+      background: rgba(136, 136, 136, 0.1);
+      color: #888;
+      border: 1px solid rgba(136, 136, 136, 0.2);
+    }
+
+    .ls-status-row {
+      display: flex;
+      justify-content: center;
+      gap: 0.5rem;
+      margin-top: 0.75rem;
+      flex-wrap: wrap;
     }
 
     .ls-status-badge {
       display: inline-flex;
       align-items: center;
-      gap: 0.375rem;
-      padding: 0.5rem 0.875rem;
+      gap: 0.25rem;
+      padding: 0.375rem 0.625rem;
       border-radius: 50px;
-      font-size: 0.75rem;
+      font-size: 0.6875rem;
       font-weight: 600;
     }
 
@@ -187,39 +202,121 @@
       border: 1px solid rgba(136, 136, 136, 0.2);
     }
 
-    .ls-alignment {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.375rem;
-      padding: 0.5rem 0.875rem;
-      border-radius: 50px;
-      font-size: 0.75rem;
-      font-weight: 600;
-      margin-top: 0.5rem;
-    }
-
-    .ls-alignment.confirms {
-      background: rgba(0, 255, 136, 0.1);
-      color: #00ff88;
-      border: 1px solid rgba(0, 255, 136, 0.2);
-    }
-
-    .ls-alignment.diverges {
-      background: rgba(255, 170, 0, 0.1);
-      color: #ffaa00;
-      border: 1px solid rgba(255, 170, 0, 0.2);
-    }
-
-    .ls-alignment.neutral {
-      background: rgba(136, 136, 136, 0.1);
-      color: #888;
-      border: 1px solid rgba(136, 136, 136, 0.2);
-    }
-
     .ls-loading {
       text-align: center;
       padding: 2rem;
       color: #666;
+    }
+
+    /* Mobile Responsive */
+    @media (max-width: 480px) {
+      .ls-widget {
+        padding: 1rem;
+        min-height: 240px;
+        border-radius: 12px;
+      }
+
+      .ls-header {
+        margin-bottom: 1rem;
+      }
+
+      .ls-title {
+        font-size: 0.75rem;
+      }
+
+      .ls-source {
+        font-size: 0.5625rem;
+      }
+
+      .ls-bars-container {
+        gap: 0.625rem;
+      }
+
+      .ls-bar-row {
+        gap: 0.5rem;
+      }
+
+      .ls-period-label {
+        font-size: 0.6875rem;
+        width: 24px;
+      }
+
+      .ls-bar {
+        height: 18px;
+        border-radius: 9px;
+      }
+
+      .ls-bar-long {
+        padding-right: 0.375rem;
+      }
+
+      .ls-bar-short {
+        padding-left: 0.375rem;
+      }
+
+      .ls-bar-pct {
+        font-size: 0.5625rem;
+      }
+
+      .ls-value-label {
+        font-size: 0.75rem;
+        width: auto;
+        min-width: 50px;
+      }
+
+      .ls-trend-section {
+        margin-top: 0.75rem;
+        padding-top: 0.75rem;
+      }
+
+      .ls-trend-badge {
+        padding: 0.5rem 0.75rem;
+        font-size: 0.75rem;
+        gap: 0.375rem;
+      }
+
+      .ls-status-row {
+        margin-top: 0.5rem;
+        gap: 0.375rem;
+      }
+
+      .ls-status-badge {
+        padding: 0.3125rem 0.5rem;
+        font-size: 0.625rem;
+        gap: 0.1875rem;
+      }
+    }
+
+    /* Small mobile (iPhone SE etc) */
+    @media (max-width: 360px) {
+      .ls-widget {
+        padding: 0.875rem;
+        min-height: 220px;
+      }
+
+      .ls-title {
+        font-size: 0.6875rem;
+      }
+
+      .ls-period-label {
+        font-size: 0.625rem;
+        width: 20px;
+      }
+
+      .ls-bar {
+        height: 16px;
+      }
+
+      .ls-value-label {
+        font-size: 0.6875rem;
+        width: auto;
+        min-width: 44px;
+      }
+
+      .ls-trend-badge {
+        font-size: 0.6875rem;
+        padding: 0.4375rem 0.625rem;
+      }
     }
   `;
   document.head.appendChild(styles);
@@ -228,182 +325,138 @@
   const container = document.getElementById('ls-widget');
   if (!container) return;
 
-  // Track current period
-  let currentPeriod = '1H';
-
   // Create widget HTML
   container.innerHTML = `
     <div class="ls-widget">
       <div class="ls-header">
         <div class="ls-header-left">
           <span class="ls-emoji">📊</span>
-          <span class="ls-title">Long/Short Ratio</span>
+          <span class="ls-title">Retail Positioning</span>
         </div>
-        <div class="ls-timeframe-selector">
-          <button class="ls-timeframe-btn" data-period="5m">5m</button>
-          <button class="ls-timeframe-btn active" data-period="1H">1H</button>
-          <button class="ls-timeframe-btn" data-period="1D">1D</button>
+        <span class="ls-source">OKX</span>
+      </div>
+
+      <div class="ls-bars-container">
+        <div class="ls-bar-row">
+          <span class="ls-period-label">1H</span>
+          <div class="ls-bar-wrapper">
+            <div class="ls-bar">
+              <div class="ls-bar-long" id="ls-bar-1h-long" style="width: 50%">
+                <span class="ls-bar-pct" id="ls-pct-1h-long">50%</span>
+              </div>
+              <div class="ls-bar-short" id="ls-bar-1h-short" style="width: 50%">
+                <span class="ls-bar-pct" id="ls-pct-1h-short">50%</span>
+              </div>
+            </div>
+          </div>
+          <span class="ls-value-label long" id="ls-value-1h">--</span>
+        </div>
+
+        <div class="ls-bar-row">
+          <span class="ls-period-label">1D</span>
+          <div class="ls-bar-wrapper">
+            <div class="ls-bar">
+              <div class="ls-bar-long" id="ls-bar-1d-long" style="width: 50%">
+                <span class="ls-bar-pct" id="ls-pct-1d-long">50%</span>
+              </div>
+              <div class="ls-bar-short" id="ls-bar-1d-short" style="width: 50%">
+                <span class="ls-bar-pct" id="ls-pct-1d-short">50%</span>
+              </div>
+            </div>
+          </div>
+          <span class="ls-value-label long" id="ls-value-1d">--</span>
         </div>
       </div>
-      <div class="ls-bar-container">
-        <div class="ls-bar-labels">
-          <span class="ls-bar-label long">Long</span>
-          <span class="ls-bar-label short">Short</span>
-        </div>
-        <div class="ls-bar">
-          <div class="ls-bar-long" id="ls-bar-long" style="width: 50%">
-            <span class="ls-bar-pct" id="ls-pct-long">50%</span>
-          </div>
-          <div class="ls-bar-short" id="ls-bar-short" style="width: 50%">
-            <span class="ls-bar-pct" id="ls-pct-short">50%</span>
-          </div>
-        </div>
-        <div class="ls-values">
-          <span class="ls-value long" id="ls-value-long">--</span>
-          <span class="ls-value short" id="ls-value-short">--</span>
-        </div>
-      </div>
-      <div class="ls-status">
-        <div class="ls-status-badge balanced" id="ls-status">
-          <span>⚖️</span>
+
+      <div class="ls-trend-section">
+        <div class="ls-trend-badge steady" id="ls-trend">
           <span>Loading...</span>
         </div>
-        <div class="ls-alignment neutral" id="ls-alignment">
-          <span>—</span>
-          <span>Checking signal...</span>
+        <div class="ls-status-row">
+          <div class="ls-status-badge balanced" id="ls-status">
+            <span>⚖️</span>
+            <span>Loading...</span>
+          </div>
         </div>
       </div>
     </div>
   `;
 
-  // Update widget with data
-  function updateWidget(data, signal) {
-    const barLong = document.getElementById('ls-bar-long');
-    const barShort = document.getElementById('ls-bar-short');
-    const pctLong = document.getElementById('ls-pct-long');
-    const pctShort = document.getElementById('ls-pct-short');
-    const valueLong = document.getElementById('ls-value-long');
-    const valueShort = document.getElementById('ls-value-short');
-    const statusEl = document.getElementById('ls-status');
-    const alignmentEl = document.getElementById('ls-alignment');
+  // Update a single bar row
+  function updateBar(period, data) {
+    const barLong = document.getElementById(`ls-bar-${period}-long`);
+    const barShort = document.getElementById(`ls-bar-${period}-short`);
+    const pctLong = document.getElementById(`ls-pct-${period}-long`);
+    const pctShort = document.getElementById(`ls-pct-${period}-short`);
+    const valueLabel = document.getElementById(`ls-value-${period}`);
 
-    // Update bar widths
     barLong.style.width = data.longPct + '%';
     barShort.style.width = data.shortPct + '%';
 
-    // Update percentages in bar (hide if too small)
-    pctLong.textContent = data.longPct + '%';
-    pctShort.textContent = data.shortPct + '%';
-    pctLong.classList.toggle('hidden', data.longPct < 25);
-    pctShort.classList.toggle('hidden', data.shortPct < 25);
+    pctLong.textContent = data.longPct.toFixed(1) + '%';
+    pctShort.textContent = data.shortPct.toFixed(1) + '%';
+    pctLong.classList.toggle('hidden', data.longPct < 30);
+    pctShort.classList.toggle('hidden', data.shortPct < 30);
 
-    // Update value displays
-    valueLong.textContent = data.longPct.toFixed(1) + '%';
-    valueShort.textContent = data.shortPct.toFixed(1) + '%';
-
-    // Update status badge
-    statusEl.className = `ls-status-badge ${data.crowding}`;
-    statusEl.innerHTML = `<span>${data.emoji}</span><span>${data.label}</span>`;
-
-    // Update alignment with Capital Flow signal
-    updateAlignment(data, signal);
+    valueLabel.textContent = data.longPct.toFixed(1) + '% L';
   }
 
-  // Calculate alignment with Capital Flow signal
-  function updateAlignment(lsData, signal) {
-    const alignmentEl = document.getElementById('ls-alignment');
-    const signalDirection = signal || 'neutral';
+  // Update trend comparison
+  function updateTrend(data1H, data1D) {
+    const trendEl = document.getElementById('ls-trend');
+    const statusEl = document.getElementById('ls-status');
 
-    let alignmentClass, alignmentIcon, alignmentText;
+    const diff = data1H.longPct - data1D.longPct;
+    const absDiff = Math.abs(diff).toFixed(1);
 
-    if (signalDirection === 'neutral') {
-      alignmentClass = 'neutral';
-      alignmentIcon = '—';
-      alignmentText = 'Awaiting signal';
-    } else if (signalDirection === 'bullish') {
-      // Bullish signal + Retail Short = Strong (contrarian buy)
-      // Bullish signal + Retail Long = Diverges (crowded)
-      if (lsData.is_crowded_short) {
-        alignmentClass = 'confirms';
-        alignmentIcon = '✓';
-        alignmentText = lsData.is_extreme ? 'Strong contrarian' : 'Confirms bullish';
-      } else if (lsData.is_crowded_long) {
-        alignmentClass = 'diverges';
-        alignmentIcon = '⚠';
-        alignmentText = lsData.is_extreme ? 'Caution: crowded' : 'Watch for pullback';
-      } else {
-        alignmentClass = 'neutral';
-        alignmentIcon = '—';
-        alignmentText = 'Neutral positioning';
-      }
-    } else if (signalDirection === 'bearish') {
-      // Bearish signal + Retail Long = Strong (distribution)
-      // Bearish signal + Retail Short = Diverges (capitulation?)
-      if (lsData.is_crowded_long) {
-        alignmentClass = 'confirms';
-        alignmentIcon = '✓';
-        alignmentText = lsData.is_extreme ? 'Strong distribution' : 'Confirms bearish';
-      } else if (lsData.is_crowded_short) {
-        alignmentClass = 'diverges';
-        alignmentIcon = '⚠';
-        alignmentText = lsData.is_extreme ? 'Possible bottom' : 'Watch for bounce';
-      } else {
-        alignmentClass = 'neutral';
-        alignmentIcon = '—';
-        alignmentText = 'Neutral positioning';
-      }
+    let trendClass, trendText, trendIcon;
+
+    if (diff > 0.5) {
+      trendClass = 'more-long';
+      trendIcon = '📈';
+      trendText = `Getting MORE long (+${absDiff}%)`;
+    } else if (diff < -0.5) {
+      trendClass = 'more-short';
+      trendIcon = '📉';
+      trendText = `Getting MORE short (${diff.toFixed(1)}%)`;
+    } else {
+      trendClass = 'steady';
+      trendIcon = '➡️';
+      trendText = 'Holding steady';
     }
 
-    alignmentEl.className = `ls-alignment ${alignmentClass}`;
-    alignmentEl.innerHTML = `<span>${alignmentIcon}</span><span>${alignmentText}</span>`;
+    trendEl.className = `ls-trend-badge ${trendClass}`;
+    trendEl.innerHTML = `<span>${trendIcon}</span><span>${trendText}</span>`;
+
+    // Update crowding status based on 1H (most recent)
+    statusEl.className = `ls-status-badge ${data1H.crowding}`;
+    statusEl.innerHTML = `<span>${data1H.emoji}</span><span>${data1H.label}</span>`;
   }
 
-  // Fetch L/S data for a specific period
-  async function fetchLS(period = currentPeriod) {
+  // Fetch both 1H and 1D data
+  async function fetchAllData() {
     try {
-      const response = await fetch(`/api/long-short-ratio?period=${period}`);
-      const data = await response.json();
+      const [res1H, res1D] = await Promise.all([
+        fetch('/api/long-short-ratio?period=1H'),
+        fetch('/api/long-short-ratio?period=1D')
+      ]);
 
-      // Try to get latest signal from reports
-      let signal = 'neutral';
-      try {
-        const reportsResponse = await fetch('/reports-data.json');
-        const reports = await reportsResponse.json();
-        if (reports && reports.length > 0) {
-          signal = reports[0].signal;
-        }
-      } catch (e) {
-        // Ignore if reports not available
-      }
+      const data1H = await res1H.json();
+      const data1D = await res1D.json();
 
-      updateWidget(data, signal);
+      updateBar('1h', data1H);
+      updateBar('1d', data1D);
+      updateTrend(data1H, data1D);
 
     } catch (error) {
       console.error('Error fetching L/S:', error);
-      document.getElementById('ls-status').innerHTML = '<span>—</span><span>Error loading</span>';
+      document.getElementById('ls-trend').innerHTML = '<span>—</span><span>Error loading data</span>';
     }
   }
 
-  // Handle timeframe button clicks
-  function setupTimeframeButtons() {
-    const buttons = container.querySelectorAll('.ls-timeframe-btn');
-    buttons.forEach(btn => {
-      btn.addEventListener('click', () => {
-        // Update active state
-        buttons.forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-
-        // Fetch data for new period
-        currentPeriod = btn.dataset.period;
-        fetchLS(currentPeriod);
-      });
-    });
-  }
-
-  // Initial setup
-  setupTimeframeButtons();
-  fetchLS();
+  // Initial fetch
+  fetchAllData();
 
   // Auto-refresh every 5 minutes
-  setInterval(() => fetchLS(currentPeriod), 5 * 60 * 1000);
+  setInterval(fetchAllData, 5 * 60 * 1000);
 })();

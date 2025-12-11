@@ -170,6 +170,122 @@
       font-size: 0.75rem;
       margin-top: 0.5rem;
     }
+
+    /* Mobile Responsive */
+    @media (max-width: 480px) {
+      .fng-widget {
+        padding: 1rem;
+        min-height: 240px;
+        border-radius: 12px;
+      }
+
+      .fng-header {
+        margin-bottom: 1rem;
+        gap: 0.375rem;
+      }
+
+      .fng-title {
+        font-size: 0.75rem;
+      }
+
+      .fng-gauge-container {
+        width: 140px;
+        height: 78px;
+        margin: 0 auto 0.75rem;
+      }
+
+      .fng-gauge-bg,
+      .fng-gauge-fill {
+        width: 140px;
+        height: 140px;
+      }
+
+      .fng-needle {
+        height: 52px;
+      }
+
+      .fng-center {
+        width: 14px;
+        height: 14px;
+      }
+
+      .fng-value-container {
+        margin-bottom: 0.5rem;
+      }
+
+      .fng-value {
+        font-size: 2rem;
+      }
+
+      .fng-label {
+        font-size: 0.75rem;
+      }
+
+      .fng-alignment {
+        padding: 0.4375rem 0.75rem;
+        font-size: 0.6875rem;
+        gap: 0.25rem;
+        margin-top: 0.375rem;
+      }
+
+      .fng-scale {
+        margin-top: 0.75rem;
+        padding: 0 0.25rem;
+      }
+
+      .fng-scale-label {
+        font-size: 0.5625rem;
+      }
+    }
+
+    /* Small mobile (iPhone SE etc) */
+    @media (max-width: 360px) {
+      .fng-widget {
+        padding: 0.875rem;
+        min-height: 220px;
+      }
+
+      .fng-title {
+        font-size: 0.6875rem;
+      }
+
+      .fng-gauge-container {
+        width: 120px;
+        height: 67px;
+      }
+
+      .fng-gauge-bg,
+      .fng-gauge-fill {
+        width: 120px;
+        height: 120px;
+      }
+
+      .fng-needle {
+        height: 44px;
+      }
+
+      .fng-center {
+        width: 12px;
+        height: 12px;
+      }
+
+      .fng-value {
+        font-size: 1.75rem;
+      }
+
+      .fng-label {
+        font-size: 0.6875rem;
+      }
+
+      .fng-alignment {
+        font-size: 0.625rem;
+        padding: 0.375rem 0.625rem;
+      }
+
+      .fng-scale-label {
+        font-size: 0.5rem;
+      }
+    }
   `;
   document.head.appendChild(styles);
 

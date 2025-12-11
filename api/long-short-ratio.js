@@ -6,7 +6,7 @@ export default async function handler(req, res) {
   // CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET');
-  res.setHeader('Cache-Control', 's-maxage=300, stale-while-revalidate'); // 5 min cache
+  res.setHeader('Cache-Control', 's-maxage=60, stale-while-revalidate'); // 1 min cache
 
   if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Method not allowed' });

@@ -6,5 +6,11 @@
       "methods": ["POST", "GET"],
       "dest": "/api/webhook.js"
     }
+  ],
+  "crons": [
+    {
+      "path": "/api/cron/economic-alerts",
+      "schedule": "0 8 * * *"
+    }
   ]
 }
