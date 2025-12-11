@@ -862,6 +862,22 @@
       return data;
     }
 
+    // Convert "Wednesday, December 10, 2025" to "Wed, Dec 10"
+    function getShortDate(dateStr) {
+      // Parse the date string format: "Weekday, Month Day, Year"
+      const parts = dateStr.split(', ');
+      if (parts.length >= 2) {
+        const weekday = parts[0].slice(0, 3); // Wed
+        const monthDay = parts[1].split(' '); // ["December", "10"]
+        if (monthDay.length >= 2) {
+          const month = monthDay[0].slice(0, 3); // Dec
+          const day = monthDay[1]; // 10
+          return `${weekday}, ${month} ${day}`;
+        }
+      }
+      return dateStr; // Fallback to original
+    }
+
     // Render a beautiful report card
     function renderReportCard(report) {
       const parsed = parseReport(report.reportText);
@@ -948,7 +964,7 @@
             <div class="report-top-row">
               <div class="signal-card">
                 <div class="card-label">
-                  <span>🎯</span> Today's Signal
+                  <span>🎯</span> ${getShortDate(report.date)}
                 </div>
                 <div class="signal-badge ${parsed.signal.type}">
                   <span class="signal-icon">${signalIcon}</span>

@@ -1,5 +1,25 @@
 [
   {
+    "id": 1765384869000,
+    "date": "Wednesday, December 10, 2025",
+    "timestamp": "2025-12-10T16:41:09.000Z",
+    "image": "/charts/BTCUSDT_2025-12-10_17-08-49_a86f0.png",
+    "signal": "neutral",
+    "signalValue": "-1%",
+    "reportHtml": "📊 <b>MDX CAPITAL FLOW — DAILY BTC REPORT</b>\n📅 Wednesday, December 10, 2025\n\n<b>🎯 SIGNAL:</b> NEUTRAL 🟡 -1% <i>(Very Low Confidence)</i>\n\n<b>💰 PRICE:</b> $92,060 — Consolidating pre-FOMC\n\n<b>🌊 CAPITAL FLOW BREAKDOWN:</b>\n• MACRO: 1/4 aligned — Risk-off environment\n• CRYPTO: 0/2 aligned — Institutions flat\n• SECTORS: 0/2 aligned — No rotation signal\n\n<b>📊 LONG/SHORT RATIO:</b>\n• 1H: 66.1% Long / 33.9% Short\n• 1D: 65.3% Long / 34.7% Short\n• Trend: 📈 Getting MORE long — Retail still piling in!\n• Status: ⚠️ <b>Crowded Long</b> — Contrarian warning\n\n<b>😨 FEAR & GREED:</b> 26 — Fear 😨\n\n<b>📝 ANALYSIS:</b>\nCapital Flow at <b>NEUTRAL -1%</b> signals institutions have <b>zero conviction</b> — completely sidelined ahead of FOMC. This is NOT a buy or sell signal, its a wait and see.\n\nMeanwhile, retail remains <b>STILL adding longs</b> (1H 66.1% > 1D 65.3%). This crowded positioning creates asymmetric risk: if Fed surprises hawkish, leveraged longs get liquidated.\n\n<b>⚠️ KEY LEVELS:</b>\n• Resistance: $94,500\n• Support: $90,400 (WO)\n\n<b>📍 OPEN LEVELS:</b> All ✅ Holding (DO/WO/MO)\n\n<b>🚨 HIGH IMPACT:</b> FOMC Rate Decision 2:00 PM ET\n<i>Expect volatility. Institutions waiting for clarity before positioning.</i>\n\n<i>Not financial advice. Trade at your own risk.</i>\n#BTC #CapitalFlow #MDX #FOMC",
+    "reportText": "📊 MDX CAPITAL FLOW — DAILY BTC REPORT\n📅 Wednesday, December 10, 2025\n\n🎯 SIGNAL: NEUTRAL 🟡 -1% (Very Low Confidence)\n\n💰 PRICE: $92,060 — Consolidating pre-FOMC\n\n🌊 CAPITAL FLOW BREAKDOWN:\n• MACRO: 1/4 aligned — Risk-off environment\n• CRYPTO: 0/2 aligned — Institutions flat\n• SECTORS: 0/2 aligned — No rotation signal\n\n📊 LONG/SHORT RATIO:\n• 1H: 66.1% Long / 33.9% Short\n• 1D: 65.3% Long / 34.7% Short\n• Trend: 📈 Getting MORE long — Retail still piling in!\n• Status: ⚠️ Crowded Long — Contrarian warning\n\n😨 FEAR & GREED: 26 — Fear 😨\n\n📝 ANALYSIS:\nCapital Flow at NEUTRAL -1% signals institutions have zero conviction — completely sidelined ahead of FOMC. This is NOT a buy or sell signal, its a wait and see.\n\nMeanwhile, retail remains 65%+ long with no signs of unwinding (1H = 1D). This crowded positioning creates asymmetric risk: if Fed surprises hawkish, leveraged longs get liquidated.\n\n⚠️ KEY LEVELS:\n• Resistance: $94,500\n• Support: $90,400 (WO)\n\n📍 OPEN LEVELS: All ✅ Holding (DO/WO/MO)\n\n🚨 HIGH IMPACT: FOMC Rate Decision 2:00 PM ET\nExpect volatility. Institutions waiting for clarity before positioning.\n\nNot financial advice. Trade at your own risk.\n#BTC #CapitalFlow #MDX #FOMC",
+    "fearGreed": {
+      "value": 26,
+      "classification": "Fear",
+      "emoji": "😨"
+    },
+    "longShort": {
+      "longPct": 65.1,
+      "shortPct": 34.9,
+      "label": "Retail Very Long"
+    }
+  },
+  {
     "id": 1765296532355,
     "date": "Tuesday, December 9, 2025",
     "timestamp": "2025-12-09T16:08:52.355Z",
