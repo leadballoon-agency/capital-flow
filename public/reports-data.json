@@ -1,5 +1,25 @@
 [
   {
+    "id": 1765471050000,
+    "date": "Thursday, December 11, 2025",
+    "timestamp": "2025-12-11T19:17:30.000Z",
+    "image": "/charts/BTCUSDT_2025-12-11_20-17-30_9da4b.png",
+    "signal": "neutral",
+    "signalValue": "1%",
+    "reportHtml": "📊 <b>MDX CAPITAL FLOW — DAILY BTC REPORT</b>\n📅 Thursday, December 11, 2025\n\n<b>🎯 SIGNAL:</b> NEUTRAL 🟡 1% <i>(Low Confidence)</i>\n\n<b>💰 PRICE:</b> $90,746 — Holding above key opens\n\n<b>🌊 CAPITAL FLOW BREAKDOWN:</b>\n• MACRO: 2/4 aligned — DXY neutral, yields softening\n• CRYPTO: 2/2 aligned — BTC & ETH flow positive\n• SECTORS: 1/2 aligned — TOTAL3 showing strength\n\n<b>🌍 MACRO DETAIL:</b>\n• DXY: 50% — Dollar neutral, no headwinds\n• VIX: 56% ▼ — Fear declining post-FOMC\n• GOLD: 47% — Safe haven flow neutral\n• US10Y: 44% ▼ — Yields dropping = risk-on\n\n<b>₿ CRYPTO LEADERS:</b>\n• BTC Flow: 54% — Institutions accumulating\n• ETH Flow: 50% — ETH neutral but following\n\n<b>📈 SECTORS:</b>\n• BTC.D: 50% — Dominance stable, alts finding bids\n• TOTAL3: 82% ▼ — Altcoin sector VERY strong!\n\n<b>📊 MOMENTUM:</b> Rising ↗️\n• 4/8 signals aligned\n• 45 min in current state\n\n<b>📝 ANALYSIS:</b>\nBTC consolidating at <b>$90.7K</b> post-FOMC with improved macro conditions. Yesterday's neutral signal proved correct — institutions waited for Fed clarity.\n\nThe <b>TOTAL3 at 82%</b> is the standout: altcoins catching a massive bid as risk appetite returns. BTC dominance flat at 50% confirms capital rotating into alts.\n\nYields dropping (US10Y 44% ▼) and VIX falling (56% ▼) create risk-on conditions. Signal at <b>NEUTRAL 1%</b> — institutions participating but cautious.\n\n<b>⚠️ KEY LEVELS:</b>\n• Resistance: $91,200 (daily high) / $94,500\n• Support: $89,300 (daily low) / $88,500 (WO)\n\n<b>📍 OPEN LEVELS:</b>\n• Daily: $89,872 — ✅ Holding — Bullish\n• Weekly: $90,500 — ⚠️ Testing — Neutral\n• Monthly: $90,400 — ⚠️ Testing — Neutral\n\n<b>🔥 NOTABLE:</b>\n• Recovered from Sunday's $88K low\n• TOTAL3 82% = Altseason signal\n• Macro improving (yields down, VIX down)\n\n<i>Not financial advice. Trade at your own risk.</i>\n#BTC #CapitalFlow #MDX",
+    "reportText": "📊 MDX CAPITAL FLOW — DAILY BTC REPORT\n📅 Thursday, December 11, 2025\n\n🎯 SIGNAL: NEUTRAL 🟡 1% (Low Confidence)\n\n💰 PRICE: $90,746 — Holding above key opens\n\n🌊 CAPITAL FLOW BREAKDOWN:\n• MACRO: 2/4 aligned — DXY neutral, yields softening\n• CRYPTO: 2/2 aligned — BTC & ETH flow positive\n• SECTORS: 1/2 aligned — TOTAL3 showing strength\n\n🌍 MACRO DETAIL:\n• DXY: 50% — Dollar neutral, no headwinds\n• VIX: 56% ▼ — Fear declining post-FOMC\n• GOLD: 47% — Safe haven flow neutral\n• US10Y: 44% ▼ — Yields dropping = risk-on\n\n₿ CRYPTO LEADERS:\n• BTC Flow: 54% — Institutions accumulating\n• ETH Flow: 50% — ETH neutral but following\n\n📈 SECTORS:\n• BTC.D: 50% — Dominance stable, alts finding bids\n• TOTAL3: 82% ▼ — Altcoin sector VERY strong!\n\n📊 MOMENTUM: Rising ↗️\n• 4/8 signals aligned\n• 45 min in current state\n\n📝 ANALYSIS:\nBTC consolidating at $90.7K post-FOMC with improved macro conditions. Yesterday's neutral signal proved correct — institutions waited for Fed clarity.\n\nThe TOTAL3 at 82% is the standout: altcoins catching a massive bid as risk appetite returns. BTC dominance flat at 50% confirms capital rotating into alts.\n\nYields dropping (US10Y 44% ▼) and VIX falling (56% ▼) create risk-on conditions. Signal at NEUTRAL 1% — institutions participating but cautious.\n\n⚠️ KEY LEVELS:\n• Resistance: $91,200 (daily high) / $94,500\n• Support: $89,300 (daily low) / $88,500 (WO)\n\n📍 OPEN LEVELS:\n• Daily: $89,872 — ✅ Holding — Bullish\n• Weekly: $90,500 — ⚠️ Testing — Neutral\n• Monthly: $90,400 — ⚠️ Testing — Neutral\n\n🔥 NOTABLE:\n• Recovered from Sunday's $88K low\n• TOTAL3 82% = Altseason signal\n• Macro improving (yields down, VIX down)\n\nNot financial advice. Trade at your own risk.\n#BTC #CapitalFlow #MDX",
+    "fearGreed": {
+      "value": 74,
+      "classification": "Greed",
+      "emoji": "🤑"
+    },
+    "longShort": {
+      "longPct": 52.1,
+      "shortPct": 47.9,
+      "label": "Balanced"
+    }
+  },
+  {
     "id": 1765384869000,
     "date": "Wednesday, December 10, 2025",
     "timestamp": "2025-12-10T16:41:09.000Z",
