@@ -1,8 +1,9 @@
 // This Pine Script® code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
-// © MDX Algo - Capital Flow Filter v4.4 (Beast Mode Edition)
+// © MarkTaylor
+// Capital Flow Filter v4.5.0
 
 //@version=6
-indicator("MDX Capital Flow Filter v4.4", overlay=true, max_labels_count=500)
+indicator("Capital Flow Filter [v4.5.0]", shorttitle="Capital Flow", overlay=true, max_labels_count=500)
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // INPUTS - MODE
@@ -56,6 +57,10 @@ lookbackManual = input.int(100, "Manual Lookback", minval=20, maxval=500, group=
 showFlipDots = input.bool(true, "Show Flip Dots", group="Settings")
 smoothingMode = input.string("Auto", "Smoothing", options=["Auto", "Manual"], group="Settings")
 smoothingManual = input.int(5, "Manual Smoothing", minval=1, maxval=20, group="Settings")
+
+// Performance tracking lookback
+perfLookbackMode = input.string("Auto", "Performance Lookback", options=["Auto", "Last 20", "Last 50", "Last 100", "All Time"], group="Settings",
+     tooltip="Auto: Scalp=20, Intraday=50, Swing=100 signals\nOr choose a fixed lookback for win rate calculation")
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // INPUTS - SESSION FILTER
@@ -263,19 +268,23 @@ getSignal(float flow, bool invert) =>
     invert ? -rawSignal : rawSignal
 
 calcCorrelation(float signal, int len) =>
+    // Threshold for combined multi-TF signals (0.3 = need 30%+ agreement)
+    // This filters out weak/conflicting signals that produce noisy correlation
+    signalThreshold = 0.3
+
     priceUp = close > close[1]
-    signalBull = signal > 0
-    signalBear = signal < 0
-    signalActive = signal != 0
-    
+    signalBull = signal > signalThreshold
+    signalBear = signal < -signalThreshold
+    signalActive = math.abs(signal) > signalThreshold
+
     correctBull = signalBull and priceUp ? 1.0 : 0.0
     correctBear = signalBear and not priceUp ? 1.0 : 0.0
     correct = correctBull + correctBear
     active = signalActive ? 1.0 : 0.0
-    
+
     correctSum = math.sum(correct, len)
     activeSum = math.sum(active, len)
-    
+
     activeSum > 10 ? (correctSum / activeSum) * 100 : 50.0
 
 calcEdge(float corr) =>
@@ -629,10 +638,68 @@ bgcolor(bgColor, title="Background Tint")
 flipToBullish = normalizedScore > 0.05 and normalizedScore[1] <= 0.05
 flipToBearish = normalizedScore < -0.05 and normalizedScore[1] >= -0.05
 
-plotshape(showFlipDots and flipToBullish ? keltnerLower : na, "Bull Flip", 
+plotshape(showFlipDots and flipToBullish ? keltnerLower : na, "Bull Flip",
      shape.circle, location.absolute, bullish_strong, size=size.tiny)
-plotshape(showFlipDots and flipToBearish ? keltnerUpper : na, "Bear Flip", 
+plotshape(showFlipDots and flipToBearish ? keltnerUpper : na, "Bear Flip",
      shape.circle, location.absolute, bearish_strong, size=size.tiny)
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// SIGNAL PERFORMANCE TRACKING
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// Track signal outcomes for win rate display
+// Determine performance lookback based on mode
+perfLookbackLimit = switch perfLookbackMode
+    "Auto" => tradingMode == "Scalp" ? 20 : tradingMode == "Intraday" ? 50 : 100
+    "Last 20" => 20
+    "Last 50" => 50
+    "Last 100" => 100
+    => 0  // All Time = 0 (no limit)
+
+var int totalSignals = 0
+var float lastSignalPrice = na
+var int lastSignalDirection = 0  // 1 = bull, -1 = bear
+var bool lastSignalCorrect = false
+var bool hasLastSignal = false
+var float lastSignalReturn = 0.0
+var int currentStreak = 0
+
+// Arrays to track rolling window of signal results
+var array<bool> signalResults = array.new_bool(0)
+
+// On each new flip signal, evaluate previous signal and record new one
+if flipToBullish or flipToBearish
+    // Evaluate previous signal if exists
+    if not na(lastSignalPrice) and lastSignalDirection != 0
+        priceChange = (close - lastSignalPrice) / lastSignalPrice * 100
+        wasCorrect = (lastSignalDirection > 0 and priceChange > 0) or (lastSignalDirection < 0 and priceChange < 0)
+        lastSignalCorrect := wasCorrect
+        hasLastSignal := true
+        lastSignalReturn := priceChange
+        totalSignals := totalSignals + 1
+        currentStreak := wasCorrect ? (currentStreak > 0 ? currentStreak + 1 : 1) : (currentStreak < 0 ? currentStreak - 1 : -1)
+
+        // Add to rolling array
+        array.push(signalResults, wasCorrect)
+
+        // Trim array if we have a limit and exceeded it
+        if perfLookbackLimit > 0 and array.size(signalResults) > perfLookbackLimit
+            array.shift(signalResults)
+
+    // Record new signal
+    lastSignalPrice := close
+    lastSignalDirection := flipToBullish ? 1 : -1
+
+// Calculate win rate from array (rolling window)
+arraySize = array.size(signalResults)
+correctInWindow = 0
+if arraySize > 0
+    for i = 0 to arraySize - 1
+        if array.get(signalResults, i)
+            correctInWindow := correctInWindow + 1
+
+winRate = arraySize > 0 ? (float(correctInWindow) / float(arraySize)) * 100 : na
+displaySignalCount = arraySize
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // VOLUME CANDLE COLORING
@@ -894,8 +961,20 @@ getConfBar(float score) =>
         bar := bar + (i <= filled ? "█" : "░")
     bar
 
-// Table size based on expanded/collapsed (extra row for manipulation warning)
-tableRows = showExtendedInfo ? 16 : 6
+// Helper: Get accuracy icon based on correlation %
+getAccuracyIcon(float corr) =>
+    corr > 60 ? "✓" : corr < 40 ? "✗" : "~"
+
+// Helper: Get streak text (e.g., "3W" or "2L")
+getStreakText(int streak) =>
+    math.abs(streak) < 2 ? "" : streak > 0 ? str.tostring(streak) + "W" : str.tostring(math.abs(streak)) + "L"
+
+// Helper: Get last signal result text
+getLastSignalText(bool hasSignal, bool correct, float returnPct) =>
+    not hasSignal ? "—" : (correct ? "✓" : "✗") + (returnPct > 0 ? "+" : "") + str.tostring(returnPct, "#.#") + "%"
+
+// Table size based on expanded/collapsed (extra row for manipulation warning + performance)
+tableRows = showExtendedInfo ? 17 : 6
 var table panel = table.new(getTablePosition(), 4, tableRows, bgcolor=bg_dark, border_width=0)
 
 // Manipulation warning colors
@@ -960,16 +1039,16 @@ if barstate.islast and showTable
         table.cell(panel, 3, 1, macroSummary, text_color=macroColor, text_size=getTextSize("small"), bgcolor=bg_light, text_halign=text.align_right)
         
         // Row 2: Macro details - DXY & VIX
-        dxyText = "DXY " + str.tostring(corr_dxy, "#") + "%"
-        vixText = "VIX " + str.tostring(corr_vix, "#") + "%"
+        dxyText = getAccuracyIcon(corr_dxy) + "DXY " + str.tostring(corr_dxy, "#") + "%"
+        vixText = getAccuracyIcon(corr_vix) + "VIX " + str.tostring(corr_vix, "#") + "%"
         table.cell(panel, 0, 2, dxyText, text_color=text_secondary, text_size=getTextSize("small"), bgcolor=bg_dark, text_halign=text.align_left)
         table.cell(panel, 1, 2, getArrow(sig_dxy, m_dxy), text_color=getSignalColor(sig_dxy, m_dxy), text_size=getTextSize("normal"), bgcolor=bg_dark)
         table.cell(panel, 2, 2, vixText, text_color=text_secondary, text_size=getTextSize("small"), bgcolor=bg_dark, text_halign=text.align_left)
         table.cell(panel, 3, 2, getArrow(sig_vix, m_vix), text_color=getSignalColor(sig_vix, m_vix), text_size=getTextSize("normal"), bgcolor=bg_dark, text_halign=text.align_right)
         
         // Row 3: Macro details - GOLD & US10Y
-        goldText = "GOLD " + str.tostring(corr_gold, "#") + "%"
-        yieldsText = "US10Y " + str.tostring(corr_yields, "#") + "%"
+        goldText = getAccuracyIcon(corr_gold) + "GOLD " + str.tostring(corr_gold, "#") + "%"
+        yieldsText = getAccuracyIcon(corr_yields) + "US10Y " + str.tostring(corr_yields, "#") + "%"
         table.cell(panel, 0, 3, goldText, text_color=text_secondary, text_size=getTextSize("small"), bgcolor=bg_dark, text_halign=text.align_left)
         table.cell(panel, 1, 3, getArrow(sig_gold, m_gold), text_color=getSignalColor(sig_gold, m_gold), text_size=getTextSize("normal"), bgcolor=bg_dark)
         table.cell(panel, 2, 3, yieldsText, text_color=text_secondary, text_size=getTextSize("small"), bgcolor=bg_dark, text_halign=text.align_left)
@@ -983,8 +1062,8 @@ if barstate.islast and showTable
         table.cell(panel, 3, 4, cryptoSummary, text_color=cryptoColor, text_size=getTextSize("small"), bgcolor=bg_light, text_halign=text.align_right)
         
         // Row 5: Crypto details - BTC & ETH
-        btcText = "BTC " + str.tostring(corr_btc, "#") + "%"
-        ethText = "ETH " + str.tostring(corr_eth, "#") + "%"
+        btcText = getAccuracyIcon(corr_btc) + "BTC " + str.tostring(corr_btc, "#") + "%"
+        ethText = getAccuracyIcon(corr_eth) + "ETH " + str.tostring(corr_eth, "#") + "%"
         table.cell(panel, 0, 5, btcText, text_color=text_secondary, text_size=getTextSize("small"), bgcolor=bg_dark, text_halign=text.align_left)
         table.cell(panel, 1, 5, getArrow(sig_btc, m_btc), text_color=getSignalColor(sig_btc, m_btc), text_size=getTextSize("normal"), bgcolor=bg_dark)
         table.cell(panel, 2, 5, ethText, text_color=text_secondary, text_size=getTextSize("small"), bgcolor=bg_dark, text_halign=text.align_left)
@@ -998,8 +1077,8 @@ if barstate.islast and showTable
         table.cell(panel, 3, 6, sectorSummary, text_color=sectorColor, text_size=getTextSize("small"), bgcolor=bg_light, text_halign=text.align_right)
         
         // Row 7: Sector details - BTC.D & TOTAL3
-        btcdText = "BTC.D " + str.tostring(corr_btcd, "#") + "%"
-        total3Text = "TOTAL3 " + str.tostring(corr_total3, "#") + "%"
+        btcdText = getAccuracyIcon(corr_btcd) + "BTC.D " + str.tostring(corr_btcd, "#") + "%"
+        total3Text = getAccuracyIcon(corr_total3) + "TOTAL3 " + str.tostring(corr_total3, "#") + "%"
         table.cell(panel, 0, 7, btcdText, text_color=text_secondary, text_size=getTextSize("small"), bgcolor=bg_dark, text_halign=text.align_left)
         table.cell(panel, 1, 7, getArrow(sig_btcd, m_btcd), text_color=getSignalColor(sig_btcd, m_btcd), text_size=getTextSize("normal"), bgcolor=bg_dark)
         table.cell(panel, 2, 7, total3Text, text_color=text_secondary, text_size=getTextSize("small"), bgcolor=bg_dark, text_halign=text.align_left)
@@ -1030,42 +1109,54 @@ if barstate.islast and showTable
         table.cell(panel, 2, 10, "", bgcolor=bg_medium)
         table.cell(panel, 3, 10, volText, text_color=volColor, text_size=getTextSize("small"), bgcolor=bg_medium, text_halign=text.align_right)
         
-        // Row 11: Empty spacer
-        table.cell(panel, 0, 11, "", bgcolor=bg_dark)
-        table.cell(panel, 1, 11, "", bgcolor=bg_dark)
-        table.cell(panel, 2, 11, "", bgcolor=bg_dark)
-        table.cell(panel, 3, 11, "", bgcolor=bg_dark)
+        // Row 11: Performance Stats Header
+        table.cell(panel, 0, 11, "PERFORMANCE", text_color=text_primary, text_size=getTextSize("small"), bgcolor=bg_light, text_halign=text.align_left)
+        table.cell(panel, 1, 11, "", bgcolor=bg_light)
+        table.cell(panel, 2, 11, "", bgcolor=bg_light)
+        perfWindowLabel = perfLookbackLimit > 0 ? "Last " + str.tostring(displaySignalCount) : str.tostring(displaySignalCount) + " signals"
+        table.cell(panel, 3, 11, perfWindowLabel, text_color=text_muted, text_size=getTextSize("small"), bgcolor=bg_light, text_halign=text.align_right)
+
+        // Row 12: Performance Stats Details
+        perfLabel = displaySignalCount > 0 ? "Win Rate: " + str.tostring(winRate, "#") + "%" : "—"
+        perfColor = na(winRate) ? text_muted : winRate > 55 ? bullish_strong : winRate < 45 ? bearish_strong : neutral_color
+        lastSignalLabel = hasLastSignal ? "Last: " + getLastSignalText(hasLastSignal, lastSignalCorrect, lastSignalReturn) : "Last: —"
+        streakLabel = currentStreak != 0 ? "Streak: " + getStreakText(currentStreak) : ""
+        streakColor = currentStreak > 0 ? bullish_strong : currentStreak < 0 ? bearish_strong : text_muted
+        table.cell(panel, 0, 12, perfLabel, text_color=perfColor, text_size=getTextSize("small"), bgcolor=bg_dark, text_halign=text.align_left)
+        table.cell(panel, 1, 12, "", bgcolor=bg_dark)
+        table.cell(panel, 2, 12, lastSignalLabel, text_color=not hasLastSignal ? text_muted : lastSignalCorrect ? bullish_strong : bearish_strong, text_size=getTextSize("small"), bgcolor=bg_dark, text_halign=text.align_right)
+        table.cell(panel, 3, 12, streakLabel, text_color=streakColor, text_size=getTextSize("small"), bgcolor=bg_dark, text_halign=text.align_right)
         
-        // Row 12: Verdict
+        // Row 13: Verdict
         verdictIcon = displayScore > 0.5 ? "🚀" : displayScore > 0.1 ? "🟢" : displayScore < -0.5 ? "🔻" : displayScore < -0.1 ? "🔴" : "⚪"
-        table.cell(panel, 0, 12, verdictIcon + " " + verdictText, text_color=verdictColor, text_size=getTextSize("normal"), bgcolor=verdictBgColor, text_halign=text.align_left)
-        table.cell(panel, 1, 12, "", bgcolor=verdictBgColor)
-        table.cell(panel, 2, 12, "", bgcolor=verdictBgColor)
-        table.cell(panel, 3, 12, scorePct, text_color=verdictColor, text_size=getTextSize("normal"), bgcolor=verdictBgColor, text_halign=text.align_right)
-        
-        // Row 13: Confidence bar
-        table.cell(panel, 0, 13, confBar, text_color=verdictColor, text_size=getTextSize("small"), bgcolor=verdictBgColor, text_halign=text.align_left)
+        table.cell(panel, 0, 13, verdictIcon + " " + verdictText, text_color=verdictColor, text_size=getTextSize("normal"), bgcolor=verdictBgColor, text_halign=text.align_left)
         table.cell(panel, 1, 13, "", bgcolor=verdictBgColor)
         table.cell(panel, 2, 13, "", bgcolor=verdictBgColor)
-        table.cell(panel, 3, 13, "Confidence", text_color=text_muted, text_size=getTextSize("small"), bgcolor=verdictBgColor, text_halign=text.align_right)
-        
-        // Row 14-15: Manipulation Warning (if active)
+        table.cell(panel, 3, 13, scorePct, text_color=verdictColor, text_size=getTextSize("normal"), bgcolor=verdictBgColor, text_halign=text.align_right)
+
+        // Row 14: Confidence bar
+        table.cell(panel, 0, 14, confBar, text_color=verdictColor, text_size=getTextSize("small"), bgcolor=verdictBgColor, text_halign=text.align_left)
+        table.cell(panel, 1, 14, "", bgcolor=verdictBgColor)
+        table.cell(panel, 2, 14, "", bgcolor=verdictBgColor)
+        table.cell(panel, 3, 14, "Confidence", text_color=text_muted, text_size=getTextSize("small"), bgcolor=verdictBgColor, text_halign=text.align_right)
+
+        // Row 15-16: Manipulation Warning (if active)
         if showManipWarning and manipScore > 0
             manipIcon = manipWarningHigh ? "🚨" : manipWarningMed ? "⚠️" : "👀"
             manipLevelText = manipWarningHigh ? "HIGH MANIPULATION" : manipWarningMed ? "MANIPULATION" : "SUSPICIOUS"
             manipDetailText = beastModeAlerts ? (accumDistWarning ? "Whales loading" : wickHunting ? "Stop hunt!" : flashCrashPump ? "Shakeout" : spoofPattern ? "Spoofing" : "Flow divergence") : manipType
-            
-            table.cell(panel, 0, 14, manipIcon + " " + manipLevelText, text_color=manipTextColor, text_size=getTextSize("small"), bgcolor=manipBgColor, text_halign=text.align_left)
-            table.cell(panel, 1, 14, "", bgcolor=manipBgColor)
-            table.cell(panel, 2, 14, "", bgcolor=manipBgColor)
-            table.cell(panel, 3, 14, manipDetailText, text_color=manipTextColor, text_size=getTextSize("small"), bgcolor=manipBgColor, text_halign=text.align_right)
-            
-            // Beast mode extra commentary
-            beastComment = beastModeAlerts ? (manipWarningHigh ? "They're hunting you!" : "Watch your back") : ""
-            table.cell(panel, 0, 15, beastComment, text_color=text_muted, text_size=getTextSize("small"), bgcolor=manipBgColor, text_halign=text.align_left)
+
+            table.cell(panel, 0, 15, manipIcon + " " + manipLevelText, text_color=manipTextColor, text_size=getTextSize("small"), bgcolor=manipBgColor, text_halign=text.align_left)
             table.cell(panel, 1, 15, "", bgcolor=manipBgColor)
             table.cell(panel, 2, 15, "", bgcolor=manipBgColor)
-            table.cell(panel, 3, 15, "", bgcolor=manipBgColor)
+            table.cell(panel, 3, 15, manipDetailText, text_color=manipTextColor, text_size=getTextSize("small"), bgcolor=manipBgColor, text_halign=text.align_right)
+
+            // Beast mode extra commentary
+            beastComment = beastModeAlerts ? (manipWarningHigh ? "They're hunting you!" : "Watch your back") : ""
+            table.cell(panel, 0, 16, beastComment, text_color=text_muted, text_size=getTextSize("small"), bgcolor=manipBgColor, text_halign=text.align_left)
+            table.cell(panel, 1, 16, "", bgcolor=manipBgColor)
+            table.cell(panel, 2, 16, "", bgcolor=manipBgColor)
+            table.cell(panel, 3, 16, "", bgcolor=manipBgColor)
         
     else
         // ═══════════════════════════════════════════════════════════════════════
