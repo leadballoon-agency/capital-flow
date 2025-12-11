@@ -803,6 +803,197 @@
       border: 1px solid var(--dark-border);
     }
 
+    /* Timeframe Scanning Section */
+    .timeframe-section {
+      padding: 6rem 2rem;
+      background: linear-gradient(180deg, #080808 0%, var(--dark) 100%);
+    }
+
+    .timeframe-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+
+    .timeframe-card {
+      background: var(--dark-card);
+      border: 1px solid var(--dark-border);
+      border-radius: 12px;
+      overflow: hidden;
+      transition: all 0.3s;
+    }
+
+    .timeframe-card:hover {
+      border-color: rgba(255, 255, 255, 0.2);
+      transform: translateY(-4px);
+    }
+
+    .timeframe-card.best {
+      border-color: var(--green);
+      box-shadow: 0 0 20px rgba(0, 255, 136, 0.15);
+    }
+
+    .timeframe-img {
+      width: 100%;
+      height: 120px;
+      object-fit: cover;
+      object-position: top right;
+      border-bottom: 1px solid var(--dark-border);
+    }
+
+    .timeframe-stats {
+      padding: 0.75rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+      align-items: center;
+      text-align: center;
+    }
+
+    .tf-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--gray-light);
+    }
+
+    .tf-winrate {
+      font-size: 0.875rem;
+      font-weight: 700;
+    }
+
+    .tf-winrate.high { color: var(--green); }
+    .tf-winrate.mid { color: #ffaa00; }
+    .tf-winrate.low { color: var(--red); }
+
+    .tf-badge {
+      font-size: 0.625rem;
+      padding: 0.2rem 0.5rem;
+      background: rgba(0, 255, 136, 0.15);
+      color: var(--green);
+      border-radius: 4px;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    .timeframe-insight {
+      display: flex;
+      align-items: flex-start;
+      gap: 1rem;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--dark-border);
+      border-radius: 12px;
+      padding: 1.25rem;
+    }
+
+    .insight-icon {
+      font-size: 1.5rem;
+      flex-shrink: 0;
+    }
+
+    .insight-content {
+      color: var(--gray-light);
+      font-size: 0.9375rem;
+      line-height: 1.6;
+    }
+
+    .insight-content strong {
+      color: #fff;
+    }
+
+    @media (max-width: 1024px) {
+      .timeframe-grid {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+
+    @media (max-width: 768px) {
+      .timeframe-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .timeframe-img {
+        height: 100px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .timeframe-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .timeframe-img {
+        height: 150px;
+      }
+    }
+
+    /* Timeframe Uses */
+    .timeframe-uses {
+      margin-top: 2rem;
+      padding: 1.5rem;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--dark-border);
+      border-radius: 12px;
+    }
+
+    .uses-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1rem;
+    }
+
+    .use-card {
+      background: var(--dark-card);
+      border: 1px solid var(--dark-border);
+      border-radius: 10px;
+      padding: 1.25rem;
+      transition: all 0.3s;
+    }
+
+    .use-card:hover {
+      border-color: rgba(255, 255, 255, 0.15);
+    }
+
+    .use-header {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .use-icon {
+      font-size: 1.25rem;
+    }
+
+    .use-title {
+      font-weight: 600;
+      font-size: 0.9375rem;
+      color: #fff;
+    }
+
+    .use-card p {
+      font-size: 0.8125rem;
+      color: var(--gray-light);
+      line-height: 1.5;
+      margin: 0;
+    }
+
+    .use-card p strong {
+      color: var(--orange);
+    }
+
+    @media (max-width: 1024px) {
+      .uses-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 600px) {
+      .uses-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
     /* Signal Types */
     .signals {
       padding: 6rem 2rem;
@@ -1203,7 +1394,10 @@
       <div class="nav-links">
         <a href="#live-feed">Live Feed</a>
         <a href="#features">Features</a>
+        <a href="#timeframe-scanning">Performance</a>
         <a href="#signals">Signals</a>
+        <a href="/strategies.html">Strategies</a>
+        <a href="/methodology.html">Methodology</a>
         <a href="/reports.html">Reports</a>
         <a href="/about.html">About</a>
         <a href="https://mdxalgo.com/?ref=CsMGq" target="_blank">MDX ALGO</a>
@@ -1320,6 +1514,7 @@
             <li><span class="feature-check">✓</span> <strong>CRYPTO</strong> — BTC & ETH institutional flow</li>
             <li><span class="feature-check">✓</span> <strong>SECTORS</strong> — Dominance & altcoin rotation</li>
             <li><span class="feature-check">✓</span> <strong>Signal State</strong> — Direction, strength & duration</li>
+            <li><span class="feature-check">✓</span> <strong>PERFORMANCE</strong> — Win rate, last signal & streak</li>
           </ul>
           <a href="https://mdxalgo.com/?ref=CsMGq" target="_blank" class="btn btn-secondary" style="margin-top: 1rem;">
             Get the Indicator →
@@ -1401,16 +1596,122 @@
           <p>Alerts when price action diverges from capital flow, signaling potential reversals or traps.</p>
         </div>
 
-        <div class="feature-card">
-          <div class="feature-icon">🚨</div>
-          <h3>Manipulation Detection</h3>
-          <p>Identifies accumulation, distribution, stop hunts, spoofing, and flash moves in real-time.</p>
+        <div class="feature-card feature-card-image">
+          <img src="/images/lean-bear.png" alt="Capital Flow Table showing Lean Bear with Suspicious Activity warning" class="feature-image">
+          <h3>Suspicious Activity Alerts</h3>
+          <p>Detects unusual market behavior and warns you to "watch your back" when conditions look manipulated.</p>
         </div>
 
         <div class="feature-card">
           <div class="feature-icon">⚡</div>
           <h3>Instant Alerts</h3>
           <p>Real-time Telegram notifications with dynamic messages showing ticker, score, and signal strength.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">🎯</div>
+          <h3>Performance Tracking</h3>
+          <p>Real-time win rate display with rolling window analysis. Scan timeframes to find where signals perform best in current market conditions.</p>
+        </div>
+
+        <div class="feature-card feature-card-image">
+          <img src="/images/Neutral-red-manipulation-red-whales-loading.png" alt="Capital Flow Table showing Neutral with Whales Loading manipulation warning" class="feature-image">
+          <h3>Whale Activity Detection</h3>
+          <p>Spots large player accumulation and distribution patterns. "Whales loading" warns you when big money is positioning.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Timeframe Scanning Section -->
+  <section class="timeframe-section" id="timeframe-scanning">
+    <div class="container">
+      <div class="section-header">
+        <h2>Find Your Edge with Timeframe Scanning</h2>
+        <p>The indicator tracks its own win rate in real-time. Flip through timeframes to find where signals perform best in current market conditions.</p>
+      </div>
+
+      <div class="timeframe-grid">
+        <div class="timeframe-card">
+          <img src="/images/5minute-BTC.png" alt="5 Minute BTC Chart showing 23% win rate" class="timeframe-img">
+          <div class="timeframe-stats">
+            <span class="tf-label">5m Scalp</span>
+            <span class="tf-winrate low">23% Win Rate</span>
+          </div>
+        </div>
+
+        <div class="timeframe-card">
+          <img src="/images/15minute-btc.png" alt="15 Minute BTC Chart showing 30% win rate" class="timeframe-img">
+          <div class="timeframe-stats">
+            <span class="tf-label">15m Scalp</span>
+            <span class="tf-winrate low">30% Win Rate</span>
+          </div>
+        </div>
+
+        <div class="timeframe-card best">
+          <img src="/images/1HBTC.png" alt="1 Hour BTC Chart showing 44% win rate" class="timeframe-img">
+          <div class="timeframe-stats">
+            <span class="tf-label">1H Intraday</span>
+            <span class="tf-winrate high">44% Win Rate</span>
+            <span class="tf-badge">Best Edge</span>
+          </div>
+        </div>
+
+        <div class="timeframe-card">
+          <img src="/images/4H-BTC.png" alt="4 Hour BTC Chart showing 38% win rate" class="timeframe-img">
+          <div class="timeframe-stats">
+            <span class="tf-label">4H Intraday</span>
+            <span class="tf-winrate mid">38% Win Rate</span>
+          </div>
+        </div>
+
+        <div class="timeframe-card">
+          <img src="/images/daily-BTC.png" alt="Daily BTC Chart showing 31% win rate" class="timeframe-img">
+          <div class="timeframe-stats">
+            <span class="tf-label">Daily Swing</span>
+            <span class="tf-winrate low">31% Win Rate</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="timeframe-insight">
+        <div class="insight-icon">💡</div>
+        <div class="insight-content">
+          <strong>Current Insight:</strong> In this example, the 1H timeframe shows the highest win rate (44%). This suggests shorter intraday signals are more reliable than swing signals in the current choppy market conditions.
+        </div>
+      </div>
+
+      <div class="timeframe-uses">
+        <h3 style="text-align: center; margin-bottom: 1.5rem; font-size: 1.25rem;">Different Timeframes, Different Uses</h3>
+        <div class="uses-grid">
+          <div class="use-card">
+            <div class="use-header">
+              <span class="use-icon">⚡</span>
+              <span class="use-title">1m-5m Scalping</span>
+            </div>
+            <p>Cloud as <strong>dynamic support/resistance</strong>. Flip dots mark entry points. Cloud color tells you to <strong>hold or take profit</strong>. Win rate less important—it's a visual trade management tool.</p>
+          </div>
+          <div class="use-card">
+            <div class="use-header">
+              <span class="use-icon">📊</span>
+              <span class="use-title">15m-1H Intraday</span>
+            </div>
+            <p><strong>Win rate matters here.</strong> Follow signal direction for intraday swings. Cloud thickness shows conviction. Best balance of signal quality and trade frequency.</p>
+          </div>
+          <div class="use-card">
+            <div class="use-header">
+              <span class="use-icon">🎯</span>
+              <span class="use-title">4H Swing</span>
+            </div>
+            <p>Wait for <strong>Full Send (70%+)</strong> or Full Confluence signals. Fewer trades, higher quality. Use for position sizing decisions based on conviction level.</p>
+          </div>
+          <div class="use-card">
+            <div class="use-header">
+              <span class="use-icon">🌍</span>
+              <span class="use-title">Daily+ Macro</span>
+            </div>
+            <p>Sets the <strong>directional backdrop</strong> for lower timeframe trades. Don't overtrade—use for overall bias, not frequent entries.</p>
+          </div>
         </div>
       </div>
     </div>
@@ -1612,6 +1913,8 @@
   <footer>
     <div class="footer-links">
       <a href="/about.html">About</a>
+      <a href="/strategies.html">Strategies</a>
+      <a href="/methodology.html">Methodology</a>
       <a href="/reports.html">Reports</a>
       <a href="https://mdxalgo.com/?ref=CsMGq" target="_blank">MDX ALGO</a>
       <a href="https://t.me/fivedaytrader" target="_blank">Telegram</a>
