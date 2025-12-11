@@ -1,0 +1,1051 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Methodology | Capital Flow Filter</title>
+  <meta name="description" content="Deep dive into the Capital Flow Filter methodology. Understand why each input was chosen and how they work together.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --orange: #ff6b00;
+      --orange-light: #ff8533;
+      --dark: #0a0a0a;
+      --dark-card: #111111;
+      --dark-border: #1a1a1a;
+      --gray: #888888;
+      --gray-light: #aaaaaa;
+      --green: #00ff88;
+      --red: #ff4466;
+      --blue: #4a9eff;
+      --purple: #a855f7;
+      --yellow: #eab308;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--dark);
+      color: #fff;
+      line-height: 1.7;
+    }
+
+    nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      padding: 1rem 2rem;
+      background: rgba(10, 10, 10, 0.95);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--dark-border);
+    }
+
+    .nav-content {
+      max-width: 1000px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-weight: 700;
+      font-size: 1.25rem;
+      text-decoration: none;
+      color: #fff;
+    }
+
+    .logo-icon {
+      width: 32px;
+      height: 32px;
+      background: linear-gradient(135deg, var(--orange), var(--orange-light));
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 0.875rem;
+    }
+
+    .back-link {
+      color: var(--gray-light);
+      text-decoration: none;
+      font-size: 0.875rem;
+      transition: color 0.2s;
+    }
+
+    .back-link:hover {
+      color: #fff;
+    }
+
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 8rem 2rem 4rem;
+    }
+
+    .page-header {
+      text-align: center;
+      margin-bottom: 3rem;
+    }
+
+    .page-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+      background: rgba(255, 107, 0, 0.1);
+      border: 1px solid rgba(255, 107, 0, 0.3);
+      border-radius: 50px;
+      font-size: 0.875rem;
+      color: var(--orange);
+      margin-bottom: 1.5rem;
+    }
+
+    h1 {
+      font-size: 2.5rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+      line-height: 1.2;
+    }
+
+    .subtitle {
+      font-size: 1.25rem;
+      color: var(--gray-light);
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    h2 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-top: 3rem;
+      margin-bottom: 1rem;
+      color: #fff;
+    }
+
+    h3 {
+      font-size: 1.125rem;
+      font-weight: 600;
+      margin-top: 2rem;
+      margin-bottom: 0.75rem;
+      color: var(--orange);
+    }
+
+    p {
+      color: var(--gray-light);
+      margin-bottom: 1rem;
+    }
+
+    strong {
+      color: #fff;
+    }
+
+    a {
+      color: var(--orange);
+      text-decoration: none;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+
+    /* Section Cards */
+    .section-card {
+      background: var(--dark-card);
+      border: 1px solid var(--dark-border);
+      border-radius: 16px;
+      padding: 2rem;
+      margin: 2rem 0;
+    }
+
+    .section-card h3 {
+      margin-top: 0;
+    }
+
+    /* Input Grid */
+    .input-category {
+      margin: 2rem 0;
+    }
+
+    .category-header {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .category-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.25rem;
+    }
+
+    .category-icon.macro { background: rgba(74, 158, 255, 0.15); }
+    .category-icon.crypto { background: rgba(255, 107, 0, 0.15); }
+    .category-icon.sector { background: rgba(168, 85, 247, 0.15); }
+
+    .category-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: #fff;
+    }
+
+    .category-subtitle {
+      font-size: 0.875rem;
+      color: var(--gray);
+    }
+
+    .input-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1rem;
+    }
+
+    .input-card {
+      background: var(--dark);
+      border: 1px solid var(--dark-border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      transition: all 0.3s;
+    }
+
+    .input-card:hover {
+      border-color: rgba(255, 255, 255, 0.15);
+    }
+
+    .input-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 0.75rem;
+    }
+
+    .input-name {
+      font-weight: 700;
+      font-size: 1rem;
+      color: #fff;
+    }
+
+    .input-tag {
+      font-size: 0.6875rem;
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    .input-tag.risk-off { background: rgba(255, 68, 102, 0.15); color: var(--red); }
+    .input-tag.risk-on { background: rgba(0, 255, 136, 0.15); color: var(--green); }
+    .input-tag.leader { background: rgba(255, 107, 0, 0.15); color: var(--orange); }
+    .input-tag.rotation { background: rgba(168, 85, 247, 0.15); color: var(--purple); }
+
+    .input-description {
+      font-size: 0.875rem;
+      color: var(--gray-light);
+      margin-bottom: 1rem;
+      line-height: 1.5;
+    }
+
+    .input-signals {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .signal-pill {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      font-size: 0.75rem;
+      padding: 0.3rem 0.6rem;
+      border-radius: 4px;
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--gray-light);
+    }
+
+    .signal-pill .up { color: var(--green); }
+    .signal-pill .down { color: var(--red); }
+
+    /* Alternatives Table */
+    .alternatives-section {
+      margin: 3rem 0;
+    }
+
+    .alt-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1.5rem 0;
+      font-size: 0.875rem;
+    }
+
+    .alt-table th,
+    .alt-table td {
+      padding: 1rem;
+      text-align: left;
+      border-bottom: 1px solid var(--dark-border);
+    }
+
+    .alt-table th {
+      background: var(--dark-card);
+      color: var(--gray-light);
+      font-weight: 600;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .alt-table td {
+      color: var(--gray-light);
+    }
+
+    .alt-table tbody tr {
+      background: var(--dark-card);
+    }
+
+    .alt-table tbody tr:hover {
+      background: #151515;
+    }
+
+    .alt-table .ticker {
+      color: #fff;
+      font-weight: 600;
+    }
+
+    .alt-table .status {
+      font-size: 0.6875rem;
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+      font-weight: 600;
+    }
+
+    .alt-table .status.current { background: rgba(0, 255, 136, 0.15); color: var(--green); }
+    .alt-table .status.testing { background: rgba(234, 179, 8, 0.15); color: var(--yellow); }
+    .alt-table .status.planned { background: rgba(74, 158, 255, 0.15); color: var(--blue); }
+
+    /* Presets Section */
+    .presets-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+      margin: 2rem 0;
+    }
+
+    .preset-card {
+      background: var(--dark-card);
+      border: 1px solid var(--dark-border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      text-align: center;
+      transition: all 0.3s;
+    }
+
+    .preset-card:hover {
+      border-color: rgba(255, 107, 0, 0.3);
+    }
+
+    .preset-card.coming-soon {
+      opacity: 0.6;
+    }
+
+    .preset-icon {
+      font-size: 2rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .preset-name {
+      font-weight: 600;
+      font-size: 1rem;
+      color: #fff;
+      margin-bottom: 0.5rem;
+    }
+
+    .preset-desc {
+      font-size: 0.8125rem;
+      color: var(--gray);
+      margin-bottom: 1rem;
+    }
+
+    .preset-inputs {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 0.35rem;
+    }
+
+    .preset-input {
+      font-size: 0.625rem;
+      padding: 0.2rem 0.4rem;
+      background: var(--dark);
+      border: 1px solid var(--dark-border);
+      border-radius: 3px;
+      color: var(--gray-light);
+    }
+
+    .preset-badge {
+      display: inline-block;
+      font-size: 0.625rem;
+      padding: 0.2rem 0.5rem;
+      background: rgba(234, 179, 8, 0.15);
+      color: var(--yellow);
+      border-radius: 4px;
+      margin-top: 0.75rem;
+      font-weight: 600;
+    }
+
+    /* Framework Box */
+    .framework-box {
+      background: linear-gradient(135deg, rgba(255, 107, 0, 0.08), rgba(255, 107, 0, 0.02));
+      border: 1px solid rgba(255, 107, 0, 0.2);
+      border-radius: 16px;
+      padding: 2rem;
+      margin: 2rem 0;
+    }
+
+    .framework-title {
+      font-size: 1.125rem;
+      font-weight: 600;
+      color: #fff;
+      margin-bottom: 1rem;
+    }
+
+    .framework-list {
+      list-style: none;
+    }
+
+    .framework-list li {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+      margin-bottom: 0.75rem;
+      color: var(--gray-light);
+      font-size: 0.9375rem;
+    }
+
+    .framework-list li::before {
+      content: '✓';
+      color: var(--green);
+      font-weight: 600;
+      flex-shrink: 0;
+    }
+
+    /* Roadmap */
+    .roadmap-item {
+      display: flex;
+      gap: 1.5rem;
+      padding: 1.5rem 0;
+      border-bottom: 1px solid var(--dark-border);
+    }
+
+    .roadmap-item:last-child {
+      border-bottom: none;
+    }
+
+    .roadmap-phase {
+      width: 80px;
+      flex-shrink: 0;
+    }
+
+    .phase-badge {
+      display: inline-block;
+      font-size: 0.6875rem;
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    .phase-badge.now { background: rgba(0, 255, 136, 0.15); color: var(--green); }
+    .phase-badge.next { background: rgba(255, 107, 0, 0.15); color: var(--orange); }
+    .phase-badge.future { background: rgba(74, 158, 255, 0.15); color: var(--blue); }
+
+    .roadmap-content h4 {
+      font-size: 1rem;
+      font-weight: 600;
+      color: #fff;
+      margin-bottom: 0.5rem;
+    }
+
+    .roadmap-content p {
+      font-size: 0.875rem;
+      margin: 0;
+    }
+
+    /* CTA */
+    .cta-section {
+      background: linear-gradient(135deg, rgba(255, 107, 0, 0.1), rgba(255, 107, 0, 0.05));
+      border: 1px solid rgba(255, 107, 0, 0.2);
+      border-radius: 16px;
+      padding: 2.5rem;
+      margin: 3rem 0;
+      text-align: center;
+    }
+
+    .cta-section h3 {
+      margin-top: 0;
+      font-size: 1.5rem;
+      color: #fff;
+    }
+
+    .cta-buttons {
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-top: 1.5rem;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.875rem 1.5rem;
+      border-radius: 8px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: all 0.2s;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--orange), var(--orange-light));
+      color: #fff;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      text-decoration: none;
+    }
+
+    .btn-secondary {
+      background: var(--dark-card);
+      border: 1px solid var(--dark-border);
+      color: #fff;
+    }
+
+    .btn-secondary:hover {
+      border-color: var(--orange);
+      text-decoration: none;
+    }
+
+    /* Footer */
+    footer {
+      padding: 3rem 2rem;
+      border-top: 1px solid var(--dark-border);
+      text-align: center;
+      margin-top: 4rem;
+    }
+
+    .footer-links {
+      display: flex;
+      justify-content: center;
+      gap: 2rem;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+    }
+
+    .footer-links a {
+      color: var(--gray);
+      font-size: 0.875rem;
+    }
+
+    .copyright {
+      color: var(--gray);
+      font-size: 0.8125rem;
+    }
+
+    @media (max-width: 768px) {
+      .input-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .presets-grid {
+        grid-template-columns: 1fr;
+      }
+
+      h1 {
+        font-size: 2rem;
+      }
+
+      .roadmap-item {
+        flex-direction: column;
+        gap: 0.75rem;
+      }
+
+      .roadmap-phase {
+        width: auto;
+      }
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="nav-content">
+      <a href="/" class="logo">
+        <span class="logo-icon">CF</span>
+        Capital Flow
+      </a>
+      <a href="/" class="back-link">← Back to Home</a>
+    </div>
+  </nav>
+
+  <div class="container">
+    <div class="page-header">
+      <span class="page-badge">Deep Dive</span>
+      <h1>Methodology</h1>
+      <p class="subtitle">Understanding why each input was chosen and how they work together to track capital rotation</p>
+    </div>
+
+    <!-- Philosophy -->
+    <div class="section-card">
+      <h3>The Core Philosophy</h3>
+      <p>Capital Flow Filter is built on a simple premise: <strong>price follows money</strong>. Before crypto moves, capital rotates across macro assets, between risk-on and risk-off positions, and within crypto sectors.</p>
+      <p>By tracking these flows across 8 carefully selected inputs, we can identify the direction of capital rotation before it fully manifests in price. Each input was chosen based on:</p>
+      <ul style="color: var(--gray-light); padding-left: 1.5rem; margin-top: 1rem;">
+        <li><strong>Correlation</strong> — Does it consistently lead or coincide with crypto moves?</li>
+        <li><strong>Data availability</strong> — Is it accessible on TradingView across timeframes?</li>
+        <li><strong>Signal clarity</strong> — Does it provide clear directional information?</li>
+        <li><strong>Non-redundancy</strong> — Does it add unique information vs other inputs?</li>
+      </ul>
+    </div>
+
+    <!-- Current Inputs -->
+    <h2>Current Inputs (v4.5.1)</h2>
+    <p>The indicator tracks 8 assets across 3 categories. Each is analyzed for rate-of-change across multiple timeframes, then weighted by its recent predictive accuracy.</p>
+
+    <!-- Macro Inputs -->
+    <div class="input-category">
+      <div class="category-header">
+        <div class="category-icon macro">🌍</div>
+        <div>
+          <div class="category-title">Macro (4 inputs)</div>
+          <div class="category-subtitle">Traditional finance risk sentiment</div>
+        </div>
+      </div>
+
+      <div class="input-grid">
+        <div class="input-card">
+          <div class="input-header">
+            <span class="input-name">DXY (Dollar Index)</span>
+            <span class="input-tag risk-off">Risk-Off</span>
+          </div>
+          <p class="input-description">Measures USD strength against a basket of major currencies. Dollar strength typically pressures risk assets including crypto.</p>
+          <div class="input-signals">
+            <span class="signal-pill"><span class="down">↓</span> DXY falling = Bullish crypto</span>
+            <span class="signal-pill"><span class="up">↑</span> DXY rising = Bearish crypto</span>
+          </div>
+        </div>
+
+        <div class="input-card">
+          <div class="input-header">
+            <span class="input-name">VIX (Volatility Index)</span>
+            <span class="input-tag risk-off">Risk-Off</span>
+          </div>
+          <p class="input-description">The "fear gauge" for traditional markets. High VIX indicates market stress and risk-off sentiment that spills into crypto.</p>
+          <div class="input-signals">
+            <span class="signal-pill"><span class="down">↓</span> VIX falling = Bullish crypto</span>
+            <span class="signal-pill"><span class="up">↑</span> VIX spiking = Bearish crypto</span>
+          </div>
+        </div>
+
+        <div class="input-card">
+          <div class="input-header">
+            <span class="input-name">Gold (XAUUSD)</span>
+            <span class="input-tag risk-off">Risk-Off</span>
+          </div>
+          <p class="input-description">Classic safe haven asset. When capital flows to gold, it often flows away from risk assets. Gold and BTC sometimes compete as "digital gold."</p>
+          <div class="input-signals">
+            <span class="signal-pill"><span class="down">↓</span> Gold falling = Bullish crypto</span>
+            <span class="signal-pill"><span class="up">↑</span> Gold rising = Bearish crypto</span>
+          </div>
+        </div>
+
+        <div class="input-card">
+          <div class="input-header">
+            <span class="input-name">US10Y (10-Year Yields)</span>
+            <span class="input-tag risk-off">Risk-Off</span>
+          </div>
+          <p class="input-description">Rising yields increase the opportunity cost of holding non-yielding assets like crypto. Yield spikes often precede risk-off moves.</p>
+          <div class="input-signals">
+            <span class="signal-pill"><span class="down">↓</span> Yields falling = Bullish crypto</span>
+            <span class="signal-pill"><span class="up">↑</span> Yields rising = Bearish crypto</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Crypto Inputs -->
+    <div class="input-category">
+      <div class="category-header">
+        <div class="category-icon crypto">₿</div>
+        <div>
+          <div class="category-title">Crypto Leaders (2 inputs)</div>
+          <div class="category-subtitle">Market leaders that set the tone</div>
+        </div>
+      </div>
+
+      <div class="input-grid">
+        <div class="input-card">
+          <div class="input-header">
+            <span class="input-name">BTC (Bitcoin)</span>
+            <span class="input-tag leader">Leader</span>
+          </div>
+          <p class="input-description">The market leader. BTC sets the overall crypto market direction. Institutional flows typically hit BTC first before rotating elsewhere.</p>
+          <div class="input-signals">
+            <span class="signal-pill"><span class="up">↑</span> BTC rising = Bullish</span>
+            <span class="signal-pill"><span class="down">↓</span> BTC falling = Bearish</span>
+          </div>
+        </div>
+
+        <div class="input-card">
+          <div class="input-header">
+            <span class="input-name">ETH (Ethereum)</span>
+            <span class="input-tag leader">Leader</span>
+          </div>
+          <p class="input-description">The second leader and DeFi backbone. ETH strength often precedes altcoin rotation. ETH/BTC ratio is a key risk-on indicator.</p>
+          <div class="input-signals">
+            <span class="signal-pill"><span class="up">↑</span> ETH rising = Bullish</span>
+            <span class="signal-pill"><span class="down">↓</span> ETH falling = Bearish</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sector Inputs -->
+    <div class="input-category">
+      <div class="category-header">
+        <div class="category-icon sector">📊</div>
+        <div>
+          <div class="category-title">Sector Rotation (2 inputs)</div>
+          <div class="category-subtitle">Where is capital sitting within crypto?</div>
+        </div>
+      </div>
+
+      <div class="input-grid">
+        <div class="input-card">
+          <div class="input-header">
+            <span class="input-name">BTC.D (BTC Dominance)</span>
+            <span class="input-tag rotation">Rotation</span>
+          </div>
+          <p class="input-description">Percentage of total crypto market cap in BTC. Rising dominance = flight to safety. Falling dominance = capital rotating to alts.</p>
+          <div class="input-signals">
+            <span class="signal-pill"><span class="down">↓</span> BTC.D falling = Bullish alts</span>
+            <span class="signal-pill"><span class="up">↑</span> BTC.D rising = Risk-off / BTC only</span>
+          </div>
+        </div>
+
+        <div class="input-card">
+          <div class="input-header">
+            <span class="input-name">TOTAL3 (Alt Market Cap)</span>
+            <span class="input-tag rotation">Rotation</span>
+          </div>
+          <p class="input-description">Total altcoin market cap excluding BTC and ETH. Direct measure of capital in the alt sector. Rising TOTAL3 = alt season conditions.</p>
+          <div class="input-signals">
+            <span class="signal-pill"><span class="up">↑</span> TOTAL3 rising = Bullish alts</span>
+            <span class="signal-pill"><span class="down">↓</span> TOTAL3 falling = Bearish alts</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Alternatives Section -->
+    <h2>Alternative Inputs Under Consideration</h2>
+    <p>We're continuously evaluating additional inputs that could improve signal accuracy or enable instrument-specific tuning. Here's what's on our radar:</p>
+
+    <h3>Macro Alternatives</h3>
+    <table class="alt-table">
+      <thead>
+        <tr>
+          <th>Input</th>
+          <th>Use Case</th>
+          <th>Trade-off vs Current</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="ticker">USDT.D</td>
+          <td>Stablecoin dominance as crypto-native fear gauge</td>
+          <td>More reactive than DXY but noisier on lower TFs</td>
+          <td><span class="status testing">Testing</span></td>
+        </tr>
+        <tr>
+          <td class="ticker">MOVE</td>
+          <td>Bond market volatility (like VIX for bonds)</td>
+          <td>May lead crypto better during rate-driven moves</td>
+          <td><span class="status planned">Planned</span></td>
+        </tr>
+        <tr>
+          <td class="ticker">TLT</td>
+          <td>Long-term treasury ETF as risk-off proxy</td>
+          <td>More direct yield play; Gold has inflation angle</td>
+          <td><span class="status planned">Planned</span></td>
+        </tr>
+        <tr>
+          <td class="ticker">US02Y</td>
+          <td>2-year yields (more Fed sensitive)</td>
+          <td>Faster reaction to Fed; 10Y shows structural trends</td>
+          <td><span class="status planned">Planned</span></td>
+        </tr>
+        <tr>
+          <td class="ticker">SPX / NDX</td>
+          <td>Direct equity correlation</td>
+          <td>Crypto increasingly trades like tech stocks</td>
+          <td><span class="status testing">Testing</span></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>Crypto Alternatives</h3>
+    <table class="alt-table">
+      <thead>
+        <tr>
+          <th>Input</th>
+          <th>Use Case</th>
+          <th>Trade-off vs Current</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="ticker">SOL</td>
+          <td>L1 rotation leader, retail activity proxy</td>
+          <td>Could complement ETH for alt rotation signals</td>
+          <td><span class="status testing">Testing</span></td>
+        </tr>
+        <tr>
+          <td class="ticker">TOTAL2</td>
+          <td>All alts including ETH</td>
+          <td>Better when ETH leads rotation vs TOTAL3</td>
+          <td><span class="status planned">Planned</span></td>
+        </tr>
+        <tr>
+          <td class="ticker">OTHERS.D</td>
+          <td>Non-top-10 dominance</td>
+          <td>Better for small cap alt season detection</td>
+          <td><span class="status planned">Planned</span></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>On-Chain / Derivatives (Future)</h3>
+    <table class="alt-table">
+      <thead>
+        <tr>
+          <th>Input</th>
+          <th>Use Case</th>
+          <th>Trade-off</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="ticker">Funding Rates</td>
+          <td>Leverage sentiment, crypto-native fear gauge</td>
+          <td>Could replace VIX for pure crypto analysis</td>
+          <td><span class="status planned">Planned</span></td>
+        </tr>
+        <tr>
+          <td class="ticker">Open Interest</td>
+          <td>Positioning and conviction levels</td>
+          <td>Shows leverage buildup before liquidation cascades</td>
+          <td><span class="status planned">Planned</span></td>
+        </tr>
+        <tr>
+          <td class="ticker">Exchange Flows</td>
+          <td>Direct accumulation/distribution</td>
+          <td>Most direct signal but data availability varies</td>
+          <td><span class="status planned">Planned</span></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- Instrument Presets -->
+    <h2>Instrument-Specific Presets (Roadmap)</h2>
+    <p>Different assets respond to different inputs. A BTC-focused trader needs heavy macro weighting, while an alt trader cares more about sector rotation. We're building presets for this:</p>
+
+    <div class="presets-grid">
+      <div class="preset-card">
+        <div class="preset-icon">₿</div>
+        <div class="preset-name">BTC Macro</div>
+        <p class="preset-desc">Heavy macro weighting for BTC trading</p>
+        <div class="preset-inputs">
+          <span class="preset-input">DXY 1.5x</span>
+          <span class="preset-input">VIX 1.5x</span>
+          <span class="preset-input">US10Y 1.2x</span>
+          <span class="preset-input">SPX</span>
+        </div>
+        <span class="preset-badge">Coming Soon</span>
+      </div>
+
+      <div class="preset-card">
+        <div class="preset-icon">⟠</div>
+        <div class="preset-name">ETH Balanced</div>
+        <p class="preset-desc">Balanced macro + DeFi rotation signals</p>
+        <div class="preset-inputs">
+          <span class="preset-input">BTC</span>
+          <span class="preset-input">BTC.D</span>
+          <span class="preset-input">DXY</span>
+          <span class="preset-input">TOTAL3</span>
+        </div>
+        <span class="preset-badge">Coming Soon</span>
+      </div>
+
+      <div class="preset-card">
+        <div class="preset-icon">🚀</div>
+        <div class="preset-name">Alt Season</div>
+        <p class="preset-desc">Sector rotation focus for altcoin trading</p>
+        <div class="preset-inputs">
+          <span class="preset-input">BTC.D 1.5x</span>
+          <span class="preset-input">TOTAL3 1.5x</span>
+          <span class="preset-input">ETH</span>
+          <span class="preset-input">OTHERS.D</span>
+        </div>
+        <span class="preset-badge">Coming Soon</span>
+      </div>
+
+      <div class="preset-card">
+        <div class="preset-icon">◎</div>
+        <div class="preset-name">L1 Rotation</div>
+        <p class="preset-desc">Track capital flow between L1 chains</p>
+        <div class="preset-inputs">
+          <span class="preset-input">ETH</span>
+          <span class="preset-input">SOL</span>
+          <span class="preset-input">BTC.D</span>
+          <span class="preset-input">TOTAL3</span>
+        </div>
+        <span class="preset-badge">Coming Soon</span>
+      </div>
+
+      <div class="preset-card">
+        <div class="preset-icon">🎰</div>
+        <div class="preset-name">Degen Mode</div>
+        <p class="preset-desc">Max sensitivity for meme/small cap trading</p>
+        <div class="preset-inputs">
+          <span class="preset-input">OTHERS.D</span>
+          <span class="preset-input">Funding</span>
+          <span class="preset-input">TOTAL3</span>
+          <span class="preset-input">USDT.D</span>
+        </div>
+        <span class="preset-badge">Coming Soon</span>
+      </div>
+
+      <div class="preset-card">
+        <div class="preset-icon">🏛️</div>
+        <div class="preset-name">TradFi Correlated</div>
+        <p class="preset-desc">For when crypto trades like tech stocks</p>
+        <div class="preset-inputs">
+          <span class="preset-input">SPX 1.5x</span>
+          <span class="preset-input">NDX</span>
+          <span class="preset-input">VIX</span>
+          <span class="preset-input">DXY</span>
+        </div>
+        <span class="preset-badge">Coming Soon</span>
+      </div>
+    </div>
+
+    <!-- Evaluation Framework -->
+    <div class="framework-box">
+      <div class="framework-title">Input Evaluation Framework</div>
+      <p style="margin-bottom: 1rem;">When evaluating new inputs, we ask:</p>
+      <ul class="framework-list">
+        <li><strong>Predictive value:</strong> Does it lead crypto price action or just coincide?</li>
+        <li><strong>Consistency:</strong> Does it work across different market regimes?</li>
+        <li><strong>Timeframe stability:</strong> Is it reliable on both scalp and swing timeframes?</li>
+        <li><strong>Data quality:</strong> Is it available on TradingView with clean, continuous data?</li>
+        <li><strong>Uniqueness:</strong> Does it add information not captured by existing inputs?</li>
+        <li><strong>Interpretability:</strong> Is the signal logic clear and explainable?</li>
+      </ul>
+    </div>
+
+    <!-- Roadmap -->
+    <h2>Development Roadmap</h2>
+    <div class="section-card">
+      <div class="roadmap-item">
+        <div class="roadmap-phase">
+          <span class="phase-badge now">Now</span>
+        </div>
+        <div class="roadmap-content">
+          <h4>v4.5.x — Performance Tracking</h4>
+          <p>Built-in win rate tracking, timeframe scanning, and self-calibrating correlation weights. Currently live.</p>
+        </div>
+      </div>
+
+      <div class="roadmap-item">
+        <div class="roadmap-phase">
+          <span class="phase-badge next">Next</span>
+        </div>
+        <div class="roadmap-content">
+          <h4>v4.6 — Alternative Input Testing</h4>
+          <p>Add USDT.D, SOL, and SPX as optional inputs. Compare performance against current set. User-selectable inputs.</p>
+        </div>
+      </div>
+
+      <div class="roadmap-item">
+        <div class="roadmap-phase">
+          <span class="phase-badge next">Next</span>
+        </div>
+        <div class="roadmap-content">
+          <h4>v4.7 — Instrument Presets</h4>
+          <p>Pre-configured input combinations optimized for BTC, ETH, alts, and specific trading styles.</p>
+        </div>
+      </div>
+
+      <div class="roadmap-item">
+        <div class="roadmap-phase">
+          <span class="phase-badge future">Future</span>
+        </div>
+        <div class="roadmap-content">
+          <h4>v5.0 — On-Chain Integration</h4>
+          <p>Add funding rates, open interest, and exchange flow data for crypto-native sentiment analysis.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="cta-section">
+      <h3>Help Shape the Methodology</h3>
+      <p style="color: var(--gray-light);">Have ideas for inputs we should test? Trading a specific instrument and want a custom preset? Let us know.</p>
+      <div class="cta-buttons">
+        <a href="https://t.me/fivedaytrader" target="_blank" class="btn btn-primary">
+          Join the Discussion
+        </a>
+        <a href="/strategies.html" class="btn btn-secondary">
+          View Strategies
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <div class="footer-links">
+      <a href="/">Home</a>
+      <a href="/about.html">About</a>
+      <a href="/methodology.html">Methodology</a>
+      <a href="/strategies.html">Strategies</a>
+      <a href="/reports.html">Reports</a>
+      <a href="https://mdxalgo.com/?ref=CsMGq" target="_blank">MDX ALGO</a>
+    </div>
+    <p class="copyright">
+      Built by traders, for traders.
+    </p>
+  </footer>
+
+  <!-- Suggestion Widget -->
+  <script src="/js/suggest-widget.js"></script>
+</body>
+</html>
