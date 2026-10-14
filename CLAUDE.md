@@ -15,8 +15,14 @@ capital-flow/
 ├── api/
 │   └── webhook.js              # TradingView webhook -> Telegram
 ├── Indicator script/
-│   ├── mdx-capital-flow-filter-v4.4_5.txt   # Pine Script source
+│   ├── mdx-capital-flow-filter-v4.6.0.txt   # CURRENT overlay (Pine v6, standalone)
+│   ├── mdx-capital-flow-filter-v4.5.x.txt   # Previous versions (4.5.0 - 4.5.2)
+│   ├── cf-filter-strategy-v4.6.0.txt        # Backtest (strategy) version of v4.6.0
+│   ├── TRADINGVIEW-DESCRIPTION.md           # Published script description
 │   └── INDICATOR-IMPROVEMENTS.md            # Feature wishlist & roadmap
+├── Capital Flow Oscillator/
+│   ├── capital-flow-oscillator-v2.1.pine    # CURRENT oscillator (Market Cipher B style)
+│   └── capital-flow-oscillator-v1.2/v2.0    # Previous versions
 ├── public/
 │   ├── index.html              # Landing page (MDX branding)
 │   ├── reports.html            # Substack-style reports archive
@@ -84,16 +90,29 @@ node scripts/generate-report.js
 
 ---
 
-## The Indicator (Capital Flow Filter v4.4)
+## The Indicator (Capital Flow Filter v4.6.0)
+
+**Versions:** v4.6.0 is current and fully standalone. It fetches its own data with `request.security`, using closed higher-timeframe bars only, so it doesn't repaint. The older v4.4 (live on the owner's "Botpit" TradingView layout) instead reads 4 MDX "Capital Flow Index" panes via `input.source`. That makes it dependent on MDX's paid indicator, so it is being phased out in favour of v4.6.
+
+TradingView script names:
+- Overlay: "Capital Flow Filter [v4.6.0]" (legend "CF Filter v4.6")
+- Oscillator: "Capital Flow Oscillator [v2.1]" (legend "CF Osc")
+- Backtest: "Capital Flow Filter Strategy [v4.6.0]"
 
 ### What It Does
 
-Aggregates capital flow data from multiple sources to generate a composite trading signal:
+Aggregates capital flow data from multiple sources to generate a composite trading signal.
 
-**Data Sources:**
-- **Macro (inverted for crypto):** DXY, VIX, Gold, US 10Y Yields
-- **Crypto Leaders:** BTC, ETH
-- **Sectors:** BTC.D (dominance), TOTAL3 (altcoin cap)
+**Market presets** (`Market` input, Auto picks one from the chart's instrument):
+- **Crypto:** DXY, VIX, Gold, US10Y | BTC, ETH | BTC.D, TOTAL3
+- **Equities:** DXY, VIX, US10Y, HYG | SPY, QQQ | IWM, XLU
+- **Metals:** DXY, US10Y, VIX, SPX | Gold, Silver | GDX, TIP
+- **Forex:** US10Y, VIX, SPX, Gold | the base & quote currency indexes | AUDJPY, Oil. Signs follow which side the USD is on.
+- **Custom:** 8 user symbols
+
+Each input has a preset direction (e.g. DXY rising = bearish for crypto). The accuracy weighting can also flip an input's sign if it has been wrong most of the time.
+
+**Flips:** the score must pass ±0.2 (`Flip Threshold`) for 2 bars (`Flip Confirmation`) to flip direction. This replaced the old ±0.05 crossing, which was very noisy.
 
 **Signal Scoring:** -1.0 to +1.0 normalized score
 - `> 0.7` = Full Send (strong conviction)
@@ -113,9 +132,38 @@ The indicator shows a panel with:
 ### Trading Modes
 
 Auto-detects based on chart timeframe:
-- **Scalp:** 5m/15m/1H data (1m-15m charts)
+- **Scalp:** 5m/15m/1H data (1m-15m charts). Macro is read as a 1H/4H/1D backdrop at 0.6 weight. On crypto, the leader/sector slots switch to order flow: open interest × price, Coinbase premium, and perp basis (Binance perps).
 - **Intraday:** 15m/1H/4H data (30m-4H charts)
 - **Swing:** 4H/1D/1W data (Daily+ charts)
+
+**Signal Threshold:** "Auto" uses adaptive (volatility-scaled) thresholds on Scalp only. It uses a fixed ±0.5% flow elsewhere, because adaptive tested worse on 1H-4H.
+
+### Backtest Results (cf-filter-strategy-v4.6.0, BTCUSDT, Jan 2024 - Oct 2026, 0.05% fees + slippage)
+
+- **Shorts lose money on every timeframe.** Trading both directions on every flip underperforms buy-and-hold.
+- **Long only + Standard (50%+) entry, exit on the opposite flip.** This is now the strategy default. It beat buy-and-hold over each strategy's own trading window:
+
+| Timeframe | Strategy | Buy & hold | Max drawdown |
+|---|---|---|---|
+| 1H | +58% | +32% | ~16% |
+| 3H | +47% | +31% | ~14% |
+| 4H | +125% | +83% | ~16% |
+
+- **Caveats:** only 15-20 trades per timeframe, the setup was chosen from about 10 configurations, and the period was mostly a bull market. Validate on ETH and on 2022 before relying on it.
+
+## The Oscillator (Capital Flow Oscillator v2.1)
+
+A companion pane styled after Market Cipher B:
+- **Waves:** WaveTrend-style momentum, or "Cloud Position" inside the Keltner cloud
+- **Money flow area** from the chart's own candles and volume
+- **Yellow momentum area**
+- **Capital flow strip** along the bottom: the same engine and Market presets as the overlay; it gates setups
+- **Dots:** wave crosses, Cloud Edge setups and A+ setups
+- **Targets:** TP1 (cloud basis), TP2 (opposite band), ✕ (flow exit)
+- **Divergence** "D" marks plus lines
+- **RSI cue:** the wave's leading edge turns red above 70 and green below 30
+
+Stoch RSI and the key box are optional and off by default.
 
 ### Alert Types
 
@@ -132,12 +180,12 @@ Auto-detects based on chart timeframe:
 ### Plot Budget
 
 **Limit:** 64 plots (TradingView maximum)
-**Current Usage:** ~64 (at limit)
+**Current Usage (v4.6.0):** ~15 plot calls, well under the limit. The old "at limit" note was wrong.
 
 **Data Exports (9 plots, reserved for future CRS):**
 - Score, Strength, CFI, Regime, Confidence, Sector Tilt, Bull Count, Bear Count, Mode
 
-Cannot add D/W/M opens to indicator until CRS is built and exports moved there.
+There is room to add D/W/M opens.
 
 ---
 
@@ -277,10 +325,10 @@ curl -X POST https://capital-flow-filter.vercel.app/api/webhook \
 ## Indicator Improvements Wishlist
 
 See `/Indicator script/INDICATOR-IMPROVEMENTS.md` for:
-- D/W/M Opens (blocked by plot limit)
-- Flip confirmation (reduce whipsaws)
+- D/W/M Opens (plot budget allows it now)
+- Flip confirmation (done in v4.5.2: threshold + confirmation bars)
 - Volume confirmation on signals
-- Adaptive thresholds
+- Adaptive thresholds (done in v4.6.0, used on Scalp)
 - Session-weighted signals
 
 ---
@@ -316,4 +364,4 @@ See `/Indicator script/INDICATOR-IMPROVEMENTS.md` for:
 
 ---
 
-*Last updated: December 9, 2025*
+*Last updated: October 14, 2026*
