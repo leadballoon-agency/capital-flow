@@ -1,0 +1,633 @@
+// This Pine Script code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// (c) MarkTaylor
+// Capital Flow Oscillator v2.0
+// Wave = momentum (default) or where price sits inside the Keltner cloud (-100 bottom edge, +100 top edge)
+// Area = money flow (buying/selling pressure on this chart)
+// Strip = capital flow regime (macro + leaders + sectors, basket set by the Market preset) - gates the setups
+// Dots = wave turns; big dots = Cloud Edge setups (edge touch + turn + flow agrees)
+
+//@version=6
+indicator("Capital Flow Oscillator [v2.0]", shorttitle="CF Osc", overlay=false, max_labels_count=500)
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// INPUTS - MODE
+// ═══════════════════════════════════════════════════════════════════════════════
+
+tradingModeInput = input.string("Auto", "Trading Mode",
+     options=["Auto", "Swing", "Intraday", "Scalp"],
+     group="Mode",
+     tooltip="Auto: Detects chart timeframe automatically\nSwing: 4H/D/W data, slower signals\nIntraday: 15m/1H/4H data, faster signals\nScalp: 5m/15m/1H data, fastest signals")
+
+autoDetectedMode = timeframe.in_seconds() <= 900 ? "Scalp" : timeframe.in_seconds() <= 14400 ? "Intraday" : "Swing"
+tradingMode = tradingModeInput == "Auto" ? autoDetectedMode : tradingModeInput
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// INPUTS - DATA SOURCES
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// Market preset: picks the 8 capital flow inputs (and which way each one counts) for the
+// instrument on the chart. Variable names below are slots - src_dxy is "macro 1", etc.
+marketInput = input.string("Auto", "Market", options=["Auto", "Crypto", "Equities", "Metals", "Forex", "Custom"], group="Market",
+     tooltip="Auto picks the basket from the chart's instrument.\nCrypto: DXY, VIX, Gold, US10Y | BTC, ETH | BTC.D, TOTAL3\nEquities: DXY, VIX, US10Y, HYG | SPY, QQQ | IWM, XLU\nMetals: DXY, US10Y, VIX, SPX | Gold, Silver | GDX, TIP\nForex: US10Y, VIX, SPX, Gold | base & quote currency index | AUDJPY, Oil\nCustom: the 8 symbols below (macro and slot 7 count inverted)")
+
+cust_1 = input.symbol("TVC:DXY", "Macro 1", group="Market - Custom Symbols")
+cust_2 = input.symbol("TVC:VIX", "Macro 2", group="Market - Custom Symbols")
+cust_3 = input.symbol("OANDA:XAUUSD", "Macro 3", group="Market - Custom Symbols")
+cust_4 = input.symbol("TVC:US10Y", "Macro 4", group="Market - Custom Symbols")
+cust_5 = input.symbol("BINANCE:BTCUSDT", "Leader 1", group="Market - Custom Symbols")
+cust_6 = input.symbol("BINANCE:ETHUSDT", "Leader 2", group="Market - Custom Symbols")
+cust_7 = input.symbol("CRYPTOCAP:BTC.D", "Sector 1 (inverted)", group="Market - Custom Symbols")
+cust_8 = input.symbol("CRYPTOCAP:TOTAL3", "Sector 2", group="Market - Custom Symbols")
+
+mktTick = str.upper(syminfo.ticker)
+isMetalSym = str.contains(mktTick, "XAU") or str.contains(mktTick, "XAG") or str.contains(mktTick, "GOLD") or str.contains(mktTick, "SILVER") or mktTick == "GLD" or mktTick == "SLV" or ((str.startswith(mktTick, "GC") or str.startswith(mktTick, "SI") or str.startswith(mktTick, "MGC")) and str.contains(mktTick, "!"))
+autoMarket = isMetalSym ? "Metals" : syminfo.type == "crypto" ? "Crypto" : syminfo.type == "forex" ? "Forex" : "Equities"
+market = marketInput == "Auto" ? autoMarket : marketInput
+
+ccyIndex(simple string c) =>
+    c == "EUR" ? "TVC:EXY" : c == "GBP" ? "TVC:BXY" : c == "JPY" ? "TVC:JXY" : c == "CHF" ? "TVC:SXY" : c == "CAD" ? "TVC:CXY" : c == "AUD" ? "TVC:AXY" : c == "NZD" ? "TVC:ZXY" : "TVC:DXY"
+
+fxBase = syminfo.basecurrency
+fxQuote = syminfo.currency
+usdBase = fxBase == "USD"
+
+src_dxy = switch market
+    "Equities" => "TVC:DXY"
+    "Metals" => "TVC:DXY"
+    "Forex" => "TVC:US10Y"
+    "Custom" => cust_1
+    => "TVC:DXY"
+src_vix = switch market
+    "Metals" => "TVC:US10Y"
+    "Forex" => "TVC:VIX"
+    "Custom" => cust_2
+    => "TVC:VIX"
+src_gold = switch market
+    "Equities" => "TVC:US10Y"
+    "Metals" => "TVC:VIX"
+    "Forex" => "SP:SPX"
+    "Custom" => cust_3
+    => "OANDA:XAUUSD"
+src_yields = switch market
+    "Equities" => "AMEX:HYG"
+    "Metals" => "SP:SPX"
+    "Forex" => "OANDA:XAUUSD"
+    "Custom" => cust_4
+    => "TVC:US10Y"
+src_btc = switch market
+    "Equities" => "AMEX:SPY"
+    "Metals" => "OANDA:XAUUSD"
+    "Forex" => ccyIndex(fxBase)
+    "Custom" => cust_5
+    => "BINANCE:BTCUSDT"
+src_eth = switch market
+    "Equities" => "NASDAQ:QQQ"
+    "Metals" => "OANDA:XAGUSD"
+    "Forex" => ccyIndex(fxQuote)
+    "Custom" => cust_6
+    => "BINANCE:ETHUSDT"
+src_btcd = switch market
+    "Equities" => "AMEX:IWM"
+    "Metals" => "AMEX:GDX"
+    "Forex" => "OANDA:AUDJPY"
+    "Custom" => cust_7
+    => "CRYPTOCAP:BTC.D"
+src_total3 = switch market
+    "Equities" => "AMEX:XLU"
+    "Metals" => "AMEX:TIP"
+    "Forex" => "TVC:USOIL"
+    "Custom" => cust_8
+    => "CRYPTOCAP:TOTAL3"
+
+// true = the input rising is BEARISH for this instrument
+inv_1 = market == "Forex" ? not usdBase : true                 // DXY / US10Y: strong dollar or yields = headwind
+inv_2 = true                                                     // VIX (Metals: US10Y)
+inv_3 = market == "Metals" ? false : market == "Forex" ? false : true   // Metals: VIX up = safe-haven bid; Forex: SPX up = risk-on
+inv_4 = market == "Equities" ? false : market == "Forex" ? usdBase : true // Equities: HYG up = credit risk-on; Forex: gold up = weak dollar
+inv_5 = false                                                    // leader 1 (Forex: base currency index)
+inv_6 = market == "Forex"                                        // Forex: quote currency strength = pair down
+inv_7 = market == "Crypto" or market == "Custom"                 // BTC.D up = alts down; IWM/GDX/AUDJPY up = risk-on
+inv_8 = market == "Equities"                                     // XLU (utilities) up = defensive rotation
+
+// Panel labels
+lbl_1 = market == "Forex" ? "US10Y" : "DXY"
+lbl_2 = market == "Metals" ? "US10Y" : "VIX"
+lbl_3 = market == "Equities" ? "US10Y" : market == "Metals" ? "VIX" : market == "Forex" ? "SPX" : "GOLD"
+lbl_4 = market == "Equities" ? "HYG" : market == "Metals" ? "SPX" : market == "Forex" ? "GOLD" : "US10Y"
+lbl_5 = market == "Equities" ? "SPY" : market == "Metals" ? "GOLD" : market == "Forex" ? fxBase : market == "Custom" ? "L1" : "BTC"
+lbl_6 = market == "Equities" ? "QQQ" : market == "Metals" ? "SILVER" : market == "Forex" ? fxQuote : market == "Custom" ? "L2" : "ETH"
+lbl_7 = market == "Equities" ? "IWM" : market == "Metals" ? "GDX" : market == "Forex" ? "AUDJPY" : market == "Custom" ? "S1" : "BTC.D"
+lbl_8 = market == "Equities" ? "XLU" : market == "Metals" ? "TIP" : market == "Forex" ? "OIL" : market == "Custom" ? "S2" : "TOTAL3"
+grp_2 = market == "Equities" ? "LEADERS" : market == "Metals" ? "METALS" : market == "Forex" ? "CURRENCIES" : market == "Custom" ? "LEADERS" : "CRYPTO"
+grp_3 = market == "Equities" ? "BREADTH" : market == "Metals" ? "MINERS / REAL" : market == "Forex" ? "RISK" : "SECTORS"
+
+flowLength = input.int(14, "Flow Calculation Length", minval=5, maxval=50, group="Settings")
+lookbackMode = input.string("Auto", "Lookback Mode", options=["Auto", "Manual"], group="Settings")
+lookbackManual = input.int(100, "Manual Lookback", minval=20, maxval=500, group="Settings")
+smoothingMode = input.string("Auto", "Smoothing", options=["Auto", "Manual"], group="Settings")
+smoothingManual = input.int(5, "Manual Smoothing", minval=1, maxval=20, group="Settings")
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// INPUTS - WAVE
+// ═══════════════════════════════════════════════════════════════════════════════
+
+waveType = input.string("Momentum", "Wave Type", options=["Momentum", "Cloud Position"], group="Wave",
+     tooltip="Momentum: smooth, cycling waves (WaveTrend-style momentum on price)\nCloud Position: where price sits inside the Keltner cloud (-100 = bottom edge, +100 = top edge) - the exact Cloud Edge strategy")
+momChannelLen = input.int(10, "Momentum Channel Length", minval=3, maxval=50, group="Wave - Momentum")
+momAvgLen = input.int(21, "Momentum Average Length", minval=3, maxval=50, group="Wave - Momentum")
+momEdgeLevel = input.int(53, "Momentum Extreme Level", minval=20, maxval=100, group="Wave - Momentum",
+     tooltip="Momentum level that counts as stretched (the 'edge') for setups")
+
+keltnerLength = input.int(20, "Keltner Length", minval=5, maxval=50, group="Wave - Cloud Position",
+     tooltip="Keep the same as the overlay so -100/+100 line up with its cloud edges. Also used for TP1/TP2 in both wave types")
+keltnerMult = input.float(2.0, "Keltner Multiplier", minval=0.5, maxval=5.0, step=0.1, group="Wave - Cloud Position")
+waveFastLen = input.int(4, "Wave Smoothing", minval=1, maxval=20, group="Wave - Cloud Position",
+     tooltip="Higher = smoother waves, slightly later turns")
+waveSlowLen = input.int(6, "Slow Wave Lag", minval=2, maxval=15, group="Wave - Cloud Position",
+     tooltip="Higher = more gap between the waves, so the light leading edge stands out more")
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// INPUTS - SETUPS
+// ═══════════════════════════════════════════════════════════════════════════════
+
+edgeLevel = input.int(90, "Cloud Edge Level", minval=50, maxval=150, group="Setups",
+     tooltip="Cloud Position only: wave level that counts as price touching the cloud edge. 100 = exactly on the outer Keltner band")
+obosLevel = input.int(60, "Overbought / Oversold Level", minval=20, maxval=100, group="Setups")
+edgeMemory = input.int(5, "Edge Touch Memory (bars)", minval=1, maxval=20, group="Setups",
+     tooltip="How recently the wave must have touched the edge for a turn to count as a setup")
+minFlow = input.float(0.05, "Min Flow for Setup", minval=0.0, maxval=0.5, step=0.05, group="Setups",
+     tooltip="Flow score needed to call the cloud green (long) or red (short)")
+strongFlow = input.float(0.5, "A+ Flow Threshold", minval=0.2, maxval=0.9, step=0.05, group="Setups",
+     tooltip="Setups with flow at or beyond this level get the gold A+ dot")
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// INPUTS - VISUALS
+// ═══════════════════════════════════════════════════════════════════════════════
+
+showMomentum = input.bool(true, "Show Yellow Momentum Area", group="Visuals",
+     tooltip="MC-style yellow area: the gap between the fast and slow waves. Flips sign slightly before the waves cross")
+momScale = input.float(1.0, "Yellow Momentum Height", minval=0.2, maxval=2.0, step=0.1, group="Visuals",
+     tooltip="Lower = slimmer yellow area, so more of the money flow shows through")
+showMoneyFlow = input.bool(true, "Show Money Flow Area", group="Visuals")
+showFlowStrip = input.bool(true, "Show Capital Flow Strip", group="Visuals",
+     tooltip="Green/red strip along the bottom: the macro capital flow regime that gates setups")
+showSmallDots = input.bool(true, "Show Wave Cross Dots", group="Visuals",
+     tooltip="Small dots on wave crosses away from zero. Setups get bigger dots either way")
+dotMinLevel = input.int(30, "Hide Cross Dots Inside ±", minval=0, maxval=80, group="Visuals",
+     tooltip="Crosses near zero are mostly noise - hide their dots")
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// INPUTS - MONEY FLOW
+// ═══════════════════════════════════════════════════════════════════════════════
+
+mfLength = input.int(60, "Money Flow Length", minval=5, maxval=200, group="Money Flow",
+     tooltip="Bars averaged. Higher = smoother, slower")
+mfMult = input.float(200.0, "Money Flow Height", minval=10.0, maxval=400.0, step=10.0, group="Money Flow")
+mfUseVolume = input.bool(true, "Weight by Volume", group="Money Flow",
+     tooltip="Bigger-volume candles count more. Ignored on symbols without volume")
+showTPMarks = input.bool(true, "Show TP1 / TP2 / Exit Marks", group="Visuals")
+showDivergence = input.bool(true, "Show Divergences", group="Visuals")
+showLabel = input.bool(true, "Show Status Box", group="Visuals")
+labelPos = input.string("Bottom Right", "Status Box Position", options=["Bottom Right", "Top Right", "Bottom Left", "Top Left"], group="Visuals")
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// INPUTS - ALERTS
+// ═══════════════════════════════════════════════════════════════════════════════
+
+alertSetups = input.bool(true, "Cloud Edge Setup Alerts", group="Alerts")
+alertAPlusOnly = input.bool(false, "Only Alert A+ Setups", group="Alerts")
+alertTP = input.bool(true, "TP1 / TP2 Alerts", group="Alerts")
+alertExit = input.bool(true, "Flow Exit Alerts", group="Alerts")
+alertCooldown = input.int(3, "Setup Alert Cooldown (bars)", minval=1, maxval=50, group="Alerts")
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// COLORS
+// ═══════════════════════════════════════════════════════════════════════════════
+
+wave_fast = #5AB4FF
+wave_slow = #1B2A80
+momentum_color = #FFE45C
+flow_bull = #2EE86B
+flow_bear = #FF4A3D
+dot_bull = #3FFF7F
+dot_bear = #FF4D4D
+dot_aplus_long = #FFC400
+dot_aplus_short = #FF2E63
+tp_color = #00E5FF
+exit_color = #9E9E9E
+div_bull = #2EE86B
+div_bear = #FF4A3D
+level_color = #787B86
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// TIMEFRAME SELECTION BY MODE
+// ═══════════════════════════════════════════════════════════════════════════════
+
+tf1 = switch tradingMode
+    "Swing" => "240"
+    "Intraday" => "15"
+    "Scalp" => "5"
+    => "240"
+
+tf2 = switch tradingMode
+    "Swing" => "1D"
+    "Intraday" => "60"
+    "Scalp" => "15"
+    => "1D"
+
+tf3 = switch tradingMode
+    "Swing" => "1W"
+    "Intraday" => "240"
+    "Scalp" => "60"
+    => "1W"
+
+tf1_weight = 1.0
+tf2_weight = 2.0
+tf3_weight = 3.0
+totalTfWeight = tf1_weight + tf2_weight + tf3_weight
+
+autoLookback = switch tradingMode
+    "Swing" => timeframe.in_seconds() <= 3600 ? 200 : timeframe.in_seconds() <= 14400 ? 100 : timeframe.in_seconds() <= 86400 ? 50 : 25
+    "Intraday" => timeframe.in_seconds() <= 900 ? 400 : timeframe.in_seconds() <= 3600 ? 200 : 100
+    "Scalp" => timeframe.in_seconds() <= 300 ? 600 : timeframe.in_seconds() <= 900 ? 400 : 200
+    => 100
+
+lookback = lookbackMode == "Auto" ? autoLookback : lookbackManual
+
+baseSmoothing = switch tradingMode
+    "Swing" => timeframe.in_seconds() < 3600 ? 8 : timeframe.in_seconds() < 14400 ? 5 : timeframe.in_seconds() < 86400 ? 3 : 1
+    "Intraday" => timeframe.in_seconds() < 900 ? 5 : timeframe.in_seconds() < 3600 ? 3 : 2
+    "Scalp" => timeframe.in_seconds() < 300 ? 3 : 2
+    => 3
+
+smoothing = smoothingMode == "Auto" ? baseSmoothing : smoothingManual
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// HELPER FUNCTIONS
+// ═══════════════════════════════════════════════════════════════════════════════
+
+calcFlow(float src, int len) =>
+    roc = ta.roc(src, len)
+    ta.ema(roc, len)
+
+calcFlowOffset(int len, int off) =>
+    f = calcFlow(close, len)
+    f[off]
+
+// Non-repainting request: higher timeframes use the last CLOSED bar ([1] + lookahead_on),
+// so history and live bars show the same values. Lower timeframes are already closed bars.
+getFlow(simple string sym, simple string tf) =>
+    bool htf = timeframe.in_seconds(tf) >= timeframe.in_seconds()
+    int off = htf ? 1 : 0
+    request.security(sym, tf, calcFlowOffset(flowLength, off), lookahead=htf ? barmerge.lookahead_on : barmerge.lookahead_off)
+
+getSignal(float flow, bool invert) =>
+    threshold = 0.5
+    rawSignal = flow > threshold ? 1.0 : flow < -threshold ? -1.0 : 0.0
+    invert ? -rawSignal : rawSignal
+
+calcCorrelation(float signal, int len) =>
+    signalThreshold = 0.3
+    priceUp = close > close[1]
+    signalBull = signal > signalThreshold
+    signalBear = signal < -signalThreshold
+    signalActive = math.abs(signal) > signalThreshold
+    correctBull = signalBull and priceUp ? 1.0 : 0.0
+    correctBear = signalBear and not priceUp ? 1.0 : 0.0
+    correct = correctBull + correctBear
+    active = signalActive ? 1.0 : 0.0
+    correctSum = math.sum(correct, len)
+    activeSum = math.sum(active, len)
+    activeSum > 10 ? (correctSum / activeSum) * 100 : 50.0
+
+calcEdge(float corr) =>
+    math.abs(corr - 50) / 50
+
+calcMultiplier(float corr) =>
+    corr >= 50 ? 1.0 : -1.0
+
+calcWeight(float corr) =>
+    0.2 + 0.8 * calcEdge(corr)
+
+combineTf(float s1, float s2, float s3) =>
+    (s1 * tf1_weight + s2 * tf2_weight + s3 * tf3_weight) / totalTfWeight
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// FLOW ENGINE (same logic as overlay v4.5, without repainting)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+tickerUpper = str.upper(syminfo.ticker)
+isBTC = str.contains(tickerUpper, "BTC") and not str.contains(tickerUpper, "BTC.D")
+isETH = str.contains(tickerUpper, "ETH")
+
+macroMult = market != "Crypto" ? 1.0 : isBTC ? 1.2 : isETH ? 1.1 : 0.9
+cryptoMult = market != "Crypto" ? 1.0 : isBTC ? 1.0 : isETH ? 1.1 : 1.0
+sectorMult = market != "Crypto" ? 1.0 : isBTC ? 0.8 : isETH ? 1.0 : 1.3
+
+sig_dxy = combineTf(getSignal(getFlow(src_dxy, tf1), inv_1), getSignal(getFlow(src_dxy, tf2), inv_1), getSignal(getFlow(src_dxy, tf3), inv_1))
+sig_vix = combineTf(getSignal(getFlow(src_vix, tf1), inv_2), getSignal(getFlow(src_vix, tf2), inv_2), getSignal(getFlow(src_vix, tf3), inv_2))
+sig_gold = combineTf(getSignal(getFlow(src_gold, tf1), inv_3), getSignal(getFlow(src_gold, tf2), inv_3), getSignal(getFlow(src_gold, tf3), inv_3))
+sig_yields = combineTf(getSignal(getFlow(src_yields, tf1), inv_4), getSignal(getFlow(src_yields, tf2), inv_4), getSignal(getFlow(src_yields, tf3), inv_4))
+
+sig_btc = combineTf(getSignal(getFlow(src_btc, tf1), inv_5), getSignal(getFlow(src_btc, tf2), inv_5), getSignal(getFlow(src_btc, tf3), inv_5))
+sig_eth = combineTf(getSignal(getFlow(src_eth, tf1), inv_6), getSignal(getFlow(src_eth, tf2), inv_6), getSignal(getFlow(src_eth, tf3), inv_6))
+
+sig_btcd = getSignal(getFlow(src_btcd, tf2), inv_7)
+sig_total3 = getSignal(getFlow(src_total3, tf2), inv_8)
+
+corr_dxy = calcCorrelation(sig_dxy, lookback)
+corr_vix = calcCorrelation(sig_vix, lookback)
+corr_gold = calcCorrelation(sig_gold, lookback)
+corr_yields = calcCorrelation(sig_yields, lookback)
+corr_btc = calcCorrelation(sig_btc, lookback)
+corr_eth = calcCorrelation(sig_eth, lookback)
+corr_btcd = calcCorrelation(sig_btcd, lookback)
+corr_total3 = calcCorrelation(sig_total3, lookback)
+
+eff_dxy = sig_dxy * calcMultiplier(corr_dxy)
+eff_vix = sig_vix * calcMultiplier(corr_vix)
+eff_gold = sig_gold * calcMultiplier(corr_gold)
+eff_yields = sig_yields * calcMultiplier(corr_yields)
+eff_btc = sig_btc * calcMultiplier(corr_btc)
+eff_eth = sig_eth * calcMultiplier(corr_eth)
+eff_btcd = sig_btcd * calcMultiplier(corr_btcd)
+eff_total3 = sig_total3 * calcMultiplier(corr_total3)
+
+w_dxy = calcWeight(corr_dxy)
+w_vix = calcWeight(corr_vix)
+w_gold = calcWeight(corr_gold)
+w_yields = calcWeight(corr_yields)
+w_btc = calcWeight(corr_btc)
+w_eth = calcWeight(corr_eth)
+w_btcd = calcWeight(corr_btcd)
+w_total3 = calcWeight(corr_total3)
+
+bullCount = (eff_dxy > 0 ? 1 : 0) + (eff_vix > 0 ? 1 : 0) + (eff_gold > 0 ? 1 : 0) + (eff_yields > 0 ? 1 : 0) +
+     (eff_btc > 0 ? 1 : 0) + (eff_eth > 0 ? 1 : 0) + (eff_btcd > 0 ? 1 : 0) + (eff_total3 > 0 ? 1 : 0)
+bearCount = (eff_dxy < 0 ? 1 : 0) + (eff_vix < 0 ? 1 : 0) + (eff_gold < 0 ? 1 : 0) + (eff_yields < 0 ? 1 : 0) +
+     (eff_btc < 0 ? 1 : 0) + (eff_eth < 0 ? 1 : 0) + (eff_btcd < 0 ? 1 : 0) + (eff_total3 < 0 ? 1 : 0)
+
+macroScore = (eff_dxy * w_dxy + eff_vix * w_vix + eff_gold * w_gold + eff_yields * w_yields) * macroMult
+macroWeights = (w_dxy + w_vix + w_gold + w_yields) * macroMult
+cryptoScore = (eff_btc * w_btc + eff_eth * w_eth) * cryptoMult
+cryptoWeights = (w_btc + w_eth) * cryptoMult
+sectorScore = (eff_btcd * w_btcd + eff_total3 * w_total3) * sectorMult
+sectorWeights = (w_btcd + w_total3) * sectorMult
+
+totalWeights = macroWeights + cryptoWeights + sectorWeights
+rawScore = totalWeights > 0.1 ? math.max(math.min((macroScore + cryptoScore + sectorScore) / totalWeights, 1.0), -1.0) : 0.0
+flowScore = smoothing > 1 ? ta.ema(rawScore, smoothing) : rawScore
+conviction = math.min(math.abs(flowScore), 1.0)
+
+flowBull = flowScore > minFlow
+flowBear = flowScore < -minFlow
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// WAVES
+// ═══════════════════════════════════════════════════════════════════════════════
+
+isMomentum = waveType == "Momentum"
+
+kBasis = ta.ema(close, keltnerLength)
+kRange = ta.atr(keltnerLength) * keltnerMult
+rawPos = kRange > 0 ? (close - kBasis) / kRange * 100 : 0.0
+
+// Display waves use hlc3 (smoother than close) and soft-compress anything beyond the
+// cloud edge, so one big candle can't squash the whole pane
+compressWave(float x) =>
+    ax = math.abs(x)
+    ax <= 100 ? x : math.sign(x) * (100 + (ax - 100) * 0.3)
+
+wavePos = kRange > 0 ? (hlc3 - kBasis) / kRange * 100 : 0.0
+cloudWave = compressWave(ta.ema(wavePos, waveFastLen))
+
+// Momentum wave: WaveTrend-style - distance from a moving average, scaled by its
+// average deviation, then smoothed. Naturally cycles back to zero
+esa = ta.ema(hlc3, momChannelLen)
+dev = ta.ema(math.abs(hlc3 - esa), momChannelLen)
+ci = dev > 0 ? (hlc3 - esa) / (0.015 * dev) : 0.0
+momWave = ta.ema(ci, momAvgLen)
+
+wt1 = isMomentum ? momWave : cloudWave
+wt2 = ta.sma(wt1, isMomentum ? 4 : waveSlowLen)
+momentum = wt1 - wt2
+
+crossUp = ta.crossover(wt1, wt2)
+crossDn = ta.crossunder(wt1, wt2)
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// CLOUD EDGE SETUPS
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// Long: flow green + wave touched the lower edge recently + wave turns up
+// Short: flow red + wave touched the upper edge recently + wave turns down
+setupEdge = isMomentum ? momEdgeLevel : edgeLevel
+touchedLower = ta.lowest(wt1, edgeMemory) <= -setupEdge
+touchedUpper = ta.highest(wt1, edgeMemory) >= setupEdge
+
+longSetup = crossUp and touchedLower and flowBull
+shortSetup = crossDn and touchedUpper and flowBear
+longAPlus = longSetup and flowScore >= strongFlow
+shortAPlus = shortSetup and flowScore <= -strongFlow
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// DUAL TP TRACKER - TP1 = basis (wave 0), TP2 = opposite band (wave ±100)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+var int tradeDir = 0
+var bool tp1Done = false
+
+bool tp1Hit = false
+bool tp2Hit = false
+bool flowExit = false
+
+if longSetup
+    tradeDir := 1
+    tp1Done := false
+else if shortSetup
+    tradeDir := -1
+    tp1Done := false
+else if tradeDir == 1
+    if not tp1Done and rawPos >= 0
+        tp1Hit := true
+        tp1Done := true
+    if tp1Done and rawPos >= 100
+        tp2Hit := true
+        tradeDir := 0
+    else if flowBear
+        flowExit := true
+        tradeDir := 0
+else if tradeDir == -1
+    if not tp1Done and rawPos <= 0
+        tp1Hit := true
+        tp1Done := true
+    if tp1Done and rawPos <= -100
+        tp2Hit := true
+        tradeDir := 0
+    else if flowBull
+        flowExit := true
+        tradeDir := 0
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// DIVERGENCE - pivots on the slow wave vs price (confirmed 2 bars later)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+pivotLow = ta.pivotlow(wt2, 2, 2)
+pivotHigh = ta.pivothigh(wt2, 2, 2)
+
+var float lastPlWave = na
+var float lastPlPrice = na
+var float lastPhWave = na
+var float lastPhPrice = na
+
+bool bullDiv = false
+bool bearDiv = false
+
+if not na(pivotLow)
+    bullDiv := not na(lastPlWave) and pivotLow < 0 and pivotLow > lastPlWave and low[2] < lastPlPrice
+    lastPlWave := pivotLow
+    lastPlPrice := low[2]
+
+if not na(pivotHigh)
+    bearDiv := not na(lastPhWave) and pivotHigh > 0 and pivotHigh < lastPhWave and high[2] > lastPhPrice
+    lastPhWave := pivotHigh
+    lastPhPrice := high[2]
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// PLOTTING - LEVELS
+// ═══════════════════════════════════════════════════════════════════════════════
+
+hline(0, "Zero", color=color.new(level_color, 40), linestyle=hline.style_solid)
+hline(obosLevel, "Overbought", color=color.new(level_color, 55), linestyle=hline.style_dotted)
+hline(-obosLevel, "Oversold", color=color.new(level_color, 55), linestyle=hline.style_dotted)
+hline(100, "Upper Cloud Edge", color=isMomentum ? na : color.new(flow_bear, 55), linestyle=hline.style_dashed)
+hline(-100, "Lower Cloud Edge", color=isMomentum ? na : color.new(flow_bull, 55), linestyle=hline.style_dashed)
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// PLOTTING - WAVES & FLOW
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// MC-style layering: light fast wave underneath, dark slow wave on top,
+// so the light leading edge shows wherever the fast wave runs ahead
+plot(wt1, "Fast Wave", color=color.new(wave_fast, 5), style=plot.style_area, display=display.pane)
+plot(wt2, "Slow Wave", color=color.new(wave_slow, 8), style=plot.style_area, display=display.pane)
+plot(wt1, "Fast Wave Edge", color=color.new(#9AD3FF, 0), linewidth=1)
+
+// Money flow: where each candle closed within its range (+1 = closed on the high,
+// -1 = closed on the low), optionally volume-weighted, averaged over mfLength bars
+candlePressure = high > low ? (close - open) / (high - low) : 0.0
+relVolume = ta.sma(volume, mfLength)
+volWeight = mfUseVolume and relVolume > 0 ? math.min(volume / relVolume, 3.0) : 1.0
+moneyFlow = ta.sma(candlePressure * nz(volWeight, 1.0), mfLength) * mfMult
+mfColor = moneyFlow >= 0 ? color.new(flow_bull, 20) : color.new(flow_bear, 20)
+plot(showMoneyFlow ? moneyFlow : na, "Money Flow", color=mfColor, style=plot.style_area)
+
+// Bright yellow momentum on top, MC-style (lightly smoothed so it doesn't flicker)
+momentumDisplay = ta.ema(momentum, 3) * momScale
+plot(showMomentum ? momentumDisplay : na, "Momentum", color=color.new(momentum_color, 8), style=plot.style_area, display=display.pane)
+
+
+// Capital flow regime strip along the bottom - 3 brightness steps: weak / moderate / strong
+stripTransp = conviction >= 0.5 ? 0 : conviction >= 0.2 ? 35 : 65
+stripColor = flowBull ? color.new(flow_bull, stripTransp) : flowBear ? color.new(flow_bear, stripTransp) : color.new(level_color, 70)
+plot(showFlowStrip ? -104 : na, "Capital Flow Strip", color=stripColor, style=plot.style_columns, histbase=-112, display=display.pane)
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// PLOTTING - DOTS & MARKS
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// Each dot is drawn twice - a dark disc one size up, then the colour on top - for an outlined look
+dot_outline = color.new(#0B0E1A, 0)
+smallUp = showSmallDots and crossUp and math.abs(wt2) >= dotMinLevel and not longSetup
+smallDn = showSmallDots and crossDn and math.abs(wt2) >= dotMinLevel and not shortSetup
+setupLong = longSetup and not longAPlus
+setupShort = shortSetup and not shortAPlus
+
+plotshape(smallUp or smallDn ? wt2 : na, "Cross Dot Outline", shape.circle, location.absolute, dot_outline, size=size.small, display=display.pane)
+plotshape(smallUp ? wt2 : na, "Wave Cross Up", shape.circle, location.absolute, dot_bull, size=size.tiny)
+plotshape(smallDn ? wt2 : na, "Wave Cross Down", shape.circle, location.absolute, dot_bear, size=size.tiny)
+
+plotshape(setupLong or setupShort ? wt2 : na, "Setup Dot Outline", shape.circle, location.absolute, dot_outline, size=size.normal, display=display.pane)
+plotshape(setupLong ? wt2 : na, "Cloud Edge Long", shape.circle, location.absolute, dot_bull, size=size.small)
+plotshape(setupShort ? wt2 : na, "Cloud Edge Short", shape.circle, location.absolute, dot_bear, size=size.small)
+
+plotshape(longAPlus or shortAPlus ? wt2 : na, "A+ Dot Outline", shape.circle, location.absolute, dot_outline, size=size.large, display=display.pane)
+plotshape(longAPlus ? wt2 : na, "A+ Long", shape.circle, location.absolute, dot_aplus_long, size=size.normal)
+plotshape(shortAPlus ? wt2 : na, "A+ Short", shape.diamond, location.absolute, dot_aplus_short, size=size.normal)
+
+plotshape(showTPMarks and tp1Hit ? wt1 : na, "TP1", shape.labeldown, location.absolute, color.new(tp_color, 20), size=size.tiny, text="TP1", textcolor=color.black)
+plotshape(showTPMarks and tp2Hit ? wt1 : na, "TP2", shape.labeldown, location.absolute, color.new(tp_color, 0), size=size.tiny, text="TP2", textcolor=color.black)
+plotshape(showTPMarks and flowExit ? wt1 : na, "Flow Exit", shape.xcross, location.absolute, exit_color, size=size.tiny)
+
+plotshape(showDivergence and bullDiv ? pivotLow : na, "Bull Divergence", shape.triangleup, location.absolute, div_bull, size=size.tiny, offset=-2, text="D", textcolor=div_bull)
+plotshape(showDivergence and bearDiv ? pivotHigh : na, "Bear Divergence", shape.triangledown, location.absolute, div_bear, size=size.tiny, offset=-2, text="D", textcolor=div_bear)
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// STATUS BOX (table, so it never gets cut off at the chart edge)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+boxPos = switch labelPos
+    "Top Right" => position.top_right
+    "Bottom Left" => position.bottom_left
+    "Top Left" => position.top_left
+    => position.bottom_right
+var table statusBox = table.new(boxPos, 1, 3, border_width=0)
+
+if barstate.islast and showLabel
+    flowText = (flowBull ? "CAPITAL FLOW BULL " : flowBear ? "CAPITAL FLOW BEAR " : "CAPITAL FLOW NEUTRAL ") +
+         str.tostring(math.round(flowScore * 100)) + "% · " + str.tostring(math.max(bullCount, bearCount)) + "/8"
+    zoneText = wt1 <= -setupEdge ? "at lower edge" : wt1 >= setupEdge ? "at upper edge" : wt1 <= -obosLevel ? "oversold" : wt1 >= obosLevel ? "overbought" : "mid-range"
+    waveText = "Wave " + str.tostring(math.round(wt1)) + " · " + zoneText
+    tradeText = tradeDir == 1 ? "Long active · " + (tp1Done ? "TP1 hit" : "awaiting TP1") :
+         tradeDir == -1 ? "Short active · " + (tp1Done ? "TP1 hit" : "awaiting TP1") : "No active setup"
+    tradeText := tradeText + " · " + market
+    boxColor = flowBull ? color.new(flow_bull, 70) : flowBear ? color.new(flow_bear, 70) : color.new(level_color, 70)
+    table.cell(statusBox, 0, 0, flowText, text_color=color.white, text_size=size.small, bgcolor=boxColor, text_halign=text.align_left)
+    table.cell(statusBox, 0, 1, waveText, text_color=color.white, text_size=size.small, bgcolor=color.new(#0d1117, 20), text_halign=text.align_left)
+    table.cell(statusBox, 0, 2, tradeText, text_color=#8b949e, text_size=size.small, bgcolor=color.new(#0d1117, 20), text_halign=text.align_left)
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// ALERTS
+// ═══════════════════════════════════════════════════════════════════════════════
+
+var int lastSetupAlertBar = -1000
+canAlert = bar_index - lastSetupAlertBar >= alertCooldown
+
+fireLong = alertSetups and canAlert and (alertAPlusOnly ? longAPlus : longSetup)
+fireShort = alertSetups and canAlert and (alertAPlusOnly ? shortAPlus : shortSetup)
+fireTP1 = alertTP and tp1Hit
+fireTP2 = alertTP and tp2Hit
+fireExit = alertExit and flowExit
+
+if fireLong or fireShort
+    lastSetupAlertBar := bar_index
+
+scoreText = str.tostring(math.round(flowScore * 100)) + "%"
+tickerText = syminfo.ticker + " " + timeframe.period
+
+if fireLong
+    alert((longAPlus ? "🟡 A+ " : "🟢 ") + "CLOUD EDGE LONG | " + tickerText + " | Flow " + scoreText + " | Wave turning up from lower edge", alert.freq_once_per_bar_close)
+if fireShort
+    alert((shortAPlus ? "🔴 A+ " : "🔴 ") + "CLOUD EDGE SHORT | " + tickerText + " | Flow " + scoreText + " | Wave turning down from upper edge", alert.freq_once_per_bar_close)
+if fireTP1
+    alert("🎯 TP1 (basis) | " + tickerText + " | Consider moving stop to breakeven", alert.freq_once_per_bar_close)
+if fireTP2
+    alert("🎯 TP2 (opposite band) | " + tickerText, alert.freq_once_per_bar_close)
+if fireExit
+    alert("✕ FLOW EXIT | " + tickerText + " | Capital flow flipped against the open setup", alert.freq_once_per_bar_close)
+
+alertcondition(fireLong, title="Cloud Edge LONG", message="Cloud Edge LONG setup on {{ticker}} {{interval}} - flow bullish, wave turning up from lower edge")
+alertcondition(fireShort, title="Cloud Edge SHORT", message="Cloud Edge SHORT setup on {{ticker}} {{interval}} - flow bearish, wave turning down from upper edge")
+alertcondition(fireTP1, title="TP1 (Basis)", message="TP1 reached on {{ticker}} {{interval}} - price at Keltner basis")
+alertcondition(fireTP2, title="TP2 (Opposite Band)", message="TP2 reached on {{ticker}} {{interval}} - price at opposite Keltner band")
+alertcondition(fireExit, title="Flow Exit", message="Capital flow flipped against the open setup on {{ticker}} {{interval}}")
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// DATA EXPORTS
+// ═══════════════════════════════════════════════════════════════════════════════
+
+plot(flowScore, title="Flow Score", display=display.none)
+plot(moneyFlow, title="Money Flow", display=display.none)
+plot(wt1, title="Wave Value", display=display.none)
+plot(longSetup ? 1 : shortSetup ? -1 : 0, title="Setup", display=display.none)
+plot(tradeDir, title="Trade State", display=display.none)
