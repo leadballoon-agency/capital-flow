@@ -387,6 +387,11 @@ calcFlowOffset(int len, int off) =>
 getFlow(simple string sym, simple string tf) =>
     bool htf = timeframe.in_seconds(tf) >= timeframe.in_seconds()
     int off = htf ? 1 : 0
+    // NOTE: calcFlowOffset reads adaptiveThreshold, which depends on the timeframe. Inside
+    // request.security Pine re-evaluates it in the REQUESTED context, so lower-timeframe reads
+    // (e.g. 15m on a 3H/4H chart) can come back volatility-scaled. The v4.6.0 backtests depend on
+    // this; replacing it with an explicit per-timeframe rule changed 3H from +47% to +19% (see
+    // lab/README.md). Do not "simplify" this without re-running the strategy.
     [f, t] = request.security(sym, tf, calcFlowOffset(flowLength, off), lookahead=htf ? barmerge.lookahead_on : barmerge.lookahead_off, ignore_invalid_symbol=true)
     stale = neutralWhenClosed and (na(t) or time - t > (3 * timeframe.in_seconds(tf) + timeframe.in_seconds()) * 1000)
     stale ? 0.0 : nz(f)

@@ -1,0 +1,17 @@
+//@version=6
+// Temporary probe: what does request.security return for a LOWER timeframe on this chart?
+indicator("LTF Probe (temporary)", overlay=false)
+probe() =>
+    r = ta.roc(close, 14)
+    [close, close[14], r, ta.ema(r, 14), time, time[14]]
+[c, c14, r, f, t, t14] = request.security("TVC:DXY", "15", probe(), lookahead=barmerge.lookahead_off)
+[c1h, c1h14, r1h, f1h, t1h, t1h14] = request.security("TVC:DXY", "60", probe(), lookahead=barmerge.lookahead_off)
+plot(c, "DXY 15m close", display=display.data_window)
+plot(c14, "DXY 15m close[14]", display=display.data_window)
+plot(r, "DXY 15m roc", display=display.data_window)
+plot(f, "DXY 15m flow", display=display.data_window)
+plot((t - t14) / 60000, "15m: minutes spanned by 14 bars", display=display.data_window)
+plot(c1h, "DXY 1h close", display=display.data_window)
+plot(f1h, "DXY 1h flow", display=display.data_window)
+plot((t1h - t1h14) / 60000, "1h: minutes spanned by 14 bars", display=display.data_window)
+plot(0, "zero")

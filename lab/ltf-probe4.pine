@@ -1,0 +1,37 @@
+//@version=6
+// Temporary probe 4: does a global that depends on timeframe re-evaluate inside request.security?
+indicator("LTF Probe (temporary)", overlay=false)
+autoDetectedMode = timeframe.in_seconds() <= 900 ? "Scalp" : timeframe.in_seconds() <= 14400 ? "Intraday" : "Swing"
+adaptiveThreshold = autoDetectedMode == "Scalp"
+calcFlowOld(int len, int off) =>
+    f = ta.ema(ta.roc(close, len), len)
+    scale = ta.sma(math.abs(ta.roc(close, len)), 100)
+    v = adaptiveThreshold ? (scale > 0 ? f / scale : 0.0) : f
+    [v[off], time[off]]
+calcFlowNew(int len, int off, bool adaptive) =>
+    f = ta.ema(ta.roc(close, len), len)
+    scale = ta.sma(math.abs(ta.roc(close, len)), 100)
+    v = adaptive ? (scale > 0 ? f / scale : 0.0) : f
+    [v[off], time[off]]
+getOld(simple string sym, simple string tf) =>
+    bool htf = timeframe.in_seconds(tf) >= timeframe.in_seconds()
+    int off = htf ? 1 : 0
+    [f, t] = request.security(sym, tf, calcFlowOld(14, off), lookahead=htf ? barmerge.lookahead_on : barmerge.lookahead_off, ignore_invalid_symbol=true)
+    nz(f)
+getNew(simple string sym, simple string tf) =>
+    bool htf = timeframe.in_seconds(tf) >= timeframe.in_seconds()
+    int off = htf ? 1 : 0
+    bool ad = timeframe.in_seconds(tf) <= 900
+    [f, t] = request.security(sym, tf, calcFlowNew(14, off, ad), lookahead=htf ? barmerge.lookahead_on : barmerge.lookahead_off, ignore_invalid_symbol=true)
+    nz(f)
+plot(getOld("TVC:DXY", "15"), "old DXY 15", display=display.data_window)
+plot(getNew("TVC:DXY", "15"), "new DXY 15", display=display.data_window)
+plot(getOld("TVC:DXY", "60"), "old DXY 60", display=display.data_window)
+plot(getNew("TVC:DXY", "60"), "new DXY 60", display=display.data_window)
+plot(getOld("TVC:DXY", "240"), "old DXY 240", display=display.data_window)
+plot(getNew("TVC:DXY", "240"), "new DXY 240", display=display.data_window)
+plot(getOld("BINANCE:BTCUSDT", "15"), "old BTC 15", display=display.data_window)
+plot(getNew("BINANCE:BTCUSDT", "15"), "new BTC 15", display=display.data_window)
+plot(getOld("BINANCE:BTCUSDT", "60"), "old BTC 60", display=display.data_window)
+plot(getNew("BINANCE:BTCUSDT", "60"), "new BTC 60", display=display.data_window)
+plot(0, "zero")

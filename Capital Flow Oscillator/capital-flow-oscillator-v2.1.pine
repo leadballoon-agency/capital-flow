@@ -175,6 +175,10 @@ strongFlow = input.float(0.5, "A+ Flow Threshold", minval=0.2, maxval=0.9, step=
 // INPUTS - VISUALS
 // ═══════════════════════════════════════════════════════════════════════════════
 
+displayStyle = input.string("Classic", "Display Style", options=["Clean", "Classic"], group="Visuals",
+     tooltip="Clean: thin glowing wave lines, soft money-flow wash, solid capital flow band, fewer marks, score cards\nClassic: Market Cipher-style filled waves with the bright yellow momentum area")
+isClean = displayStyle == "Clean"
+cleanYellow = input.bool(false, "Show Yellow Momentum in Clean Style", group="Visuals")
 showMomentum = input.bool(true, "Show Yellow Momentum Area", group="Visuals",
      tooltip="MC-style yellow area: the gap between the fast and slow waves. Flips sign slightly before the waves cross")
 momScale = input.float(1.0, "Yellow Momentum Height", minval=0.2, maxval=2.0, step=0.1, group="Visuals",
@@ -318,6 +322,11 @@ calcFlowOffset(int len, int off) =>
 getFlow(simple string sym, simple string tf) =>
     bool htf = timeframe.in_seconds(tf) >= timeframe.in_seconds()
     int off = htf ? 1 : 0
+    // NOTE: calcFlowOffset reads adaptiveThreshold, which depends on the timeframe. Inside
+    // request.security Pine re-evaluates it in the REQUESTED context, so lower-timeframe reads
+    // (e.g. 15m on a 3H/4H chart) can come back volatility-scaled. The v4.6.0 backtests depend on
+    // this; replacing it with an explicit per-timeframe rule changed 3H from +47% to +19% (see
+    // lab/README.md). Do not "simplify" this without re-running the strategy.
     [f, t] = request.security(sym, tf, calcFlowOffset(flowLength, off), lookahead=htf ? barmerge.lookahead_on : barmerge.lookahead_off, ignore_invalid_symbol=true)
     stale = neutralWhenClosed and (na(t) or time - t > (3 * timeframe.in_seconds(tf) + timeframe.in_seconds()) * 1000)
     stale ? 0.0 : nz(f)
@@ -572,7 +581,7 @@ bool bearDiv = false
 if not na(pivotLow)
     bullDiv := not na(lastPlWave) and pivotLow < 0 and pivotLow > lastPlWave and low[2] < lastPlPrice
     if bullDiv and showDivergence and bar_index - 2 - lastPlBar <= 80
-        line.new(lastPlBar, lastPlWave, bar_index - 2, pivotLow, color=div_bull, width=2)
+        line.new(lastPlBar, lastPlWave, bar_index - 2, pivotLow, color=isClean ? color.new(div_bull, 15) : div_bull, width=isClean ? 1 : 2, style=isClean ? line.style_dashed : line.style_solid)
     lastPlWave := pivotLow
     lastPlPrice := low[2]
     lastPlBar := bar_index - 2
@@ -580,7 +589,7 @@ if not na(pivotLow)
 if not na(pivotHigh)
     bearDiv := not na(lastPhWave) and pivotHigh > 0 and pivotHigh < lastPhWave and high[2] > lastPhPrice
     if bearDiv and showDivergence and bar_index - 2 - lastPhBar <= 80
-        line.new(lastPhBar, lastPhWave, bar_index - 2, pivotHigh, color=div_bear, width=2)
+        line.new(lastPhBar, lastPhWave, bar_index - 2, pivotHigh, color=isClean ? color.new(div_bear, 15) : div_bear, width=isClean ? 1 : 2, style=isClean ? line.style_dashed : line.style_solid)
     lastPhWave := pivotHigh
     lastPhPrice := high[2]
     lastPhBar := bar_index - 2
@@ -601,32 +610,58 @@ hline(-100, "Lower Cloud Edge", color=isMomentum ? na : color.new(flow_bull, 55)
 
 // MC-style layering: light fast wave underneath, dark slow wave on top,
 // so the light leading edge shows wherever the fast wave runs ahead
-plot(wt1, "Fast Wave", color=color.new(wave_fast, 5), style=plot.style_area, display=display.pane)
-plot(wt2, "Slow Wave", color=color.new(wave_slow, 8), style=plot.style_area, display=display.pane)
-// Leading edge doubles as the RSI cue: red while overbought, green while oversold
-rsiCue = ta.rsi(close, rsiCueLen)
-edgeColor = rsiCueStyle == "Wave Edge" and rsiCue > rsiOB ? rsi_ob : rsiCueStyle == "Wave Edge" and rsiCue < rsiOS ? rsi_os : #9AD3FF
-plot(wt1, "Fast Wave Edge", color=color.new(#9AD3FF, 0), linewidth=1)
-plot(edgeColor != #9AD3FF ? wt1 : na, "RSI Edge", color=color.new(edgeColor, 0), linewidth=2, style=plot.style_linebr, display=display.pane)
-
 // Money flow: where each candle closed within its range (+1 = closed on the high,
 // -1 = closed on the low), optionally volume-weighted, averaged over mfLength bars
 candlePressure = high > low ? (close - open) / (high - low) : 0.0
 relVolume = ta.sma(volume, mfLength)
 volWeight = mfUseVolume and relVolume > 0 ? math.min(volume / relVolume, 3.0) : 1.0
 moneyFlow = ta.sma(candlePressure * nz(volWeight, 1.0), mfLength) * mfMult
+
+// Clean: money flow is a soft wash BEHIND the wave lines
+plot(isClean and showMoneyFlow ? moneyFlow : na, "Money Flow (Clean)", color=moneyFlow >= 0 ? color.new(flow_bull, 78) : color.new(flow_bear, 78), style=plot.style_area, display=display.pane)
+
+// Classic: MC-style layering - light fast wave underneath, dark slow wave on top
+plot(isClean ? na : wt1, "Fast Wave", color=color.new(wave_fast, 5), style=plot.style_area, display=display.pane)
+plot(isClean ? na : wt2, "Slow Wave", color=color.new(wave_slow, 8), style=plot.style_area, display=display.pane)
+
+// Leading edge doubles as the RSI cue: red while overbought, green while oversold
+rsiCue = ta.rsi(close, rsiCueLen)
+rsiHot = rsiCueStyle == "Wave Edge" and (rsiCue > rsiOB or rsiCue < rsiOS)
+edgeColor = rsiCueStyle == "Wave Edge" and rsiCue > rsiOB ? rsi_ob : rsiCueStyle == "Wave Edge" and rsiCue < rsiOS ? rsi_os : #9AD3FF
+plot(isClean ? na : wt1, "Fast Wave Edge", color=color.new(#9AD3FF, 0), linewidth=1)
+plot(not isClean and rsiHot ? wt1 : na, "RSI Edge", color=color.new(edgeColor, 0), linewidth=2, style=plot.style_linebr, display=display.pane)
+
+// Clean: slow wave as a thin deep-blue line, fast wave as a bright line with a soft glow
+clean_fast = rsiHot ? edgeColor : #4DA3FF
+plot(isClean ? wt2 : na, "Slow Wave (Clean)", color=color.new(#3B5FC4, 0), linewidth=2, display=display.pane)
+plot(isClean ? wt1 : na, "Fast Wave Glow", color=color.new(clean_fast, 82), linewidth=7, display=display.pane)
+plot(isClean ? wt1 : na, "Fast Wave (Clean)", color=color.new(clean_fast, 0), linewidth=2, display=display.pane)
+
+// Classic: money flow on top of the wave areas
 mfColor = moneyFlow >= 0 ? color.new(flow_bull, 20) : color.new(flow_bear, 20)
-plot(showMoneyFlow ? moneyFlow : na, "Money Flow", color=mfColor, style=plot.style_area)
+plot(not isClean and showMoneyFlow ? moneyFlow : na, "Money Flow", color=mfColor, style=plot.style_area)
 
 // Bright yellow momentum on top, MC-style (lightly smoothed so it doesn't flicker)
 momentumDisplay = ta.ema(momentum, 3) * momScale
-plot(showMomentum ? momentumDisplay : na, "Momentum", color=color.new(momentum_color, 8), style=plot.style_area, display=display.pane)
+plot(showMomentum and (not isClean or cleanYellow) ? momentumDisplay : na, "Momentum", color=color.new(momentum_color, 8), style=plot.style_area, display=display.pane)
 
 
 // Capital flow regime strip along the bottom - 3 brightness steps: weak / moderate / strong
 stripTransp = conviction >= 0.5 ? 0 : conviction >= 0.2 ? 35 : 65
 stripColor = flowBull ? color.new(flow_bull, stripTransp) : flowBear ? color.new(flow_bear, stripTransp) : color.new(level_color, 70)
-plot(showFlowStrip ? -104 : na, "Capital Flow Strip", color=stripColor, style=plot.style_columns, histbase=-112, display=display.pane)
+plot(showFlowStrip and not isClean ? -104 : na, "Capital Flow Strip", color=stripColor, style=plot.style_columns, histbase=-112, display=display.pane)
+// Clean: one continuous band that only changes shade when conviction changes step
+// Smoothed score + hysteresis so the band doesn't flicker bar to bar
+bandScore = ta.ema(flowScore, 8)
+var int bandStep = 0   // -3..+3: strong/moderate/weak bear, neutral, weak/moderate/strong bull
+rawStep = bandScore >= 0.5 ? 3 : bandScore >= 0.2 ? 2 : bandScore > 0.08 ? 1 : bandScore <= -0.5 ? -3 : bandScore <= -0.2 ? -2 : bandScore < -0.08 ? -1 : 0
+if rawStep == rawStep[1] and rawStep == rawStep[2]   // new shade must hold for 3 bars
+    bandStep := rawStep
+cleanStripColor = bandStep > 0 ? color.new(flow_bull, bandStep == 3 ? 10 : bandStep == 2 ? 45 : 72) :
+     bandStep < 0 ? color.new(flow_bear, bandStep == -3 ? 10 : bandStep == -2 ? 45 : 72) : color.new(level_color, 78)
+pBandTop = plot(showFlowStrip and isClean ? -101 : na, "Flow Band Top", color=na, display=display.pane, editable=false)
+pBandBot = plot(showFlowStrip and isClean ? -115 : na, "Flow Band Bottom", color=na, display=display.pane, editable=false)
+fill(pBandTop, pBandBot, color=cleanStripColor, title="Capital Flow Band")
 
 // RSI cue (Dots style): small faint dots riding on the fast wave
 plotshape(rsiCueStyle == "Dots" and rsiCue > rsiOB ? wt1 : na, "RSI Overbought", shape.circle, location.absolute, color.new(rsi_ob, 45), size=size.auto, display=display.pane)
@@ -646,8 +681,9 @@ fill(pStochK, pStochD, color=stochKVal > stochDVal ? color.new(flow_bull, 55) : 
 
 // Each dot is drawn twice - a dark disc one size up, then the colour on top - for an outlined look
 dot_outline = color.new(#0B0E1A, 0)
-smallUp = showSmallDots and crossUp and math.abs(wt2) >= dotMinLevel and not longSetup
-smallDn = showSmallDots and crossDn and math.abs(wt2) >= dotMinLevel and not shortSetup
+dotLevel = isClean ? math.max(dotMinLevel, 45) : dotMinLevel
+smallUp = showSmallDots and crossUp and math.abs(wt2) >= dotLevel and not longSetup
+smallDn = showSmallDots and crossDn and math.abs(wt2) >= dotLevel and not shortSetup
 setupLong = longSetup and not longAPlus
 setupShort = shortSetup and not shortAPlus
 
@@ -663,8 +699,10 @@ plotshape(longAPlus or shortAPlus ? wt2 : na, "A+ Dot Outline", shape.circle, lo
 plotshape(longAPlus ? wt2 : na, "A+ Long", shape.circle, location.absolute, dot_aplus_long, size=size.normal)
 plotshape(shortAPlus ? wt2 : na, "A+ Short", shape.diamond, location.absolute, dot_aplus_short, size=size.normal)
 
-plotshape(showTPMarks and tp1Hit ? wt1 : na, "TP1", shape.labeldown, location.absolute, color.new(tp_color, 20), size=size.tiny, text="TP1", textcolor=color.black)
-plotshape(showTPMarks and tp2Hit ? wt1 : na, "TP2", shape.labeldown, location.absolute, color.new(tp_color, 0), size=size.tiny, text="TP2", textcolor=color.black)
+tpBox = isClean ? color.new(tp_color, 100) : color.new(tp_color, 20)
+tpText = isClean ? color.new(#E6E9EF, 0) : color.black
+plotshape(showTPMarks and tp1Hit ? wt1 : na, "TP1", shape.labeldown, location.absolute, tpBox, size=size.tiny, text="TP1", textcolor=tpText)
+plotshape(showTPMarks and tp2Hit ? wt1 : na, "TP2", shape.labeldown, location.absolute, tpBox, size=size.tiny, text="TP2", textcolor=tpText)
 plotshape(showTPMarks and flowExit ? wt1 : na, "Flow Exit", shape.xcross, location.absolute, exit_color, size=size.tiny)
 
 plotshape(showDivergence and bullDiv ? pivotLow : na, "Bull Divergence", shape.triangleup, location.absolute, div_bull, size=size.tiny, offset=-2, text="D", textcolor=div_bull)
@@ -679,9 +717,19 @@ boxPos = switch labelPos
     "Bottom Left" => position.bottom_left
     "Top Left" => position.top_left
     => position.bottom_right
-var table statusBox = table.new(boxPos, 1, 3, border_width=0)
+var table statusBox = table.new(boxPos, 3, 3, border_width=0)
+var table cardBox = table.new(boxPos, 3, 1, bgcolor=color.new(#131722, 0), frame_color=color.new(#363A45, 0), frame_width=1, border_color=color.new(#363A45, 0), border_width=1)
 
-if barstate.islast and showLabel
+if barstate.islast and showLabel and isClean
+    scoreTxt = (flowScore >= 0 ? "+" : "") + str.tostring(math.round(flowScore * 100)) + "%"
+    stateTxt = math.abs(flowScore) > 0.7 ? "Full Send" : math.abs(flowScore) > 0.5 ? "Standard" : math.abs(flowScore) > 0.2 ? "Lean" : "Neutral"
+    scoreCol = flowScore > 0.05 ? flow_bull : flowScore < -0.05 ? flow_bear : #B2B5BE
+    stateCol = math.abs(flowScore) > 0.2 ? #FF9F43 : #B2B5BE
+    table.cell(cardBox, 0, 0, "Flow score\n" + scoreTxt, text_color=scoreCol, text_size=size.small, text_halign=text.align_left)
+    table.cell(cardBox, 1, 0, "Confluence\n" + str.tostring(math.max(bullCount, bearCount)) + " / 8", text_color=#E6E9EF, text_size=size.small, text_halign=text.align_left)
+    table.cell(cardBox, 2, 0, "State\n" + stateTxt, text_color=stateCol, text_size=size.small, text_halign=text.align_left)
+
+if barstate.islast and showLabel and not isClean
     flowText = (flowBull ? "CAPITAL FLOW BULL " : flowBear ? "CAPITAL FLOW BEAR " : "CAPITAL FLOW NEUTRAL ") +
          str.tostring(math.round(flowScore * 100)) + "% · " + str.tostring(math.max(bullCount, bearCount)) + "/8"
     zoneText = wt1 <= -setupEdge ? "at lower edge" : wt1 >= setupEdge ? "at upper edge" : wt1 <= -obosLevel ? "oversold" : wt1 >= obosLevel ? "overbought" : "mid-range"

@@ -1,0 +1,1431 @@
+// This Pine Script® code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © MarkTaylor
+// Capital Flow Filter v4.6.0
+// v4.6.0: adaptive (volatility-scaled) thresholds on Scalp (Auto), optional closed-market neutral,
+//         Scalp mode: macro as 1H/4H/1D backdrop + crypto order flow (OI, Coinbase premium, perp basis)
+// v4.5.2: Market presets (Auto / Crypto / Equities / Metals / Forex / Custom) so the
+//         capital flow basket fits the instrument; flips need a threshold + confirmation bars
+// v4.5.1: non-repainting higher-timeframe data, toned-down alert wording,
+//         manipulation alerts fire once per event, Alert Message Style wired up,
+//         cooldown only reset by alerts that are switched on
+
+//@version=6
+indicator("CF Lab Export (temporary)", shorttitle="CF Lab Export", overlay=true, max_labels_count=500)
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// INPUTS - MODE
+// ═══════════════════════════════════════════════════════════════════════════════
+
+tradingModeInput = input.string("Auto", "Trading Mode", 
+     options=["Auto", "Swing", "Intraday", "Scalp"], 
+     group="Mode",
+     tooltip="Auto: Detects chart timeframe automatically\nSwing: 4H/D/W data, slower signals\nIntraday: 15m/1H/4H data, faster signals\nScalp: 5m/15m/1H data (macro 1H/4H/1D backdrop), fastest signals")
+
+// Auto-detect mode based on chart timeframe
+// 1m-15m = Scalp | 30m-4H = Intraday | Daily+ = Swing
+autoDetectedMode = timeframe.in_seconds() <= 900 ? "Scalp" : timeframe.in_seconds() <= 14400 ? "Intraday" : "Swing"
+
+tradingMode = tradingModeInput == "Auto" ? autoDetectedMode : tradingModeInput
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// INPUTS - DATA SOURCES
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// Market preset: picks the 8 capital flow inputs (and which way each one counts) for the
+// instrument on the chart. Variable names below are slots - src_dxy is "macro 1", etc.
+marketInput = input.string("Auto", "Market", options=["Auto", "Crypto", "Equities", "Metals", "Forex", "Custom"], group="Market",
+     tooltip="Auto picks the basket from the chart's instrument.\nCrypto: DXY, VIX, Gold, US10Y | BTC, ETH | BTC.D, TOTAL3\nEquities: DXY, VIX, US10Y, HYG | SPY, QQQ | IWM, XLU\nMetals: DXY, US10Y, VIX, SPX | Gold, Silver | GDX, TIP\nForex: US10Y, VIX, SPX, Gold | base & quote currency index | AUDJPY, Oil\nCustom: the 8 symbols below (macro and slot 7 count inverted)")
+
+orderFlowInput = input.bool(true, "Scalp Order Flow (crypto)", group="Market",
+     tooltip="On Scalp mode, crypto swaps its leader/sector inputs for fast order flow: open interest x price, Coinbase premium and perp basis (Binance perps). Macro becomes a 1H/4H/1D backdrop at lower weight")
+
+cust_1 = input.symbol("TVC:DXY", "Macro 1", group="Market - Custom Symbols")
+cust_2 = input.symbol("TVC:VIX", "Macro 2", group="Market - Custom Symbols")
+cust_3 = input.symbol("OANDA:XAUUSD", "Macro 3", group="Market - Custom Symbols")
+cust_4 = input.symbol("TVC:US10Y", "Macro 4", group="Market - Custom Symbols")
+cust_5 = input.symbol("BINANCE:BTCUSDT", "Leader 1", group="Market - Custom Symbols")
+cust_6 = input.symbol("BINANCE:ETHUSDT", "Leader 2", group="Market - Custom Symbols")
+cust_7 = input.symbol("CRYPTOCAP:BTC.D", "Sector 1 (inverted)", group="Market - Custom Symbols")
+cust_8 = input.symbol("CRYPTOCAP:TOTAL3", "Sector 2", group="Market - Custom Symbols")
+
+mktTick = str.upper(syminfo.ticker)
+isMetalSym = str.contains(mktTick, "XAU") or str.contains(mktTick, "XAG") or str.contains(mktTick, "GOLD") or str.contains(mktTick, "SILVER") or mktTick == "GLD" or mktTick == "SLV" or ((str.startswith(mktTick, "GC") or str.startswith(mktTick, "SI") or str.startswith(mktTick, "MGC")) and str.contains(mktTick, "!"))
+autoMarket = isMetalSym ? "Metals" : syminfo.type == "crypto" ? "Crypto" : syminfo.type == "forex" ? "Forex" : "Equities"
+market = marketInput == "Auto" ? autoMarket : marketInput
+
+ccyIndex(simple string c) =>
+    c == "EUR" ? "TVC:EXY" : c == "GBP" ? "TVC:BXY" : c == "JPY" ? "TVC:JXY" : c == "CHF" ? "TVC:SXY" : c == "CAD" ? "TVC:CXY" : c == "AUD" ? "TVC:AXY" : c == "NZD" ? "TVC:ZXY" : "TVC:DXY"
+
+fxBase = syminfo.basecurrency
+fxQuote = syminfo.currency
+usdBase = fxBase == "USD"
+
+src_dxy = switch market
+    "Equities" => "TVC:DXY"
+    "Metals" => "TVC:DXY"
+    "Forex" => "TVC:US10Y"
+    "Custom" => cust_1
+    => "TVC:DXY"
+src_vix = switch market
+    "Metals" => "TVC:US10Y"
+    "Forex" => "TVC:VIX"
+    "Custom" => cust_2
+    => "TVC:VIX"
+src_gold = switch market
+    "Equities" => "TVC:US10Y"
+    "Metals" => "TVC:VIX"
+    "Forex" => "SP:SPX"
+    "Custom" => cust_3
+    => "OANDA:XAUUSD"
+src_yields = switch market
+    "Equities" => "AMEX:HYG"
+    "Metals" => "SP:SPX"
+    "Forex" => "OANDA:XAUUSD"
+    "Custom" => cust_4
+    => "TVC:US10Y"
+src_btc = switch market
+    "Equities" => "AMEX:SPY"
+    "Metals" => "OANDA:XAUUSD"
+    "Forex" => ccyIndex(fxBase)
+    "Custom" => cust_5
+    => "BINANCE:BTCUSDT"
+src_eth = switch market
+    "Equities" => "NASDAQ:QQQ"
+    "Metals" => "OANDA:XAGUSD"
+    "Forex" => ccyIndex(fxQuote)
+    "Custom" => cust_6
+    => "BINANCE:ETHUSDT"
+src_btcd = switch market
+    "Equities" => "AMEX:IWM"
+    "Metals" => "AMEX:GDX"
+    "Forex" => "OANDA:AUDJPY"
+    "Custom" => cust_7
+    => "CRYPTOCAP:BTC.D"
+src_total3 = switch market
+    "Equities" => "AMEX:XLU"
+    "Metals" => "AMEX:TIP"
+    "Forex" => "TVC:USOIL"
+    "Custom" => cust_8
+    => "CRYPTOCAP:TOTAL3"
+
+// true = the input rising is BEARISH for this instrument
+inv_1 = market == "Forex" ? not usdBase : true                 // DXY / US10Y: strong dollar or yields = headwind
+inv_2 = true                                                     // VIX (Metals: US10Y)
+inv_3 = market == "Metals" ? false : market == "Forex" ? false : true   // Metals: VIX up = safe-haven bid; Forex: SPX up = risk-on
+inv_4 = market == "Equities" ? false : market == "Forex" ? usdBase : true // Equities: HYG up = credit risk-on; Forex: gold up = weak dollar
+inv_5 = false                                                    // leader 1 (Forex: base currency index)
+inv_6 = market == "Forex"                                        // Forex: quote currency strength = pair down
+inv_7 = market == "Crypto" or market == "Custom"                 // BTC.D up = alts down; IWM/GDX/AUDJPY up = risk-on
+inv_8 = market == "Equities"                                     // XLU (utilities) up = defensive rotation
+
+// Panel labels
+lbl_1 = market == "Forex" ? "US10Y" : "DXY"
+lbl_2 = market == "Metals" ? "US10Y" : "VIX"
+lbl_3 = market == "Equities" ? "US10Y" : market == "Metals" ? "VIX" : market == "Forex" ? "SPX" : "GOLD"
+lbl_4 = market == "Equities" ? "HYG" : market == "Metals" ? "SPX" : market == "Forex" ? "GOLD" : "US10Y"
+lbl_5 = market == "Equities" ? "SPY" : market == "Metals" ? "GOLD" : market == "Forex" ? fxBase : market == "Custom" ? "L1" : "BTC"
+lbl_6 = market == "Equities" ? "QQQ" : market == "Metals" ? "SILVER" : market == "Forex" ? fxQuote : market == "Custom" ? "L2" : "ETH"
+lbl_7 = market == "Equities" ? "IWM" : market == "Metals" ? "GDX" : market == "Forex" ? "AUDJPY" : market == "Custom" ? "S1" : "BTC.D"
+lbl_8 = market == "Equities" ? "XLU" : market == "Metals" ? "TIP" : market == "Forex" ? "OIL" : market == "Custom" ? "S2" : "TOTAL3"
+grp_2 = market == "Equities" ? "LEADERS" : market == "Metals" ? "METALS" : market == "Forex" ? "CURRENCIES" : market == "Custom" ? "LEADERS" : "CRYPTO"
+grp_3 = market == "Equities" ? "BREADTH" : market == "Metals" ? "MINERS / REAL" : market == "Forex" ? "RISK" : "SECTORS"
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// INPUTS - KELTNER CLOUD
+// ═══════════════════════════════════════════════════════════════════════════════
+
+keltnerLength = input.int(20, "Keltner Length", minval=5, maxval=50, group="Cloud")
+keltnerMult = input.float(2.0, "Keltner Multiplier", minval=0.5, maxval=5.0, step=0.1, group="Cloud")
+showKeltner = input.bool(true, "Show Keltner Lines", group="Cloud")
+cloudIntensity = input.float(1.0, "Cloud Intensity", minval=0.1, maxval=2.0, step=0.1, group="Cloud")
+useThickness = input.bool(true, "Cloud Thickness = Conviction", group="Cloud")
+useBgColor = input.bool(false, "Tint Chart Background", group="Cloud", tooltip="Subtle green/red background tint based on bias")
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// INPUTS - SETTINGS
+// ═══════════════════════════════════════════════════════════════════════════════
+
+flowLength = input.int(14, "Flow Calculation Length", minval=5, maxval=50, group="Settings")
+thresholdMode = input.string("Auto", "Signal Threshold", options=["Auto", "Adaptive", "Fixed"], group="Settings",
+     tooltip="Auto: adaptive on Scalp, fixed +/-0.5% on Intraday/Swing (tested better there)\nAdaptive: judge each input against its own typical move\nFixed: +/-0.5% flow (v4.5 behaviour)")
+adaptiveThreshold = thresholdMode == "Adaptive" or (thresholdMode == "Auto" and tradingMode == "Scalp")
+neutralWhenClosed = input.bool(false, "Neutral When Market Closed", group="Settings",
+     tooltip="Count DXY/VIX/yields as neutral while their market is shut (weekends, overnight).\nOff = keep their last reading (tested better)")
+adaptiveLevel = input.float(0.5, "Adaptive Sensitivity", minval=0.2, maxval=1.5, step=0.1, group="Settings",
+     tooltip="How big a move counts as a signal, as a multiple of the input's typical move. Lower = more signals")
+lookbackMode = input.string("Auto", "Lookback Mode", options=["Auto", "Manual"], group="Settings",
+     tooltip="Auto: Adjusts lookback based on mode & timeframe to maintain consistent time coverage\nManual: Use fixed lookback value")
+lookbackManual = input.int(100, "Manual Lookback", minval=20, maxval=500, group="Settings")
+showFlipDots = input.bool(true, "Show Flip Dots", group="Settings")
+flipLevel = input.float(0.2, "Flip Threshold", minval=0.05, maxval=0.7, step=0.05, group="Settings",
+     tooltip="The score must pass +/- this level to flip direction. Higher = fewer, more reliable flips")
+flipConfirm = input.int(2, "Flip Confirmation (bars)", minval=1, maxval=10, group="Settings",
+     tooltip="Bars the score must stay past the threshold before the flip counts")
+smoothingMode = input.string("Auto", "Smoothing", options=["Auto", "Manual"], group="Settings")
+smoothingManual = input.int(5, "Manual Smoothing", minval=1, maxval=20, group="Settings")
+
+// Performance tracking lookback
+perfLookbackMode = input.string("Auto", "Performance Lookback", options=["Auto", "Last 20", "Last 50", "Last 100", "All Time"], group="Settings",
+     tooltip="Auto: Scalp=20, Intraday=50, Swing=100 signals\nOr choose a fixed lookback for win rate calculation")
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// INPUTS - SESSION FILTER
+// ═══════════════════════════════════════════════════════════════════════════════
+
+useSessionFilter = input.bool(false, "Enable Session Filter", group="Session", tooltip="Only for Intraday/Scalp modes")
+sessionChoice = input.string("All", "Preferred Session", options=["All", "Asia", "London", "New York", "London+NY"], group="Session")
+dimOutsideSession = input.bool(true, "Dim Signals Outside Session", group="Session")
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// INPUTS - PANEL
+// ═══════════════════════════════════════════════════════════════════════════════
+
+showTable = input.bool(true, "Show Panel", group="Panel")
+tablePosition = input.string("Top Right", "Panel Position", 
+     options=["Top Left", "Top Center", "Top Right", "Bottom Left", "Bottom Center", "Bottom Right"], 
+     group="Panel")
+tableSize = input.string("Normal", "Panel Size",
+     options=["Tiny", "Small", "Normal", "Large", "Huge"], 
+     group="Panel")
+showExtendedInfo = input.bool(true, "Show Extended Info", group="Panel", tooltip="Confluence, momentum, time in state")
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// INPUTS - PERSONALITY (The Fun Stuff)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+beastModeAlerts = input.bool(true, "🔥 Beast Mode Alerts", group="Personality", 
+     tooltip="John Carlton-style alerts that grab you by the throat and don't let go. Irreverent, fun, and impossible to ignore.")
+showManipWarning = input.bool(true, "⚠️ Market Manipulation Warning", group="Personality",
+     tooltip="Detects potential manipulation: volume anomalies, wick hunting, divergence spikes")
+manipSensitivity = input.string("Normal", "Manipulation Sensitivity", options=["Relaxed", "Normal", "Paranoid"], group="Personality")
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// INPUTS - ALERTS
+// ═══════════════════════════════════════════════════════════════════════════════
+
+alertStyle = input.string("Detailed", "Alert Message Style", options=["Simple", "Detailed", "Webhook"], group="Alerts")
+alertCooldown = input.int(5, "Alert Cooldown (bars)", minval=1, maxval=50, group="Alerts", tooltip="Minimum bars between alerts")
+
+// Score alerts
+alertFullSend = input.bool(true, "Full Send Alerts (±70%)", group="Alerts - Score")
+alertStandard = input.bool(true, "Standard Alerts (±50%)", group="Alerts - Score")
+alertLean = input.bool(false, "Lean Alerts (±20%)", group="Alerts - Score")
+
+// Flip alerts
+alertFlip = input.bool(true, "Pressure Flip Alerts", group="Alerts - Flip")
+
+// Confluence alerts
+alertFullConfluence = input.bool(false, "Full Confluence (8/8)", group="Alerts - Confluence")
+alertMacroAligned = input.bool(true, "Macro Aligned (4/4)", group="Alerts - Confluence")
+alertCryptoLeaders = input.bool(false, "Crypto Leaders Aligned", group="Alerts - Confluence")
+
+// Divergence alerts
+alertDivergence = input.bool(false, "Divergence Alerts", group="Alerts - Advanced")
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// INPUTS - VOLUME CANDLES
+// ═══════════════════════════════════════════════════════════════════════════════
+
+useVolumeCandles = input.bool(false, "Color Candles by Volume", group="Volume Candles")
+volLookback = input.int(20, "Volume Lookback", minval=5, maxval=100, group="Volume Candles")
+highVolThreshold = input.float(1.5, "High Volume Threshold", minval=1.1, maxval=3.0, step=0.1, group="Volume Candles")
+veryHighVolThreshold = input.float(2.0, "Very High Volume Threshold", minval=1.5, maxval=5.0, step=0.1, group="Volume Candles")
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// COLORS
+// ═══════════════════════════════════════════════════════════════════════════════
+
+bullish_strong = #00ffaa
+bearish_strong = #ff4466
+neutral_color = #888888
+keltner_color = #ffcc00
+accent_gold = #f0b90b
+accent_blue = #3b82f6
+accent_orange = #f59e0b
+accent_red = #ef4444
+
+bg_dark = color.new(#0d1117, 10)
+bg_medium = color.new(#161b22, 10)
+bg_light = color.new(#21262d, 10)
+text_primary = #e6edf3
+text_secondary = #8b949e
+text_muted = #6e7681
+
+vol_bull_very_high = #00bfff
+vol_bull_high = #00d4aa
+vol_bear_very_high = #ff00ff
+vol_bear_high = #ff6b9d
+vol_low = #4a4a4a
+vol_normal_bull = #26a69a
+vol_normal_bear = #ef5350
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// SESSION DETECTION
+// ═══════════════════════════════════════════════════════════════════════════════
+
+inAsia = (hour >= 0 and hour < 8)
+inLondon = (hour >= 8 and hour < 16)
+inNewYork = (hour >= 13 and hour < 21)
+inLondonNY = inLondon or inNewYork
+
+inPreferredSession = switch sessionChoice
+    "All" => true
+    "Asia" => inAsia
+    "London" => inLondon
+    "New York" => inNewYork
+    "London+NY" => inLondonNY
+    => true
+
+sessionActive = not useSessionFilter or inPreferredSession
+sessionMult = sessionActive ? 1.0 : (dimOutsideSession ? 0.5 : 1.0)
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// TIMEFRAME SELECTION BY MODE
+// ═══════════════════════════════════════════════════════════════════════════════
+
+tf1 = switch tradingMode
+    "Swing" => "240"
+    "Intraday" => "15"
+    "Scalp" => "5"
+    => "240"
+
+tf2 = switch tradingMode
+    "Swing" => "1D"
+    "Intraday" => "60"
+    "Scalp" => "15"
+    => "1D"
+
+tf3 = switch tradingMode
+    "Swing" => "1W"
+    "Intraday" => "240"
+    "Scalp" => "60"
+    => "1W"
+
+// Scalp: macro moves too slowly for 5m data - read it as a 1H/4H/1D backdrop instead
+mtf1 = tradingMode == "Scalp" ? "60" : tf1
+mtf2 = tradingMode == "Scalp" ? "240" : tf2
+mtf3 = tradingMode == "Scalp" ? "1D" : tf3
+
+tf1_weight = 1.0
+tf2_weight = 2.0
+tf3_weight = 3.0
+totalTfWeight = tf1_weight + tf2_weight + tf3_weight
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// AUTO LOOKBACK CALCULATION
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// Scale lookback to maintain consistent time coverage across modes
+// Swing: ~17 days coverage | Intraday: ~4 days | Scalp: ~2 days
+// Also adjusts for chart timeframe within each mode
+
+autoLookback = switch tradingMode
+    "Swing" => timeframe.in_seconds() <= 3600 ? 200 :      // 1H or less: more bars needed
+               timeframe.in_seconds() <= 14400 ? 100 :     // 4H: standard
+               timeframe.in_seconds() <= 86400 ? 50 :      // Daily: fewer bars
+               25                                           // Weekly+: minimal
+    "Intraday" => timeframe.in_seconds() <= 900 ? 400 :    // 15m or less
+                  timeframe.in_seconds() <= 3600 ? 200 :   // 1H
+                  100                                       // 4H
+    "Scalp" => timeframe.in_seconds() <= 300 ? 600 :       // 5m or less
+               timeframe.in_seconds() <= 900 ? 400 :       // 15m
+               200                                          // 1H
+    => 100
+
+lookback = lookbackMode == "Auto" ? autoLookback : lookbackManual
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// AUTO SMOOTHING CALCULATION
+// ═══════════════════════════════════════════════════════════════════════════════
+
+baseSmoothing = switch tradingMode
+    "Swing" => timeframe.in_seconds() < 3600 ? 8 : timeframe.in_seconds() < 14400 ? 5 : timeframe.in_seconds() < 86400 ? 3 : 1
+    "Intraday" => timeframe.in_seconds() < 900 ? 5 : timeframe.in_seconds() < 3600 ? 3 : 2
+    "Scalp" => timeframe.in_seconds() < 300 ? 3 : 2
+    => 3
+
+smoothing = smoothingMode == "Auto" ? baseSmoothing : smoothingManual
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// HELPER FUNCTIONS
+// ═══════════════════════════════════════════════════════════════════════════════
+
+getTablePosition() =>
+    switch tablePosition
+        "Top Left" => position.top_left
+        "Top Center" => position.top_center
+        "Top Right" => position.top_right
+        "Bottom Left" => position.bottom_left
+        "Bottom Center" => position.bottom_center
+        "Bottom Right" => position.bottom_right
+        => position.top_right
+
+getTextSize(string baseSize) =>
+    switch tableSize
+        "Tiny" => size.tiny
+        "Small" => baseSize == "normal" ? size.small : size.tiny
+        "Normal" => baseSize == "normal" ? size.normal : size.small
+        "Large" => baseSize == "normal" ? size.large : size.normal
+        "Huge" => baseSize == "normal" ? size.huge : size.large
+        => baseSize == "normal" ? size.normal : size.small
+
+calcFlow(float src, int len) =>
+    roc = ta.roc(src, len)
+    ta.ema(roc, len)
+
+// Adaptive: flow as a multiple of the symbol's own typical move, so one threshold fits every
+// timeframe and market. Fixed: raw % flow (v4.5 behaviour).
+calcFlowOffset(int len, int off) =>
+    f = calcFlow(close, len)
+    scale = ta.sma(math.abs(ta.roc(close, len)), 100)
+    v = adaptiveThreshold ? (scale > 0 ? f / scale : 0.0) : f
+    [v[off], time[off]]
+
+// Non-repainting request: higher timeframes use the last CLOSED bar ([1] + lookahead_on),
+// so history and live bars show the same values. Lower timeframes are already closed bars.
+// Optionally, closed markets (weekends, outside US hours) count as neutral instead of their last reading.
+getFlow(simple string sym, simple string tf) =>
+    bool htf = timeframe.in_seconds(tf) >= timeframe.in_seconds()
+    int off = htf ? 1 : 0
+    [f, t] = request.security(sym, tf, calcFlowOffset(flowLength, off), lookahead=htf ? barmerge.lookahead_on : barmerge.lookahead_off, ignore_invalid_symbol=true)
+    stale = neutralWhenClosed and (na(t) or time - t > (3 * timeframe.in_seconds(tf) + timeframe.in_seconds()) * 1000)
+    stale ? 0.0 : nz(f)
+
+getSignal(float flow, bool invert) =>
+    threshold = adaptiveThreshold ? adaptiveLevel : 0.5
+    rawSignal = flow > threshold ? 1.0 : flow < -threshold ? -1.0 : 0.0
+    invert ? -rawSignal : rawSignal
+
+calcCorrelation(float signal, int len) =>
+    // Threshold for combined multi-TF signals (0.3 = need 30%+ agreement)
+    // This filters out weak/conflicting signals that produce noisy correlation
+    signalThreshold = 0.3
+
+    priceUp = close > close[1]
+    signalBull = signal > signalThreshold
+    signalBear = signal < -signalThreshold
+    signalActive = math.abs(signal) > signalThreshold
+
+    correctBull = signalBull and priceUp ? 1.0 : 0.0
+    correctBear = signalBear and not priceUp ? 1.0 : 0.0
+    correct = correctBull + correctBear
+    active = signalActive ? 1.0 : 0.0
+
+    correctSum = math.sum(correct, len)
+    activeSum = math.sum(active, len)
+
+    activeSum > 10 ? (correctSum / activeSum) * 100 : 50.0
+
+calcEdge(float corr) =>
+    math.abs(corr - 50) / 50
+
+calcMultiplier(float corr) =>
+    corr >= 50 ? 1.0 : -1.0
+
+calcWeight(float corr) =>
+    0.2 + 0.8 * calcEdge(corr)
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// ASSET TYPE DETECTION
+// ═══════════════════════════════════════════════════════════════════════════════
+
+tickerUpper = str.upper(syminfo.ticker)
+isBTC = str.contains(tickerUpper, "BTC") and not str.contains(tickerUpper, "BTC.D")
+isETH = str.contains(tickerUpper, "ETH")
+isMajor = isBTC or isETH
+isAlt = not isMajor
+
+macroMult = (market != "Crypto" ? 1.0 : isBTC ? 1.2 : isETH ? 1.1 : 0.9) * (tradingMode == "Scalp" ? 0.6 : 1.0)
+cryptoMult = market != "Crypto" ? 1.0 : isBTC ? 1.0 : isETH ? 1.1 : 1.0
+sectorMult = market != "Crypto" ? 1.0 : isBTC ? 0.8 : isETH ? 1.0 : 1.3
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// DATA RETRIEVAL
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// MACRO
+dxy_tf1 = getFlow(src_dxy, mtf1)
+dxy_tf2 = getFlow(src_dxy, mtf2)
+dxy_tf3 = getFlow(src_dxy, mtf3)
+
+vix_tf1 = getFlow(src_vix, mtf1)
+vix_tf2 = getFlow(src_vix, mtf2)
+vix_tf3 = getFlow(src_vix, mtf3)
+
+gold_tf1 = getFlow(src_gold, mtf1)
+gold_tf2 = getFlow(src_gold, mtf2)
+gold_tf3 = getFlow(src_gold, mtf3)
+
+yields_tf1 = getFlow(src_yields, mtf1)
+yields_tf2 = getFlow(src_yields, mtf2)
+yields_tf3 = getFlow(src_yields, mtf3)
+
+// CRYPTO
+btc_tf1 = getFlow(src_btc, tf1)
+btc_tf2 = getFlow(src_btc, tf2)
+btc_tf3 = getFlow(src_btc, tf3)
+
+eth_tf1 = getFlow(src_eth, tf1)
+eth_tf2 = getFlow(src_eth, tf2)
+eth_tf3 = getFlow(src_eth, tf3)
+
+// SECTORS
+btcd_tf2 = getFlow(src_btcd, tf2)
+total3_tf2 = getFlow(src_total3, tf2)
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// SIGNAL GENERATION
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// MACRO - inverted (risk-off assets)
+sig_dxy_1 = getSignal(dxy_tf1, inv_1)
+sig_dxy_2 = getSignal(dxy_tf2, inv_1)
+sig_dxy_3 = getSignal(dxy_tf3, inv_1)
+
+sig_vix_1 = getSignal(vix_tf1, inv_2)
+sig_vix_2 = getSignal(vix_tf2, inv_2)
+sig_vix_3 = getSignal(vix_tf3, inv_2)
+
+sig_gold_1 = getSignal(gold_tf1, inv_3)
+sig_gold_2 = getSignal(gold_tf2, inv_3)
+sig_gold_3 = getSignal(gold_tf3, inv_3)
+
+sig_yields_1 = getSignal(yields_tf1, inv_4)
+sig_yields_2 = getSignal(yields_tf2, inv_4)
+sig_yields_3 = getSignal(yields_tf3, inv_4)
+
+// CRYPTO - direct (risk-on assets)
+sig_btc_1 = getSignal(btc_tf1, inv_5)
+sig_btc_2 = getSignal(btc_tf2, inv_5)
+sig_btc_3 = getSignal(btc_tf3, inv_5)
+
+sig_eth_1 = getSignal(eth_tf1, inv_6)
+sig_eth_2 = getSignal(eth_tf2, inv_6)
+sig_eth_3 = getSignal(eth_tf3, inv_6)
+
+// SECTORS
+sig_btcd = getSignal(btcd_tf2, inv_7)   // BTC.D up = alts down
+sig_total3 = getSignal(total3_tf2, inv_8)  // TOTAL3 up = alts up
+
+// Combined multi-TF signals (weighted average)
+sig_dxy = (sig_dxy_1 * tf1_weight + sig_dxy_2 * tf2_weight + sig_dxy_3 * tf3_weight) / totalTfWeight
+sig_vix = (sig_vix_1 * tf1_weight + sig_vix_2 * tf2_weight + sig_vix_3 * tf3_weight) / totalTfWeight
+sig_gold = (sig_gold_1 * tf1_weight + sig_gold_2 * tf2_weight + sig_gold_3 * tf3_weight) / totalTfWeight
+sig_yields = (sig_yields_1 * tf1_weight + sig_yields_2 * tf2_weight + sig_yields_3 * tf3_weight) / totalTfWeight
+
+sig_btc = (sig_btc_1 * tf1_weight + sig_btc_2 * tf2_weight + sig_btc_3 * tf3_weight) / totalTfWeight
+sig_eth = (sig_eth_1 * tf1_weight + sig_eth_2 * tf2_weight + sig_eth_3 * tf3_weight) / totalTfWeight
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// CORRELATION & WEIGHTING (using auto/manual lookback)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// SCALP ORDER FLOW (crypto) - replaces the leader/sector inputs on Scalp mode
+// ═══════════════════════════════════════════════════════════════════════════════
+
+useOrderFlow = market == "Crypto" and tradingMode == "Scalp" and orderFlowInput
+ofBase = syminfo.basecurrency
+ofSpot = "BINANCE:" + ofBase + "USDT"
+ofPerp = "BINANCE:" + ofBase + "USDT.P"
+ofOI = "BINANCE:" + ofBase + "USDT.P_OI"
+ofCB = "COINBASE:" + ofBase + "USD"
+
+normMove(float src, int len) =>
+    f = ta.ema(ta.roc(src, len), len)
+    scale = ta.sma(math.abs(ta.roc(src, len)), 100)
+    scale > 0 ? f / scale : 0.0
+
+spotClose = request.security(ofSpot, timeframe.period, close, ignore_invalid_symbol=true)
+perpClose = request.security(ofPerp, timeframe.period, close, ignore_invalid_symbol=true)
+cbClose = request.security(ofCB, timeframe.period, close, ignore_invalid_symbol=true)
+oiClose = request.security(ofOI, timeframe.period, close, ignore_invalid_symbol=true)
+
+ofLevel = adaptiveLevel
+priceMove = normMove(close, flowLength)
+oiMove = nz(normMove(oiClose, flowLength))
+premMove = nz(normMove(cbClose / spotClose, flowLength))
+basisMove = nz(normMove(perpClose / spotClose, flowLength))
+
+// Rising OI confirms the price direction (new positions opening); falling OI = positions closing, no conviction
+oiSig = oiMove > ofLevel ? (priceMove > ofLevel ? 1.0 : priceMove < -ofLevel ? -1.0 : 0.0) : 0.0
+premSig = premMove > ofLevel ? 1.0 : premMove < -ofLevel ? -1.0 : 0.0     // Coinbase paying up = US spot buying
+basisSig = basisMove > ofLevel ? 1.0 : basisMove < -ofLevel ? -1.0 : 0.0  // perps bid over spot = aggressive longs
+
+if useOrderFlow
+    sig_btc := oiSig
+    sig_eth := premSig
+    sig_btcd := basisSig
+
+lbl_5 := useOrderFlow ? "OI" : lbl_5
+lbl_6 := useOrderFlow ? "CB PREM" : lbl_6
+lbl_7 := useOrderFlow ? "BASIS" : lbl_7
+grp_2 := useOrderFlow ? "ORDER FLOW" : grp_2
+grp_3 := useOrderFlow ? "BASIS / ALTS" : grp_3
+
+corr_dxy = calcCorrelation(sig_dxy, lookback)
+corr_vix = calcCorrelation(sig_vix, lookback)
+corr_gold = calcCorrelation(sig_gold, lookback)
+corr_yields = calcCorrelation(sig_yields, lookback)
+corr_btc = calcCorrelation(sig_btc, lookback)
+corr_eth = calcCorrelation(sig_eth, lookback)
+corr_btcd = calcCorrelation(sig_btcd, lookback)
+corr_total3 = calcCorrelation(sig_total3, lookback)
+
+// Weights: 20% floor + 80% scaled by edge
+w_dxy = calcWeight(corr_dxy)
+w_vix = calcWeight(corr_vix)
+w_gold = calcWeight(corr_gold)
+w_yields = calcWeight(corr_yields)
+w_btc = calcWeight(corr_btc)
+w_eth = calcWeight(corr_eth)
+w_btcd = calcWeight(corr_btcd)
+w_total3 = calcWeight(corr_total3)
+
+// Multipliers: flip contra-indicators
+m_dxy = calcMultiplier(corr_dxy)
+m_vix = calcMultiplier(corr_vix)
+m_gold = calcMultiplier(corr_gold)
+m_yields = calcMultiplier(corr_yields)
+m_btc = calcMultiplier(corr_btc)
+m_eth = calcMultiplier(corr_eth)
+m_btcd = calcMultiplier(corr_btcd)
+m_total3 = calcMultiplier(corr_total3)
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// CONFLUENCE CALCULATION
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// Effective signals (with multiplier applied)
+eff_dxy = sig_dxy * m_dxy
+eff_vix = sig_vix * m_vix
+eff_gold = sig_gold * m_gold
+eff_yields = sig_yields * m_yields
+eff_btc = sig_btc * m_btc
+eff_eth = sig_eth * m_eth
+eff_btcd = sig_btcd * m_btcd
+eff_total3 = sig_total3 * m_total3
+
+// Count bullish/bearish signals
+macroBull = (eff_dxy > 0 ? 1 : 0) + (eff_vix > 0 ? 1 : 0) + (eff_gold > 0 ? 1 : 0) + (eff_yields > 0 ? 1 : 0)
+cryptoBull = (eff_btc > 0 ? 1 : 0) + (eff_eth > 0 ? 1 : 0)
+sectorBull = (eff_btcd > 0 ? 1 : 0) + (eff_total3 > 0 ? 1 : 0)
+bullCount = macroBull + cryptoBull + sectorBull
+
+macroBear = (eff_dxy < 0 ? 1 : 0) + (eff_vix < 0 ? 1 : 0) + (eff_gold < 0 ? 1 : 0) + (eff_yields < 0 ? 1 : 0)
+cryptoBear = (eff_btc < 0 ? 1 : 0) + (eff_eth < 0 ? 1 : 0)
+sectorBear = (eff_btcd < 0 ? 1 : 0) + (eff_total3 < 0 ? 1 : 0)
+bearCount = macroBear + cryptoBear + sectorBear
+
+// Category confluence (using values computed above)
+macroBullCount = macroBull
+macroBearCount = macroBear
+cryptoBullCount = cryptoBull
+cryptoBearCount = cryptoBear
+sectorBullCount = sectorBull
+sectorBearCount = sectorBear
+
+// Full alignment checks
+fullBullConfluence = bullCount == 8
+fullBearConfluence = bearCount == 8
+macroAlignedBull = macroBullCount == 4
+macroAlignedBear = macroBearCount == 4
+cryptoLeadersBull = cryptoBullCount == 2
+cryptoLeadersBear = cryptoBearCount == 2
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// FINAL SCORE CALCULATION
+// ═══════════════════════════════════════════════════════════════════════════════
+
+macroScore = (sig_dxy * m_dxy * w_dxy + sig_vix * m_vix * w_vix + 
+              sig_gold * m_gold * w_gold + sig_yields * m_yields * w_yields) * macroMult
+macroWeights = (w_dxy + w_vix + w_gold + w_yields) * macroMult
+
+cryptoScore = (sig_btc * m_btc * w_btc + sig_eth * m_eth * w_eth) * cryptoMult
+cryptoWeights = (w_btc + w_eth) * cryptoMult
+
+sectorScore = (sig_btcd * m_btcd * w_btcd + sig_total3 * m_total3 * w_total3) * sectorMult
+sectorWeights = (w_btcd + w_total3) * sectorMult
+
+totalScore = macroScore + cryptoScore + sectorScore
+totalWeights = macroWeights + cryptoWeights + sectorWeights
+
+rawScore = totalWeights > 0.1 ? math.max(math.min(totalScore / totalWeights, 1.0), -1.0) : 0
+rawScore := rawScore * sessionMult
+
+// Apply smoothing
+normalizedScore = smoothing > 1 ? ta.ema(rawScore, smoothing) : rawScore
+
+// Score momentum
+scoreMomentum = normalizedScore - normalizedScore[3]
+strengthRising = scoreMomentum > 0.02
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// TIME IN STATE TRACKING
+// ═══════════════════════════════════════════════════════════════════════════════
+
+var int barsInState = 0
+var int lastStateDir = 0
+
+currentStateDir = normalizedScore > 0.05 ? 1 : normalizedScore < -0.05 ? -1 : 0
+
+if currentStateDir != lastStateDir
+    barsInState := 1
+    lastStateDir := currentStateDir
+else
+    barsInState += 1
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// DIVERGENCE DETECTION
+// ═══════════════════════════════════════════════════════════════════════════════
+
+priceLowerLow = low < ta.lowest(low, 10)[1]
+scoreHigherLow = normalizedScore > ta.lowest(normalizedScore, 10)[1] + 0.1
+bullishDivergence = priceLowerLow and scoreHigherLow and normalizedScore < 0
+
+priceHigherHigh = high > ta.highest(high, 10)[1]
+scoreLowerHigh = normalizedScore < ta.highest(normalizedScore, 10)[1] - 0.1
+bearishDivergence = priceHigherHigh and scoreLowerHigh and normalizedScore > 0
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// VOLATILITY WARNING
+// ═══════════════════════════════════════════════════════════════════════════════
+
+atrCurrent = ta.atr(14)
+atrAvg = ta.sma(atrCurrent, 50)
+highVolatility = atrCurrent > atrAvg * 1.5
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// MARKET MANIPULATION DETECTION
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// Sensitivity thresholds
+manipVolMult = manipSensitivity == "Paranoid" ? 2.0 : manipSensitivity == "Normal" ? 2.5 : 3.0
+manipWickMult = manipSensitivity == "Paranoid" ? 0.6 : manipSensitivity == "Normal" ? 0.7 : 0.8
+manipFlashPct = manipSensitivity == "Paranoid" ? 0.015 : manipSensitivity == "Normal" ? 0.02 : 0.025
+
+// Volume analysis
+volAvg = ta.sma(volume, 20)
+volSpike = volume > volAvg * manipVolMult
+priceRange = math.abs(close - open)
+avgRange = ta.sma(math.abs(close - open), 20)
+tinyMove = priceRange < avgRange * 0.3
+
+// 1. Accumulation/Distribution Warning: Huge volume, tiny price move
+// Someone's loading up or dumping without moving price
+accumDistWarning = volSpike and tinyMove
+
+// 2. Wick Hunting / Stop Loss Raid
+// Long wicks relative to body = someone's hunting stops
+candleBody = math.abs(close - open)
+upperWick = high - math.max(close, open)
+lowerWick = math.min(close, open) - low
+totalWick = upperWick + lowerWick
+wickHunting = candleBody > 0 and totalWick > candleBody * 3 and (upperWick > avgRange or lowerWick > avgRange)
+
+// 3. Flash Crash/Pump Detection
+// Sudden move followed by reversal
+flashMove = math.abs(close - open[1]) / open[1] > manipFlashPct
+reversal = (close > open and close[1] < open[1]) or (close < open and close[1] > open[1])
+flashCrashPump = flashMove and reversal and volSpike
+
+// 4. Spoofing Pattern: Price moved against volume direction
+// Volume suggests one direction, price went the other way
+volDirection = close > open ? 1 : close < open ? -1 : 0
+prevVolDir = close[1] > open[1] ? 1 : close[1] < open[1] ? -1 : 0
+spoofPattern = volSpike and volDirection != 0 and volDirection == -prevVolDir and math.abs(close - open) > avgRange * 1.5
+
+// 5. Divergence Spike: Capital flow diverges sharply from price
+// Market makers might be front-running
+flowPriceDiv = (normalizedScore > 0.3 and close < open and priceRange > avgRange) or 
+               (normalizedScore < -0.3 and close > open and priceRange > avgRange)
+
+// Combined manipulation score (0-5)
+manipScore = (accumDistWarning ? 1 : 0) + (wickHunting ? 1 : 0) + (flashCrashPump ? 1 : 0) + 
+             (spoofPattern ? 1 : 0) + (flowPriceDiv ? 1 : 0)
+
+// Manipulation warning levels
+manipWarningLow = manipScore >= 1 and manipScore < 2
+manipWarningMed = manipScore >= 2 and manipScore < 3
+manipWarningHigh = manipScore >= 3
+
+// Which type triggered?
+manipType = accumDistWarning ? "ACCUMULATION" : wickHunting ? "WICK HUNT" : flashCrashPump ? "FLASH MOVE" : spoofPattern ? "SPOOF" : flowPriceDiv ? "FLOW DIVERGENCE" : "UNKNOWN"
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// KELTNER CHANNEL
+// ═══════════════════════════════════════════════════════════════════════════════
+
+keltnerBasis = ta.ema(close, keltnerLength)
+keltnerAtr = ta.atr(keltnerLength)
+keltnerUpper = keltnerBasis + keltnerAtr * keltnerMult
+keltnerLower = keltnerBasis - keltnerAtr * keltnerMult
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// CLOUD CALCULATION
+// ═══════════════════════════════════════════════════════════════════════════════
+
+strength = math.min(math.abs(normalizedScore), 1.0) * cloudIntensity
+isBullish = normalizedScore > 0.05
+isBearish = normalizedScore < -0.05
+
+bullTransp = math.round(90 - strength * 50)
+bearTransp = math.round(90 - strength * 50)
+
+thicknessMult = useThickness ? 0.3 + strength * 0.7 : 1.0
+
+// FIXED: Clouds now fill between basis and upper/lower bands only
+// Bearish cloud = upper half of channel (basis to upper)
+// Bullish cloud = lower half of channel (lower to basis)
+// Thickness scales with conviction - higher conviction = thicker cloud
+
+bearCloudTop = isBearish ? keltnerUpper : na
+bearCloudBottom = isBearish ? keltnerUpper - (keltnerUpper - keltnerBasis) * thicknessMult : na
+
+bullCloudTop = isBullish ? keltnerLower + (keltnerBasis - keltnerLower) * thicknessMult : na
+bullCloudBottom = isBullish ? keltnerLower : na
+
+keltnerLineColor = showKeltner ? color.new(keltner_color, 70) : color.new(color.white, 100)
+basisLineColor = showKeltner ? color.new(keltner_color, 85) : color.new(color.white, 100)
+
+pUpper = plot(keltnerUpper, "Keltner Upper", color=keltnerLineColor, linewidth=1)
+pBasis = plot(keltnerBasis, "Keltner Basis", color=basisLineColor, linewidth=1, style=plot.style_linebr)
+pLower = plot(keltnerLower, "Keltner Lower", color=keltnerLineColor, linewidth=1)
+
+pBearTop = plot(bearCloudTop, "Bear Cloud Top", color=color.new(color.white, 100), display=display.none)
+pBearBottom = plot(bearCloudBottom, "Bear Cloud Bottom", color=color.new(color.white, 100), display=display.none)
+pBullTop = plot(bullCloudTop, "Bull Cloud Top", color=color.new(color.white, 100), display=display.none)
+pBullBottom = plot(bullCloudBottom, "Bull Cloud Bottom", color=color.new(color.white, 100), display=display.none)
+
+fill(pBearTop, pBearBottom, color=color.new(bearish_strong, bearTransp), title="Bearish Cloud")
+fill(pBullTop, pBullBottom, color=color.new(bullish_strong, bullTransp), title="Bullish Cloud")
+
+bgColor = useBgColor ? (normalizedScore > 0.1 ? color.new(bullish_strong, 95) : normalizedScore < -0.1 ? color.new(bearish_strong, 95) : na) : na
+bgcolor(bgColor, title="Background Tint")
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// FLIP DOTS
+// ═══════════════════════════════════════════════════════════════════════════════
+
+var int flowDir = 0
+bullHeld = math.sum(normalizedScore > flipLevel ? 1 : 0, flipConfirm) == flipConfirm
+bearHeld = math.sum(normalizedScore < -flipLevel ? 1 : 0, flipConfirm) == flipConfirm
+flipToBullish = bullHeld and flowDir != 1
+flipToBearish = bearHeld and flowDir != -1
+if flipToBullish
+    flowDir := 1
+if flipToBearish
+    flowDir := -1
+
+plotshape(showFlipDots and flipToBullish ? keltnerLower : na, "Bull Flip",
+     shape.circle, location.absolute, bullish_strong, size=size.tiny)
+plotshape(showFlipDots and flipToBearish ? keltnerUpper : na, "Bear Flip",
+     shape.circle, location.absolute, bearish_strong, size=size.tiny)
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// SIGNAL PERFORMANCE TRACKING
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// Track signal outcomes for win rate display
+// Determine performance lookback based on mode
+perfLookbackLimit = switch perfLookbackMode
+    "Auto" => tradingMode == "Scalp" ? 20 : tradingMode == "Intraday" ? 50 : 100
+    "Last 20" => 20
+    "Last 50" => 50
+    "Last 100" => 100
+    => 0  // All Time = 0 (no limit)
+
+var int totalSignals = 0
+var float lastSignalPrice = na
+var int lastSignalDirection = 0  // 1 = bull, -1 = bear
+var bool lastSignalCorrect = false
+var bool hasLastSignal = false
+var float lastSignalReturn = 0.0
+var int currentStreak = 0
+
+// Arrays to track rolling window of signal results
+var array<bool> signalResults = array.new_bool(0)
+
+// On each new flip signal, evaluate previous signal and record new one
+if flipToBullish or flipToBearish
+    // Evaluate previous signal if exists
+    if not na(lastSignalPrice) and lastSignalDirection != 0
+        priceChange = (close - lastSignalPrice) / lastSignalPrice * 100
+        wasCorrect = (lastSignalDirection > 0 and priceChange > 0) or (lastSignalDirection < 0 and priceChange < 0)
+        lastSignalCorrect := wasCorrect
+        hasLastSignal := true
+        lastSignalReturn := priceChange
+        totalSignals := totalSignals + 1
+        currentStreak := wasCorrect ? (currentStreak > 0 ? currentStreak + 1 : 1) : (currentStreak < 0 ? currentStreak - 1 : -1)
+
+        // Add to rolling array
+        array.push(signalResults, wasCorrect)
+
+        // Trim array if we have a limit and exceeded it
+        if perfLookbackLimit > 0 and array.size(signalResults) > perfLookbackLimit
+            array.shift(signalResults)
+
+    // Record new signal
+    lastSignalPrice := close
+    lastSignalDirection := flipToBullish ? 1 : -1
+
+// Calculate win rate from array (rolling window)
+arraySize = array.size(signalResults)
+correctInWindow = 0
+if arraySize > 0
+    for i = 0 to arraySize - 1
+        if array.get(signalResults, i)
+            correctInWindow := correctInWindow + 1
+
+winRate = arraySize > 0 ? (float(correctInWindow) / float(arraySize)) * 100 : na
+displaySignalCount = arraySize
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// VOLUME CANDLE COLORING
+// ═══════════════════════════════════════════════════════════════════════════════
+
+avgVolume = ta.sma(volume, volLookback)
+volRatio = volume / avgVolume
+
+isBullCandle = close > open
+isVeryHighVol = volRatio >= veryHighVolThreshold
+isHighVol = volRatio >= highVolThreshold and not isVeryHighVol
+isLowVol = volRatio < 0.5
+
+getCandleColor() =>
+    if not useVolumeCandles
+        na
+    else if isVeryHighVol
+        isBullCandle ? vol_bull_very_high : vol_bear_very_high
+    else if isHighVol
+        isBullCandle ? vol_bull_high : vol_bear_high
+    else if isLowVol
+        vol_low
+    else
+        isBullCandle ? vol_normal_bull : vol_normal_bear
+
+barcolor(getCandleColor(), title="Volume Candles")
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// ALERT CONDITIONS
+// ═══════════════════════════════════════════════════════════════════════════════
+
+var int lastAlertBar = 0
+canAlert = bar_index - lastAlertBar >= alertCooldown
+
+fullSendLong = normalizedScore > 0.7 and normalizedScore[1] <= 0.7 and canAlert
+fullSendShort = normalizedScore < -0.7 and normalizedScore[1] >= -0.7 and canAlert
+standardLong = normalizedScore > 0.5 and normalizedScore[1] <= 0.5 and canAlert
+standardShort = normalizedScore < -0.5 and normalizedScore[1] >= -0.5 and canAlert
+leanLong = normalizedScore > 0.2 and normalizedScore[1] <= 0.2 and canAlert
+leanShort = normalizedScore < -0.2 and normalizedScore[1] >= -0.2 and canAlert
+
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// ALERT MESSAGES
+// ═══════════════════════════════════════════════════════════════════════════════
+
+scorePctStr = str.tostring(math.round(normalizedScore * 100))
+currentDirection = normalizedScore > 0 ? "LONG" : "SHORT"
+currentType = math.abs(normalizedScore) > 0.7 ? "FULL_SEND" : math.abs(normalizedScore) > 0.5 ? "STANDARD" : math.abs(normalizedScore) > 0.2 ? "LEAN" : "NEUTRAL"
+confCount = normalizedScore > 0 ? bullCount : bearCount
+macroCount = normalizedScore > 0 ? macroBullCount : macroBearCount
+cryptoCount = normalizedScore > 0 ? cryptoBullCount : cryptoBearCount
+sectorCount = normalizedScore > 0 ? sectorBullCount : sectorBearCount
+
+simpleMsg = (normalizedScore > 0 ? "🟢 " : "🔴 ") + currentType + " " + scorePctStr + "% | " + syminfo.ticker
+
+// Build webhook message in parts
+wh1 = '{"action":"' + currentDirection + '","type":"' + currentType + '",'
+wh2 = '"ticker":"' + syminfo.ticker + '","tf":"' + timeframe.period + '",'
+wh3 = '"mode":"' + tradingMode + '","score":' + scorePctStr + ','
+wh4 = '"confluence":' + str.tostring(confCount) + ',"macro":' + str.tostring(macroCount) + ','
+wh5 = '"crypto":' + str.tostring(cryptoCount) + ',"sectors":' + str.tostring(sectorCount) + '}'
+webhookMsg = wh1 + wh2 + wh3 + wh4 + wh5
+
+// Build detailed message in parts
+dt1 = (normalizedScore > 0 ? "🟢 " : "🔴 ") + currentType + " " + currentDirection
+dt2 = " | " + syminfo.ticker + " " + timeframe.period + " | Score: " + scorePctStr + "%"
+dt3 = " | Macro: " + str.tostring(macroCount) + "/4 | " + grp_2 + ": " + str.tostring(cryptoCount) + "/2"
+dt4 = " | Sectors: " + str.tostring(sectorCount) + "/2 | Confluence: " + str.tostring(confCount) + "/8"
+detailedMsg = dt1 + dt2 + dt3 + dt4
+
+alertMessage = switch alertStyle
+    "Simple" => simpleMsg
+    "Webhook" => webhookMsg
+    "Detailed" => detailedMsg
+    => detailedMsg
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// ALERT MESSAGES - BEAST MODE (John Carlton Style)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// Beast Mode Messages - Full Send
+beastFullLong = "🚀 HOLY MOTHER OF GAINS! {{ticker}} just lit up like a Christmas tree on steroids. Capital flow is strongly aligned to the upside. Check your plan and your risk."
+beastFullShort = "🔻 RED ALERT! {{ticker}} - capital flow is strongly aligned to the downside. Check your plan and your risk."
+
+// Beast Mode Messages - Standard
+beastStdLong = "🟢 HEY! {{ticker}} is flashing green and capital flow has turned supportive. Worth a look."
+beastStdShort = "🔴 INCOMING! {{ticker}} sellers are stepping in and capital flow is leaning out. Worth a look."
+
+// Beast Mode Messages - Lean
+beastLeanLong = "🟢 Psst... {{ticker}} is starting to look frisky. Not a full send yet, but the early birds are pecking. Worth a look."
+beastLeanShort = "🔴 Hmm... {{ticker}} is getting a little wobbly. Nothing dramatic yet, but the cracks are showing. Stay frosty."
+
+// Beast Mode Messages - Flips
+beastFlipBull = "⚡ PLOT TWIST! {{ticker}} just flipped BULLISH. The bears got caught napping. Pressure just shifted to the BUY side. Wait for confirmation before acting."
+beastFlipBear = "⚡ UH OH! {{ticker}} just flipped BEARISH. Bulls got the rug pulled. Money is rotating out. Wait for confirmation before acting."
+
+// Beast Mode Messages - Confluence
+beastConfBull = "🌟 JACKPOT! {{ticker}} - All 8 signals just aligned BULLISH. This is rarer than a honest politician. Rare, but no signal is a guarantee."
+beastConfBear = "💀 DEFCON 1! {{ticker}} - All 8 signals aligned BEARISH. Rare, but no signal is a guarantee."
+
+// Beast Mode Messages - Macro
+beastMacroBull = "🌍 THE FED WHISPERER SAYS: DXY, VIX, Gold, Yields — they're ALL pointing to risk-on. Macro is giving crypto the green light. {{ticker}} has tailwinds."
+beastMacroBear = "🌍 MACRO STORM INCOMING! Every major indicator just went risk-off. DXY, VIX, the works. {{ticker}} is swimming against a tsunami."
+
+// Beast Mode Messages - Crypto Leaders
+beastLeadersBull = "₿ THE KINGS HAVE SPOKEN! BTC and ETH both flipped bullish. When the big boys lead, alts follow. {{ticker}} is getting drafted."
+beastLeadersBear = "₿ ABANDON SHIP! BTC and ETH just went red. When mama and papa are sick, the kids don't feel so good either. {{ticker}} faces a headwind."
+
+// Beast Mode Messages - Divergence
+beastDivBull = "🔮 HIDDEN GEM ALERT! {{ticker}} price is making lows but capital flow is secretly turning UP. Someone knows something. Classic accumulation pattern."
+beastDivBear = "🔮 TRAP DETECTED! {{ticker}} price making highs but capital is sneaking OUT the back door. Possible distribution. Wait for price to confirm."
+
+// Beast Mode Messages - Manipulation Warning
+beastManipWarn = "⚠️ MANIPULATION ALERT! {{ticker}} - Something fishy going on. "
+beastManipAccum = "Huge volume, tiny price move = someone's loading up or dumping without moving price. Whales are hunting."
+beastManipWick = "Wick hunting detected! Those long shadows aren't accidents — someone just raided your stop losses. Classic market maker games."
+beastManipFlash = "Flash move + reversal = classic shakeout. They want your coins at discount prices. Don't fall for it."
+beastManipSpoof = "Spoof pattern! Volume said one thing, price did another. Someone's playing 4D chess while you're playing checkers."
+beastManipDiv = "Flow divergence! Capital flow and price are telling different stories. One of them is lying. Wait for them to agree."
+
+// Standard boring messages for non-beast mode
+stdFullLong = "🚀 FULL SEND LONG | {{ticker}} {{interval}} | Score: HIGH | Confluence: STRONG"
+stdFullShort = "🚀 FULL SEND SHORT | {{ticker}} {{interval}} | Score: HIGH | Confluence: STRONG"
+stdStdLong = "🟢 STANDARD LONG | {{ticker}} {{interval}}"
+stdStdShort = "🔴 STANDARD SHORT | {{ticker}} {{interval}}"
+stdLeanLong = "🟢 LEAN LONG | {{ticker}} {{interval}}"
+stdLeanShort = "🔴 LEAN SHORT | {{ticker}} {{interval}}"
+stdFlipBull = "↗️ FLIP BULLISH | {{ticker}} {{interval}} | Pressure shifted to BUY side"
+stdFlipBear = "↘️ FLIP BEARISH | {{ticker}} {{interval}} | Pressure shifted to SELL side"
+stdConfBull = "⭐ FULL CONFLUENCE BULL | {{ticker}} | All 8 signals aligned BULLISH!"
+stdConfBear = "⭐ FULL CONFLUENCE BEAR | {{ticker}} | All 8 signals aligned BEARISH!"
+stdMacroBull = "🌍 MACRO ALIGNED BULL | {{ticker}} | All 4 macro signals support LONG"
+stdMacroBear = "🌍 MACRO ALIGNED BEAR | {{ticker}} | All 4 macro signals support SHORT"
+stdLeadersBull = "₿ CRYPTO LEADERS BULL | {{ticker}} | BTC + ETH both BULLISH"
+stdLeadersBear = "₿ CRYPTO LEADERS BEAR | {{ticker}} | BTC + ETH both BEARISH"
+stdDivBull = "📈 BULLISH DIVERGENCE | {{ticker}} {{interval}} | Price making lows but flow turning up"
+stdDivBear = "📉 BEARISH DIVERGENCE | {{ticker}} {{interval}} | Price making highs but flow turning down"
+stdManipWarn = "⚠️ MANIPULATION WARNING | {{ticker}} | Unusual market activity detected"
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// MASTER ALERT - ANY SIGNAL
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// Combine all alert conditions
+anyFullSend = alertFullSend and (fullSendLong or fullSendShort)
+anyStandard = alertStandard and (standardLong or standardShort)
+anyLean = alertLean and (leanLong or leanShort)
+anyFlip = alertFlip and (flipToBullish or flipToBearish) and canAlert
+anyConfluence = alertFullConfluence and (fullBullConfluence or fullBearConfluence) and canAlert
+anyMacro = alertMacroAligned and ((macroAlignedBull and not macroAlignedBull[1]) or (macroAlignedBear and not macroAlignedBear[1])) and canAlert
+anyLeaders = alertCryptoLeaders and ((cryptoLeadersBull and not cryptoLeadersBull[1]) or (cryptoLeadersBear and not cryptoLeadersBear[1])) and canAlert
+anyDivergence = alertDivergence and (bullishDivergence or bearishDivergence) and canAlert
+var int lastManipBar = -1000
+manipReady = bar_index - lastManipBar >= alertCooldown
+manipHighAlert = showManipWarning and manipWarningHigh and not manipWarningHigh[1] and manipReady
+manipMedAlert = showManipWarning and manipWarningMed and not manipWarningMed[1] and not manipWarningHigh and manipReady
+accumAlert = showManipWarning and accumDistWarning and not accumDistWarning[1]
+wickAlert = showManipWarning and wickHunting and not wickHunting[1]
+anyManip = manipHighAlert or manipMedAlert
+
+// Master trigger
+anyAlert = anyFullSend or anyStandard or anyLean or anyFlip or anyConfluence or anyMacro or anyLeaders or anyDivergence or anyManip
+
+// Build dynamic message for webhook/Telegram
+alertType = anyFullSend ? (fullSendLong ? "🚀 FULL SEND LONG" : "🔻 FULL SEND SHORT") : anyStandard ? (standardLong ? "🟢 STANDARD LONG" : "🔴 STANDARD SHORT") : anyLean ? (leanLong ? "🟢 LEAN LONG" : "🔴 LEAN SHORT") : anyFlip ? (flipToBullish ? "↗️ FLIP BULLISH" : "↘️ FLIP BEARISH") : anyConfluence ? (fullBullConfluence ? "⭐ FULL CONFLUENCE BULL" : "⭐ FULL CONFLUENCE BEAR") : anyMacro ? (macroAlignedBull ? "🌍 MACRO BULL" : "🌍 MACRO BEAR") : anyLeaders ? (cryptoLeadersBull ? "₿ LEADERS BULL" : "₿ LEADERS BEAR") : anyDivergence ? (bullishDivergence ? "📈 BULL DIVERGENCE" : "📉 BEAR DIVERGENCE") : anyManip ? (manipWarningHigh ? "🚨 HIGH MANIPULATION" : "⚠️ MANIPULATION") : "📊 SIGNAL"
+
+// Dynamic message with all key info
+dynamicMsg = alertType + " | " + syminfo.ticker + " " + timeframe.period + " | Score: " + scorePctStr + "% | Bulls: " + str.tostring(bullCount) + " Bears: " + str.tostring(bearCount)
+
+// Message follows the "Alert Message Style" input
+styledMsg = switch alertStyle
+    "Simple" => alertType + " | " + syminfo.ticker + " " + timeframe.period
+    "Webhook" => '{"alert":"' + alertType + '",' + str.substring(webhookMsg, 1)
+    => dynamicMsg + dt3 + dt4
+
+// Fire alert() for webhook with styled message
+if anyAlert
+    alert(styledMsg, alert.freq_once_per_bar_close)
+
+// Cooldown is reset only by alerts that are switched on and actually fired
+if anyFullSend or anyStandard or anyLean or anyFlip or anyConfluence or anyMacro or anyLeaders or anyDivergence
+    lastAlertBar := bar_index
+if anyManip
+    lastManipBar := bar_index
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// ALERT CONDITIONS
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// ⚡ ANY ALERT - Master trigger for all signals
+alertcondition(anyAlert, title="⚡ ANY ALERT", message="{{ticker}} {{interval}} | Capital Flow Signal Triggered | Check chart for details")
+
+// Score Alerts - Full Send
+alertcondition(alertFullSend and fullSendLong and beastModeAlerts, title="🚀 Full Send LONG (Beast)", message="🚀 HOLY MOTHER OF GAINS! {{ticker}} just lit up like a Christmas tree on steroids. Capital flow is strongly aligned to the upside. Check your plan and your risk.")
+alertcondition(alertFullSend and fullSendShort and beastModeAlerts, title="🚀 Full Send SHORT (Beast)", message="🔻 RED ALERT! {{ticker}} - capital flow is strongly aligned to the downside. Check your plan and your risk.")
+alertcondition(alertFullSend and fullSendLong and not beastModeAlerts, title="🚀 Full Send LONG", message="🚀 FULL SEND LONG | {{ticker}} {{interval}} | Score: HIGH | Confluence: STRONG")
+alertcondition(alertFullSend and fullSendShort and not beastModeAlerts, title="🚀 Full Send SHORT", message="🚀 FULL SEND SHORT | {{ticker}} {{interval}} | Score: HIGH | Confluence: STRONG")
+
+// Score Alerts - Standard
+alertcondition(alertStandard and standardLong and beastModeAlerts, title="🟢 Standard LONG (Beast)", message="🟢 HEY! {{ticker}} is flashing green and capital flow has turned supportive. Worth a look.")
+alertcondition(alertStandard and standardShort and beastModeAlerts, title="🔴 Standard SHORT (Beast)", message="🔴 INCOMING! {{ticker}} sellers are stepping in and capital flow is leaning out. Worth a look.")
+alertcondition(alertStandard and standardLong and not beastModeAlerts, title="🟢 Standard LONG", message="🟢 STANDARD LONG | {{ticker}} {{interval}}")
+alertcondition(alertStandard and standardShort and not beastModeAlerts, title="🔴 Standard SHORT", message="🔴 STANDARD SHORT | {{ticker}} {{interval}}")
+
+// Score Alerts - Lean
+alertcondition(alertLean and leanLong and beastModeAlerts, title="🟢 Lean LONG (Beast)", message="🟢 Psst... {{ticker}} is starting to look frisky. Not a full send yet, but the early birds are pecking. Worth a look.")
+alertcondition(alertLean and leanShort and beastModeAlerts, title="🔴 Lean SHORT (Beast)", message="🔴 Hmm... {{ticker}} is getting a little wobbly. Nothing dramatic yet, but the cracks are showing. Stay frosty.")
+alertcondition(alertLean and leanLong and not beastModeAlerts, title="🟢 Lean LONG", message="🟢 LEAN LONG | {{ticker}} {{interval}}")
+alertcondition(alertLean and leanShort and not beastModeAlerts, title="🔴 Lean SHORT", message="🔴 LEAN SHORT | {{ticker}} {{interval}}")
+
+// Flip Alerts
+alertcondition(alertFlip and flipToBullish and canAlert and beastModeAlerts, title="↗️ Flip Bullish (Beast)", message="⚡ PLOT TWIST! {{ticker}} just flipped BULLISH. The bears got caught napping. Pressure shifted to BUY side. Wait for confirmation before acting.")
+alertcondition(alertFlip and flipToBearish and canAlert and beastModeAlerts, title="↘️ Flip Bearish (Beast)", message="⚡ UH OH! {{ticker}} just flipped BEARISH. Bulls got the rug pulled. Money is rotating out. Wait for confirmation before acting.")
+alertcondition(alertFlip and flipToBullish and canAlert and not beastModeAlerts, title="↗️ Flip Bullish", message="↗️ FLIP BULLISH | {{ticker}} {{interval}} | Pressure shifted to BUY side")
+alertcondition(alertFlip and flipToBearish and canAlert and not beastModeAlerts, title="↘️ Flip Bearish", message="↘️ FLIP BEARISH | {{ticker}} {{interval}} | Pressure shifted to SELL side")
+
+// Confluence Alerts
+alertcondition(alertFullConfluence and fullBullConfluence and canAlert and beastModeAlerts, title="⭐ Full Confluence BULL (Beast)", message="🌟 JACKPOT! {{ticker}} - All 8 signals just aligned BULLISH. This is rarer than an honest politician. Rare, but no signal is a guarantee.")
+alertcondition(alertFullConfluence and fullBearConfluence and canAlert and beastModeAlerts, title="⭐ Full Confluence BEAR (Beast)", message="💀 DEFCON 1! {{ticker}} - All 8 signals aligned BEARISH. Rare, but no signal is a guarantee.")
+alertcondition(alertFullConfluence and fullBullConfluence and canAlert and not beastModeAlerts, title="⭐ Full Confluence BULL", message="⭐ FULL CONFLUENCE BULL | {{ticker}} | All 8 signals aligned BULLISH!")
+alertcondition(alertFullConfluence and fullBearConfluence and canAlert and not beastModeAlerts, title="⭐ Full Confluence BEAR", message="⭐ FULL CONFLUENCE BEAR | {{ticker}} | All 8 signals aligned BEARISH!")
+
+// Macro Aligned Alerts
+alertcondition(alertMacroAligned and macroAlignedBull and not macroAlignedBull[1] and canAlert and beastModeAlerts, title="🌍 Macro BULL (Beast)", message="🌍 THE FED WHISPERER SAYS: DXY, VIX, Gold, Yields — ALL pointing risk-on. Macro giving crypto the green light. {{ticker}} has tailwinds, baby!")
+alertcondition(alertMacroAligned and macroAlignedBear and not macroAlignedBear[1] and canAlert and beastModeAlerts, title="🌍 Macro BEAR (Beast)", message="🌍 MACRO STORM! Every major indicator just went risk-off. DXY, VIX, the works. {{ticker}} swimming against a tsunami. Trade with extra care.")
+alertcondition(alertMacroAligned and macroAlignedBull and not macroAlignedBull[1] and canAlert and not beastModeAlerts, title="🌍 Macro Aligned BULL", message="🌍 MACRO ALIGNED BULL | {{ticker}} | All 4 macro signals support LONG")
+alertcondition(alertMacroAligned and macroAlignedBear and not macroAlignedBear[1] and canAlert and not beastModeAlerts, title="🌍 Macro Aligned BEAR", message="🌍 MACRO ALIGNED BEAR | {{ticker}} | All 4 macro signals support SHORT")
+
+// Crypto Leaders Alerts
+alertcondition(alertCryptoLeaders and cryptoLeadersBull and not cryptoLeadersBull[1] and canAlert and beastModeAlerts, title="₿ Leaders BULL (Beast)", message="₿ THE KINGS HAVE SPOKEN! BTC and ETH both flipped bullish. When the big boys lead, alts follow. {{ticker}} is getting drafted into the army of gains!")
+alertcondition(alertCryptoLeaders and cryptoLeadersBear and not cryptoLeadersBear[1] and canAlert and beastModeAlerts, title="₿ Leaders BEAR (Beast)", message="₿ ABANDON SHIP! BTC and ETH just went red. When mama and papa are sick, the kids don't feel good either. {{ticker}} faces a headwind.")
+alertcondition(alertCryptoLeaders and cryptoLeadersBull and not cryptoLeadersBull[1] and canAlert and not beastModeAlerts, title="₿ Crypto Leaders BULL", message="₿ CRYPTO LEADERS BULL | {{ticker}} | BTC + ETH both BULLISH")
+alertcondition(alertCryptoLeaders and cryptoLeadersBear and not cryptoLeadersBear[1] and canAlert and not beastModeAlerts, title="₿ Crypto Leaders BEAR", message="₿ CRYPTO LEADERS BEAR | {{ticker}} | BTC + ETH both BEARISH")
+
+// Divergence Alerts
+alertcondition(alertDivergence and bullishDivergence and canAlert and beastModeAlerts, title="📈 Bull Divergence (Beast)", message="🔮 HIDDEN GEM! {{ticker}} price making lows but capital flow secretly turning UP. Someone knows something. Classic accumulation. Wait for price to confirm.")
+alertcondition(alertDivergence and bearishDivergence and canAlert and beastModeAlerts, title="📉 Bear Divergence (Beast)", message="🔮 TRAP DETECTED! {{ticker}} price making highs but capital sneaking OUT the back door. Possible distribution. Wait for price to confirm.")
+alertcondition(alertDivergence and bullishDivergence and canAlert and not beastModeAlerts, title="📈 Bullish Divergence", message="📈 BULLISH DIVERGENCE | {{ticker}} {{interval}} | Price making lows but flow turning up")
+alertcondition(alertDivergence and bearishDivergence and canAlert and not beastModeAlerts, title="📉 Bearish Divergence", message="📉 BEARISH DIVERGENCE | {{ticker}} {{interval}} | Price making highs but flow turning down")
+
+// Manipulation Alerts
+alertcondition(manipHighAlert and beastModeAlerts, title="🚨 Manipulation HIGH (Beast)", message="🚨 THEY'RE MESSING WITH YOU! {{ticker}} showing HEAVY manipulation. Wick hunts, volume games, the works. Market makers are playing 4D chess. Either sit out or trade the trap.")
+alertcondition(manipMedAlert and beastModeAlerts, title="⚠️ Manipulation MED (Beast)", message="⚠️ SOMETHING'S FISHY! {{ticker}} manipulation detected. Could be accumulation, distribution, or stop hunting. Whales are circling. Proceed with caution, friend.")
+alertcondition(accumAlert and beastModeAlerts, title="🐋 Whale Activity (Beast)", message="🐋 WHALE ALERT! {{ticker}} - Massive volume but price barely moved. Translation: Someone's loading up (or dumping) without tipping their hand. Watch which way price breaks.")
+alertcondition(wickAlert and beastModeAlerts, title="🎯 Stop Hunt (Beast)", message="🎯 STOP HUNT DETECTED! {{ticker}} - Those long wicks? Not accidents. Someone just raided stop losses. Classic MM move. Be careful with tight stops here.")
+alertcondition(manipHighAlert and not beastModeAlerts, title="🚨 Manipulation Warning HIGH", message="🚨 HIGH MANIPULATION | {{ticker}} | Multiple manipulation signals detected")
+alertcondition(manipMedAlert and not beastModeAlerts, title="⚠️ Manipulation Warning MED", message="⚠️ MANIPULATION | {{ticker}} | Unusual market activity detected")
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// TABLE - OPTION D: COLLAPSIBLE DESIGN
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// Helper: Convert bars to human-readable time
+getBarsAsTime(int bars) =>
+    tfSeconds = timeframe.in_seconds()
+    totalMinutes = bars * tfSeconds / 60
+    if totalMinutes < 60
+        str.tostring(math.round(totalMinutes)) + "m"
+    else if totalMinutes < 1440
+        str.tostring(math.round(totalMinutes / 60, 1)) + "h"
+    else
+        str.tostring(math.round(totalMinutes / 1440, 1)) + "d"
+
+// Helper: Get signal arrow with color context (no more ↻)
+getArrow(float sig, float mult) =>
+    eff = sig * mult
+    eff > 0.3 ? "▲" : eff < -0.3 ? "▼" : "•"
+
+// Helper: Build confidence bar (simpler)
+getConfBar(float score) =>
+    filled = math.round(math.abs(score) * 10)
+    bar = ""
+    for i = 1 to 10
+        bar := bar + (i <= filled ? "█" : "░")
+    bar
+
+// Helper: Get accuracy icon based on correlation %
+getAccuracyIcon(float corr) =>
+    corr > 60 ? "✓" : corr < 40 ? "✗" : "~"
+
+// Helper: Get streak text (e.g., "3W" or "2L")
+getStreakText(int streak) =>
+    math.abs(streak) < 2 ? "" : streak > 0 ? str.tostring(streak) + "W" : str.tostring(math.abs(streak)) + "L"
+
+// Helper: Get last signal result text
+getLastSignalText(bool hasSignal, bool correct, float returnPct) =>
+    not hasSignal ? "—" : (correct ? "✓" : "✗") + (returnPct > 0 ? "+" : "") + str.tostring(returnPct, "#.#") + "%"
+
+// Table size based on expanded/collapsed (extra row for manipulation warning + performance)
+tableRows = showExtendedInfo ? 17 : 6
+var table panel = table.new(getTablePosition(), 4, tableRows, bgcolor=bg_dark, border_width=0)
+
+// Manipulation warning colors
+manipBgColor = color.new(#ff6b35, 70)
+manipTextColor = #ff6b35
+
+getSignalColor(float sig, float mult) =>
+    effectiveSig = sig * mult
+    effectiveSig > 0 ? bullish_strong : effectiveSig < 0 ? bearish_strong : neutral_color
+
+getVerdictBgColor(float score) =>
+    score > 0.1 ? color.new(bullish_strong, 70) : score < -0.1 ? color.new(bearish_strong, 70) : color.new(neutral_color, 70)
+
+if barstate.islast and showTable
+    
+    // ═══════════════════════════════════════════════════════════════════════════
+    // COMMON ELEMENTS
+    // ═══════════════════════════════════════════════════════════════════════════
+    
+    modeColor = switch tradingMode
+        "Swing" => accent_blue
+        "Intraday" => accent_orange
+        "Scalp" => accent_red
+        => neutral_color
+    
+    modeDisplay = tradingModeInput == "Auto" ? tradingMode + " ⓐ" : tradingMode
+    
+    // Calculate summary arrows for each category
+    macroArrows = getArrow(sig_dxy, m_dxy) + getArrow(sig_vix, m_vix) + getArrow(sig_gold, m_gold) + getArrow(sig_yields, m_yields)
+    cryptoArrows = getArrow(sig_btc, m_btc) + getArrow(sig_eth, m_eth)
+    sectorArrows = getArrow(sig_btcd, m_btcd) + getArrow(sig_total3, m_total3)
+    
+    // Category colors based on alignment
+    macroColor = macroBullCount >= 3 ? bullish_strong : macroBearCount >= 3 ? bearish_strong : neutral_color
+    cryptoColor = cryptoBullCount == 2 ? bullish_strong : cryptoBearCount == 2 ? bearish_strong : neutral_color
+    sectorColor = sectorBullCount == 2 ? bullish_strong : sectorBearCount == 2 ? bearish_strong : neutral_color
+    
+    // Verdict calculations
+    displayScore = math.max(math.min(normalizedScore, 1.0), -1.0)
+    verdictText = displayScore > 0.7 ? "FULL SEND" : displayScore > 0.5 ? "BULLISH" : displayScore > 0.2 ? "LEAN BULL" : displayScore < -0.7 ? "FULL SEND" : displayScore < -0.5 ? "BEARISH" : displayScore < -0.2 ? "LEAN BEAR" : "NEUTRAL"
+    verdictColor = displayScore > 0.1 ? bullish_strong : displayScore < -0.1 ? bearish_strong : neutral_color
+    verdictBgColor = getVerdictBgColor(displayScore)
+    scorePct = str.tostring(math.round(displayScore * 100)) + "%"
+    confBar = getConfBar(displayScore)
+    
+    if showExtendedInfo
+        // ═══════════════════════════════════════════════════════════════════════
+        // EXPANDED VIEW
+        // ═══════════════════════════════════════════════════════════════════════
+        
+        // Row 0: Header
+        table.cell(panel, 0, 0, "CAPITAL FLOW · " + str.upper(market), text_color=accent_gold, text_size=getTextSize("normal"), bgcolor=bg_medium, text_halign=text.align_left)
+        table.cell(panel, 1, 0, "", bgcolor=bg_medium)
+        table.cell(panel, 2, 0, "", bgcolor=bg_medium)
+        table.cell(panel, 3, 0, modeDisplay, text_color=modeColor, text_size=getTextSize("small"), bgcolor=bg_medium, text_halign=text.align_right)
+        
+        // Row 1: MACRO header
+        macroSummary = str.tostring(macroBullCount > macroBearCount ? macroBullCount : macroBearCount) + "/4 aligned"
+        table.cell(panel, 0, 1, "MACRO", text_color=text_primary, text_size=getTextSize("small"), bgcolor=bg_light, text_halign=text.align_left)
+        table.cell(panel, 1, 1, "", bgcolor=bg_light)
+        table.cell(panel, 2, 1, "", bgcolor=bg_light)
+        table.cell(panel, 3, 1, macroSummary, text_color=macroColor, text_size=getTextSize("small"), bgcolor=bg_light, text_halign=text.align_right)
+        
+        // Row 2: Macro details - DXY & VIX
+        dxyText = getAccuracyIcon(corr_dxy) + lbl_1 + " " + str.tostring(corr_dxy, "#") + "%"
+        vixText = getAccuracyIcon(corr_vix) + lbl_2 + " " + str.tostring(corr_vix, "#") + "%"
+        table.cell(panel, 0, 2, dxyText, text_color=text_secondary, text_size=getTextSize("small"), bgcolor=bg_dark, text_halign=text.align_left)
+        table.cell(panel, 1, 2, getArrow(sig_dxy, m_dxy), text_color=getSignalColor(sig_dxy, m_dxy), text_size=getTextSize("normal"), bgcolor=bg_dark)
+        table.cell(panel, 2, 2, vixText, text_color=text_secondary, text_size=getTextSize("small"), bgcolor=bg_dark, text_halign=text.align_left)
+        table.cell(panel, 3, 2, getArrow(sig_vix, m_vix), text_color=getSignalColor(sig_vix, m_vix), text_size=getTextSize("normal"), bgcolor=bg_dark, text_halign=text.align_right)
+        
+        // Row 3: Macro details - GOLD & US10Y
+        goldText = getAccuracyIcon(corr_gold) + lbl_3 + " " + str.tostring(corr_gold, "#") + "%"
+        yieldsText = getAccuracyIcon(corr_yields) + lbl_4 + " " + str.tostring(corr_yields, "#") + "%"
+        table.cell(panel, 0, 3, goldText, text_color=text_secondary, text_size=getTextSize("small"), bgcolor=bg_dark, text_halign=text.align_left)
+        table.cell(panel, 1, 3, getArrow(sig_gold, m_gold), text_color=getSignalColor(sig_gold, m_gold), text_size=getTextSize("normal"), bgcolor=bg_dark)
+        table.cell(panel, 2, 3, yieldsText, text_color=text_secondary, text_size=getTextSize("small"), bgcolor=bg_dark, text_halign=text.align_left)
+        table.cell(panel, 3, 3, getArrow(sig_yields, m_yields), text_color=getSignalColor(sig_yields, m_yields), text_size=getTextSize("normal"), bgcolor=bg_dark, text_halign=text.align_right)
+        
+        // Row 4: CRYPTO header
+        cryptoSummary = str.tostring(cryptoBullCount > cryptoBearCount ? cryptoBullCount : cryptoBearCount) + "/2 aligned"
+        table.cell(panel, 0, 4, grp_2, text_color=text_primary, text_size=getTextSize("small"), bgcolor=bg_light, text_halign=text.align_left)
+        table.cell(panel, 1, 4, "", bgcolor=bg_light)
+        table.cell(panel, 2, 4, "", bgcolor=bg_light)
+        table.cell(panel, 3, 4, cryptoSummary, text_color=cryptoColor, text_size=getTextSize("small"), bgcolor=bg_light, text_halign=text.align_right)
+        
+        // Row 5: Crypto details - BTC & ETH
+        btcText = getAccuracyIcon(corr_btc) + lbl_5 + " " + str.tostring(corr_btc, "#") + "%"
+        ethText = getAccuracyIcon(corr_eth) + lbl_6 + " " + str.tostring(corr_eth, "#") + "%"
+        table.cell(panel, 0, 5, btcText, text_color=text_secondary, text_size=getTextSize("small"), bgcolor=bg_dark, text_halign=text.align_left)
+        table.cell(panel, 1, 5, getArrow(sig_btc, m_btc), text_color=getSignalColor(sig_btc, m_btc), text_size=getTextSize("normal"), bgcolor=bg_dark)
+        table.cell(panel, 2, 5, ethText, text_color=text_secondary, text_size=getTextSize("small"), bgcolor=bg_dark, text_halign=text.align_left)
+        table.cell(panel, 3, 5, getArrow(sig_eth, m_eth), text_color=getSignalColor(sig_eth, m_eth), text_size=getTextSize("normal"), bgcolor=bg_dark, text_halign=text.align_right)
+        
+        // Row 6: SECTORS header
+        sectorSummary = str.tostring(sectorBullCount > sectorBearCount ? sectorBullCount : sectorBearCount) + "/2 aligned"
+        table.cell(panel, 0, 6, grp_3, text_color=text_primary, text_size=getTextSize("small"), bgcolor=bg_light, text_halign=text.align_left)
+        table.cell(panel, 1, 6, "", bgcolor=bg_light)
+        table.cell(panel, 2, 6, "", bgcolor=bg_light)
+        table.cell(panel, 3, 6, sectorSummary, text_color=sectorColor, text_size=getTextSize("small"), bgcolor=bg_light, text_halign=text.align_right)
+        
+        // Row 7: Sector details - BTC.D & TOTAL3
+        btcdText = getAccuracyIcon(corr_btcd) + lbl_7 + " " + str.tostring(corr_btcd, "#") + "%"
+        total3Text = getAccuracyIcon(corr_total3) + lbl_8 + " " + str.tostring(corr_total3, "#") + "%"
+        table.cell(panel, 0, 7, btcdText, text_color=text_secondary, text_size=getTextSize("small"), bgcolor=bg_dark, text_halign=text.align_left)
+        table.cell(panel, 1, 7, getArrow(sig_btcd, m_btcd), text_color=getSignalColor(sig_btcd, m_btcd), text_size=getTextSize("normal"), bgcolor=bg_dark)
+        table.cell(panel, 2, 7, total3Text, text_color=text_secondary, text_size=getTextSize("small"), bgcolor=bg_dark, text_halign=text.align_left)
+        table.cell(panel, 3, 7, getArrow(sig_total3, m_total3), text_color=getSignalColor(sig_total3, m_total3), text_size=getTextSize("normal"), bgcolor=bg_dark, text_halign=text.align_right)
+        
+        // Row 8: Divider
+        table.cell(panel, 0, 8, "", bgcolor=bg_light)
+        table.cell(panel, 1, 8, "", bgcolor=bg_light)
+        table.cell(panel, 2, 8, "", bgcolor=bg_light)
+        table.cell(panel, 3, 8, "", bgcolor=bg_light)
+        
+        // Row 9: Status - Confluence & Momentum
+        confCount = bullCount > bearCount ? bullCount : bearCount
+        confText = str.tostring(confCount) + "/8 signals"
+        momentumText = scoreMomentum > 0.02 ? "↗ Rising" : scoreMomentum < -0.02 ? "↘ Falling" : "→ Steady"
+        momentumColor = scoreMomentum > 0.02 ? bullish_strong : scoreMomentum < -0.02 ? bearish_strong : neutral_color
+        table.cell(panel, 0, 9, confText, text_color=verdictColor, text_size=getTextSize("small"), bgcolor=bg_medium, text_halign=text.align_left)
+        table.cell(panel, 1, 9, "", bgcolor=bg_medium)
+        table.cell(panel, 2, 9, "", bgcolor=bg_medium)
+        table.cell(panel, 3, 9, momentumText, text_color=momentumColor, text_size=getTextSize("small"), bgcolor=bg_medium, text_halign=text.align_right)
+        
+        // Row 10: Status - Duration & Volatility
+        durationText = getBarsAsTime(barsInState) + " in state"
+        volText = highVolatility ? "⚠ High Vol" : ""
+        volColor = highVolatility ? accent_orange : text_muted
+        table.cell(panel, 0, 10, durationText, text_color=text_muted, text_size=getTextSize("small"), bgcolor=bg_medium, text_halign=text.align_left)
+        table.cell(panel, 1, 10, "", bgcolor=bg_medium)
+        table.cell(panel, 2, 10, "", bgcolor=bg_medium)
+        table.cell(panel, 3, 10, volText, text_color=volColor, text_size=getTextSize("small"), bgcolor=bg_medium, text_halign=text.align_right)
+        
+        // Row 11: Performance Stats Header
+        table.cell(panel, 0, 11, "PERFORMANCE", text_color=text_primary, text_size=getTextSize("small"), bgcolor=bg_light, text_halign=text.align_left)
+        table.cell(panel, 1, 11, "", bgcolor=bg_light)
+        table.cell(panel, 2, 11, "", bgcolor=bg_light)
+        perfWindowLabel = perfLookbackLimit > 0 ? "Last " + str.tostring(displaySignalCount) : str.tostring(displaySignalCount) + " signals"
+        table.cell(panel, 3, 11, perfWindowLabel, text_color=text_muted, text_size=getTextSize("small"), bgcolor=bg_light, text_halign=text.align_right)
+
+        // Row 12: Performance Stats Details
+        perfLabel = displaySignalCount > 0 ? "Win Rate: " + str.tostring(winRate, "#") + "%" : "—"
+        perfColor = na(winRate) ? text_muted : winRate > 55 ? bullish_strong : winRate < 45 ? bearish_strong : neutral_color
+        lastSignalLabel = hasLastSignal ? "Last: " + getLastSignalText(hasLastSignal, lastSignalCorrect, lastSignalReturn) : "Last: —"
+        streakLabel = currentStreak != 0 ? "Streak: " + getStreakText(currentStreak) : ""
+        streakColor = currentStreak > 0 ? bullish_strong : currentStreak < 0 ? bearish_strong : text_muted
+        table.cell(panel, 0, 12, perfLabel, text_color=perfColor, text_size=getTextSize("small"), bgcolor=bg_dark, text_halign=text.align_left)
+        table.cell(panel, 1, 12, "", bgcolor=bg_dark)
+        table.cell(panel, 2, 12, lastSignalLabel, text_color=not hasLastSignal ? text_muted : lastSignalCorrect ? bullish_strong : bearish_strong, text_size=getTextSize("small"), bgcolor=bg_dark, text_halign=text.align_right)
+        table.cell(panel, 3, 12, streakLabel, text_color=streakColor, text_size=getTextSize("small"), bgcolor=bg_dark, text_halign=text.align_right)
+        
+        // Row 13: Verdict
+        verdictIcon = displayScore > 0.5 ? "🚀" : displayScore > 0.1 ? "🟢" : displayScore < -0.5 ? "🔻" : displayScore < -0.1 ? "🔴" : "⚪"
+        table.cell(panel, 0, 13, verdictIcon + " " + verdictText, text_color=verdictColor, text_size=getTextSize("normal"), bgcolor=verdictBgColor, text_halign=text.align_left)
+        table.cell(panel, 1, 13, "", bgcolor=verdictBgColor)
+        table.cell(panel, 2, 13, "", bgcolor=verdictBgColor)
+        table.cell(panel, 3, 13, scorePct, text_color=verdictColor, text_size=getTextSize("normal"), bgcolor=verdictBgColor, text_halign=text.align_right)
+
+        // Row 14: Confidence bar
+        table.cell(panel, 0, 14, confBar, text_color=verdictColor, text_size=getTextSize("small"), bgcolor=verdictBgColor, text_halign=text.align_left)
+        table.cell(panel, 1, 14, "", bgcolor=verdictBgColor)
+        table.cell(panel, 2, 14, "", bgcolor=verdictBgColor)
+        table.cell(panel, 3, 14, "Confidence", text_color=text_muted, text_size=getTextSize("small"), bgcolor=verdictBgColor, text_halign=text.align_right)
+
+        // Row 15-16: Manipulation Warning (if active)
+        if showManipWarning and manipScore > 0
+            manipIcon = manipWarningHigh ? "🚨" : manipWarningMed ? "⚠️" : "👀"
+            manipLevelText = manipWarningHigh ? "HIGH MANIPULATION" : manipWarningMed ? "MANIPULATION" : "SUSPICIOUS"
+            manipDetailText = beastModeAlerts ? (accumDistWarning ? "Whales loading" : wickHunting ? "Stop hunt!" : flashCrashPump ? "Shakeout" : spoofPattern ? "Spoofing" : "Flow divergence") : manipType
+
+            table.cell(panel, 0, 15, manipIcon + " " + manipLevelText, text_color=manipTextColor, text_size=getTextSize("small"), bgcolor=manipBgColor, text_halign=text.align_left)
+            table.cell(panel, 1, 15, "", bgcolor=manipBgColor)
+            table.cell(panel, 2, 15, "", bgcolor=manipBgColor)
+            table.cell(panel, 3, 15, manipDetailText, text_color=manipTextColor, text_size=getTextSize("small"), bgcolor=manipBgColor, text_halign=text.align_right)
+
+            // Beast mode extra commentary
+            beastComment = beastModeAlerts ? (manipWarningHigh ? "They're hunting you!" : "Watch your back") : ""
+            table.cell(panel, 0, 16, beastComment, text_color=text_muted, text_size=getTextSize("small"), bgcolor=manipBgColor, text_halign=text.align_left)
+            table.cell(panel, 1, 16, "", bgcolor=manipBgColor)
+            table.cell(panel, 2, 16, "", bgcolor=manipBgColor)
+            table.cell(panel, 3, 16, "", bgcolor=manipBgColor)
+        
+    else
+        // ═══════════════════════════════════════════════════════════════════════
+        // COLLAPSED VIEW (Clean & Minimal)
+        // ═══════════════════════════════════════════════════════════════════════
+        
+        // Row 0: Header
+        table.cell(panel, 0, 0, "CAPITAL FLOW · " + str.upper(market), text_color=accent_gold, text_size=getTextSize("normal"), bgcolor=bg_medium, text_halign=text.align_left)
+        table.cell(panel, 1, 0, "", bgcolor=bg_medium)
+        table.cell(panel, 2, 0, "", bgcolor=bg_medium)
+        table.cell(panel, 3, 0, modeDisplay, text_color=modeColor, text_size=getTextSize("small"), bgcolor=bg_medium, text_halign=text.align_right)
+        
+        // Row 1: Summary signals
+        macroSum = "M:" + macroArrows
+        cryptoSum = "C:" + cryptoArrows
+        sectorSum = "S:" + sectorArrows
+        table.cell(panel, 0, 1, macroSum, text_color=macroColor, text_size=getTextSize("small"), bgcolor=bg_dark, text_halign=text.align_left)
+        table.cell(panel, 1, 1, cryptoSum, text_color=cryptoColor, text_size=getTextSize("small"), bgcolor=bg_dark, text_halign=text.align_center)
+        table.cell(panel, 2, 1, "", bgcolor=bg_dark)
+        table.cell(panel, 3, 1, sectorSum, text_color=sectorColor, text_size=getTextSize("small"), bgcolor=bg_dark, text_halign=text.align_right)
+        
+        // Row 2: Verdict
+        verdictIcon = displayScore > 0.5 ? "🚀" : displayScore > 0.1 ? "🟢" : displayScore < -0.5 ? "🔻" : displayScore < -0.1 ? "🔴" : "⚪"
+        table.cell(panel, 0, 2, verdictIcon + " " + verdictText, text_color=verdictColor, text_size=getTextSize("normal"), bgcolor=verdictBgColor, text_halign=text.align_left)
+        table.cell(panel, 1, 2, "", bgcolor=verdictBgColor)
+        table.cell(panel, 2, 2, "", bgcolor=verdictBgColor)
+        table.cell(panel, 3, 2, scorePct, text_color=verdictColor, text_size=getTextSize("normal"), bgcolor=verdictBgColor, text_halign=text.align_right)
+        
+        // Row 3: Confidence bar
+        table.cell(panel, 0, 3, confBar, text_color=verdictColor, text_size=getTextSize("small"), bgcolor=verdictBgColor, text_halign=text.align_left)
+        table.cell(panel, 1, 3, "", bgcolor=verdictBgColor)
+        table.cell(panel, 2, 3, "", bgcolor=verdictBgColor)
+        table.cell(panel, 3, 3, "", bgcolor=verdictBgColor)
+        
+        // Row 4-5: Manipulation Warning (if active) - Collapsed view
+        if showManipWarning and manipScore > 0
+            manipIcon = manipWarningHigh ? "🚨" : manipWarningMed ? "⚠️" : "👀"
+            manipShortText = manipWarningHigh ? "MANIPULATION!" : manipWarningMed ? "SUSPICIOUS" : "WATCH"
+            manipTypeShort = beastModeAlerts ? (accumDistWarning ? "Whales!" : wickHunting ? "Stop hunt!" : flashCrashPump ? "Shakeout!" : spoofPattern ? "Spoof!" : "Divergence!") : manipType
+            
+            table.cell(panel, 0, 4, manipIcon + " " + manipShortText, text_color=manipTextColor, text_size=getTextSize("small"), bgcolor=manipBgColor, text_halign=text.align_left)
+            table.cell(panel, 1, 4, "", bgcolor=manipBgColor)
+            table.cell(panel, 2, 4, "", bgcolor=manipBgColor)
+            table.cell(panel, 3, 4, manipTypeShort, text_color=manipTextColor, text_size=getTextSize("small"), bgcolor=manipBgColor, text_halign=text.align_right)
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// DATA EXPORTS - CRS INTEGRATION
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// Core Score
+plot(normalizedScore, title="Score", display=display.data_window)
+plot(sig_dxy, title="Sig dxy", display=display.data_window)
+plot(sig_vix, title="Sig vix", display=display.data_window)
+plot(sig_gold, title="Sig gold", display=display.data_window)
+plot(sig_yields, title="Sig yields", display=display.data_window)
+plot(sig_btc, title="Sig btc", display=display.data_window)
+plot(sig_eth, title="Sig eth", display=display.data_window)
+plot(sig_btcd, title="Sig btcd", display=display.data_window)
+plot(sig_total3, title="Sig total3", display=display.data_window)
+
+// Capital Flow Index (0-100 scale for CRS)
+// 50 = neutral, >60 = risk-on, <40 = risk-off
+cfi = 50 + (normalizedScore * 50)
+
+// Regime State: 1 = Risk-On, 0 = Neutral, -1 = Risk-Off
+regime = cfi > 60 ? 1 : cfi < 40 ? -1 : 0
+
+// Confidence (0-100) - Based on confluence + signal strength
+confidence = (math.max(bullCount, bearCount) / 8.0) * 100 * math.min(math.abs(normalizedScore) * 2, 1.0)
+
+// Sector Tilt: 1 = Majors favored, -1 = Alts favored, 0 = Neutral
+sectorTilt = (sig_btcd * m_btcd) > 0.3 ? 1 : (sig_total3 * m_total3) > 0.3 ? -1 : 0
+
+// Confluence counts
+
+// Mode as number: 1 = Scalp, 2 = Intraday, 3 = Swing
+modeNum = tradingMode == "Scalp" ? 1 : tradingMode == "Intraday" ? 2 : 3

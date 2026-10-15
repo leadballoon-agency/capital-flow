@@ -27,3 +27,8 @@ build/
 .next/
 out/
 .env*.local
+
+# Test lab
+lab/.venv/
+lab/data/
+__pycache__/

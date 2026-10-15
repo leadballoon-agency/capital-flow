@@ -18,19 +18,25 @@ capital-flow/
 │   ├── mdx-capital-flow-filter-v4.6.0.txt   # CURRENT overlay (Pine v6, standalone)
 │   ├── mdx-capital-flow-filter-v4.5.x.txt   # Previous versions (4.5.0 - 4.5.2)
 │   ├── cf-filter-strategy-v4.6.0.txt        # Backtest (strategy) version of v4.6.0
+│   ├── capital-flow-regime-v5.0.pine        # v5.0 Regime (daily SMA50 + macro veto) - PARKED
+│   ├── capital-flow-regime-strategy-v5.0.pine  # its backtest strategy - PARKED
 │   ├── TRADINGVIEW-DESCRIPTION.md           # Published script description
 │   └── INDICATOR-IMPROVEMENTS.md            # Feature wishlist & roadmap
 ├── Capital Flow Oscillator/
-│   ├── capital-flow-oscillator-v2.1.pine    # CURRENT oscillator (Market Cipher B style)
-│   └── capital-flow-oscillator-v1.2/v2.0    # Previous versions
+│   ├── capital-flow-oscillator-v3.2.pine    # CURRENT oscillator (Market Cipher B / VuManChu replacement)
+│   ├── capital-flow-oscillator-v1.2-v3.1    # Previous versions
+│   └── capital-flow-combined-strategy-v1.0.pine  # Backtest of the v2.1 Cloud Edge playbook (retired, off the chart)
 ├── public/
 │   ├── index.html              # Landing page (MDX branding)
+│   ├── suite.html              # Suite page: Filter v4.6 + Oscillator v3.2, backtest with caveats (not linked from nav yet)
+│   ├── strategies.html / methodology.html / about.html  # Guides (some figures are old manual counts)
 │   ├── reports.html            # Substack-style reports archive
 │   ├── privacy.html            # Privacy policy
 │   ├── disclaimer.html         # Trading risk disclaimer
 │   ├── reports-data.json       # Archive of daily reports (auto-generated)
 │   ├── Daily 4H BTC Screenshots/   # Chart screenshots for reports
 │   └── images/                 # Curated indicator screenshots
+├── lab/                        # Python test lab: engine port, backtests, TradingView comparisons (see lab/README.md; data/ and .venv/ not in git)
 ├── scripts/
 │   └── generate-report.js      # AI daily report generator
 ├── .env                        # API keys (not in git)
@@ -96,7 +102,7 @@ node scripts/generate-report.js
 
 TradingView script names:
 - Overlay: "Capital Flow Filter [v4.6.0]" (legend "CF Filter v4.6")
-- Oscillator: "Capital Flow Oscillator [v2.1]" (legend "CF Osc")
+- Oscillator: "Capital Flow Oscillator [v3.2]" (legend "CF Osc")
 - Backtest: "Capital Flow Filter Strategy [v4.6.0]"
 
 ### What It Does
@@ -150,20 +156,32 @@ Auto-detects based on chart timeframe:
 | 4H | +125% | +83% | ~16% |
 
 - **Caveats:** only 15-20 trades per timeframe, the setup was chosen from about 10 configurations, and the period was mostly a bull market. Validate on ETH and on 2022 before relying on it.
+- **Hidden dependency (found 2026-10-14):** `calcFlowOffset` reads the global `adaptiveThreshold`, which depends on the timeframe. Inside `request.security` Pine re-evaluates it in the *requested* context, so lower-timeframe reads (15m on 1H-4H charts) come back volatility-scaled instead of as raw %. The backtests above depend on this. Every explicit rewrite tried changed the results (3H, same settings):
 
-## The Oscillator (Capital Flow Oscillator v2.1)
+| Flow rule | 3H result |
+|---|---|
+| v4.6.0 as written (context-dependent) | +47%, 19 trades, PF 2.35 |
+| 15m-and-below adaptive, explicit | +19%, 15 trades |
+| No input adaptive | +1%, 14 trades |
+| Every input adaptive | -6%, 26 trades |
+| Never read below chart TF | +18%, 55 trades |
 
-A companion pane styled after Market Cipher B:
-- **Waves:** WaveTrend-style momentum, or "Cloud Position" inside the Keltner cloud
-- **Money flow area** from the chart's own candles and volume
-- **Yellow momentum area**
-- **Capital flow strip** along the bottom: the same engine and Market presets as the overlay; it gates setups
-- **Dots:** wave crosses, Cloud Edge setups and A+ setups
-- **Targets:** TP1 (cloud basis), TP2 (opposite band), ✕ (flow exit)
-- **Divergence** "D" marks plus lines
-- **RSI cue:** the wave's leading edge turns red above 70 and green below 30
+  So the 3H/4H edge rests on an accidental, fragile interaction. The code is left as written, with a comment warning against "simplifying" it. Treat the 3H/4H numbers as unproven.
 
-Stoch RSI and the key box are optional and off by default.
+## The Oscillator (Capital Flow Oscillator v3.2)
+
+A Market Cipher B / VuManChu Cipher B replacement, Classic (MC-style) look by default:
+- **Waves:** WaveTrend momentum (same maths as Cipher B), or "Cloud Position" inside the Keltner cloud
+- **Higher-timeframe wave:** smooth soft-glow lavender line behind (Auto: up to 15m -> 1H, up to 1H -> 4H, up to 4H -> 1D, daily -> 1W); closed bars only
+- **Money flow:** real buy vs sell volume from lower-timeframe candles (volume delta), falling back to candle pressure; volume-weighted EMA plus an Ehlers super smoother ("Money Flow Smoothing", default 12) so it draws as a smooth curve, not a sawtooth; normalised to its own typical size. "Money Flow Source → Cipher B" swaps in VuManChu Cipher B's exact formula (60-bar SMA of body/range × 150, minus 2.5) for comparison
+- **Yellow momentum area**, RSI wave-edge cue, optional Stoch RSI
+- **Graded dots:** every wave turn is scored on 5 checks (stretched wave, HTF wave, money flow, capital flow, recent divergence). Only turns from a stretched wave grade above C. A = gold/pink, B = outlined dot, C = small dot
+- **Divergence engine:** price swings vs wave, RSI and money flow; regular and hidden, strength 1-3. Lines only (bold = all three agree); hidden ones count for grading but aren't drawn by default
+- **Readout:** compact two-column box (capital flow, wave + HTF arrows, volume delta + latest divergence, last graded signal); alerts carry the grade and reasons
+- **Capital flow band** along the bottom (same engine and Market presets as the overlay); continuous, changes shade only when conviction holds 3 bars ("Bars" option keeps the old columns)
+- TP1/TP2 marks still exist but are off by default
+
+The user wants it to replace Cipher B as a discretionary tool, not to be tuned by backtests. Keep dots small (the user found the big ones too large).
 
 ### Alert Types
 
@@ -180,12 +198,12 @@ Stoch RSI and the key box are optional and off by default.
 ### Plot Budget
 
 **Limit:** 64 plots (TradingView maximum)
-**Current Usage (v4.6.0):** ~15 plot calls, well under the limit. The old "at limit" note was wrong.
+**Current Usage (v4.6.0):** exactly 64, AT the limit. Adding 17 data-window plots failed with "The script creates too many plots (73)". Every new plot needs one removed.
 
 **Data Exports (9 plots, reserved for future CRS):**
 - Score, Strength, CFI, Regime, Confidence, Sector Tilt, Bull Count, Bear Count, Mode
 
-There is room to add D/W/M opens.
+There is no room for D/W/M opens as plots; use lines/labels or remove other plots first.
 
 ---
 
@@ -325,7 +343,7 @@ curl -X POST https://capital-flow-filter.vercel.app/api/webhook \
 ## Indicator Improvements Wishlist
 
 See `/Indicator script/INDICATOR-IMPROVEMENTS.md` for:
-- D/W/M Opens (plot budget allows it now)
+- D/W/M Opens (use lines/labels: plot budget is full)
 - Flip confirmation (done in v4.5.2: threshold + confirmation bars)
 - Volume confirmation on signals
 - Adaptive thresholds (done in v4.6.0, used on Scalp)
@@ -364,4 +382,4 @@ See `/Indicator script/INDICATOR-IMPROVEMENTS.md` for:
 
 ---
 
-*Last updated: October 14, 2026*
+*Last updated: October 15, 2026*

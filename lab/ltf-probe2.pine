@@ -1,0 +1,30 @@
+//@version=6
+// Temporary probe 2: the v4.6 getFlow path, called the same way the indicator calls it
+indicator("LTF Probe (temporary)", overlay=false)
+flowLength = 14
+adaptiveThreshold = false
+calcFlow(float src, int len) =>
+    roc = ta.roc(src, len)
+    ta.ema(roc, len)
+calcFlowOffset(int len, int off) =>
+    f = calcFlow(close, len)
+    scale = ta.sma(math.abs(ta.roc(close, len)), 100)
+    v = adaptiveThreshold ? (scale > 0 ? f / scale : 0.0) : f
+    [v[off], time[off]]
+getFlow(simple string sym, simple string tf) =>
+    bool htf = timeframe.in_seconds(tf) >= timeframe.in_seconds()
+    int off = htf ? 1 : 0
+    [f, t] = request.security(sym, tf, calcFlowOffset(flowLength, off), lookahead=htf ? barmerge.lookahead_on : barmerge.lookahead_off, ignore_invalid_symbol=true)
+    nz(f)
+// A: exact v4.6 path
+plot(getFlow("TVC:DXY", "15"), "A getFlow 15", display=display.data_window)
+plot(getFlow("TVC:DXY", "60"), "A getFlow 60", display=display.data_window)
+plot(getFlow("TVC:DXY", "240"), "A getFlow 240", display=display.data_window)
+// B: same, offset hard-coded to 0
+[fb, tb] = request.security("TVC:DXY", "15", calcFlowOffset(flowLength, 0), lookahead=barmerge.lookahead_off)
+plot(fb, "B off=0 const", display=display.data_window)
+// C: no tuple / no offset
+plot(request.security("TVC:DXY", "15", calcFlow(close, flowLength)), "C plain", display=display.data_window)
+// D: variable lookahead but const offset
+plot(request.security("TVC:DXY", "15", calcFlow(close, flowLength), lookahead=timeframe.in_seconds("15") >= timeframe.in_seconds() ? barmerge.lookahead_on : barmerge.lookahead_off), "D var lookahead", display=display.data_window)
+plot(0, "zero")
