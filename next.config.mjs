@@ -2,12 +2,14 @@
 const nextConfig = {
   // Lab, Pine scripts and screenshots aren't part of the app
   outputFileTracingExcludes: { '*': ['lab/**', 'Capital Flow Oscillator/**', 'Indicator script/**'] },
-  async rewrites() {
-    // The older pages are still static HTML in public/
-    return [{ source: '/', destination: '/index.html' }];
-  },
   async redirects() {
-    return [{ source: '/suite.html', destination: '/oscillator', permanent: false }];
+    // Old static .html addresses keep working
+    const pages = ['about', 'disclaimer', 'methodology', 'privacy', 'reports', 'strategies', 'suggest'];
+    return [
+      { source: '/index.html', destination: '/', permanent: true },
+      ...pages.map((p) => ({ source: `/${p}.html`, destination: `/${p}`, permanent: true })),
+      { source: '/suite.html', destination: '/oscillator', permanent: false },
+    ];
   },
 };
 

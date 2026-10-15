@@ -12,12 +12,16 @@ This project provides a **free trading signals service** built around the Capita
 
 ```
 capital-flow/                   # Next.js 16 (React 19) app on Vercel since 2026-10-15
-├── app/
+├── app/                        # Every page is React (App Router); each route has page.jsx + its own CSS file
 │   ├── layout.jsx              # Root layout (fonts)
-│   └── oscillator/             # /oscillator: CF Osc landing page (React; page.jsx, HeroVisual.jsx, osc.css)
+│   ├── page.jsx + home.css     # / landing page (MDX branding)
+│   ├── oscillator/             # /oscillator: CF Osc page (page.jsx, HeroVisual.jsx, osc.css)
+│   ├── about/ methodology/ strategies/ reports/ suggest/ privacy/ disclaimer/
+│   └── components/             # Client components: SignalsFeed, LatestReportCard, FearGreedWidget, LongShortWidget,
+│                               #   EconomicCalendarWidget, SuggestWidget (floating feedback), ReportsArchive, SuggestionsBoard
 ├── pages/api/                  # API routes (moved from api/ for Next): webhook, signals, suggestions,
 │   └── webhook.js              #   fear-greed, long-short-ratio, economic-calendar, cron/economic-alerts
-├── next.config.mjs             # "/" -> /index.html rewrite; /suite.html -> /oscillator redirect
+├── next.config.mjs             # Redirects: old /*.html addresses -> clean routes, /suite.html -> /oscillator
 ├── vercel.json                 # framework: nextjs + the daily economic-alerts cron
 ├── Indicator script/
 │   ├── mdx-capital-flow-filter-v4.6.0.txt   # CURRENT overlay (Pine v6, standalone)
@@ -31,12 +35,7 @@ capital-flow/                   # Next.js 16 (React 19) app on Vercel since 2026
 │   ├── capital-flow-oscillator-v3.4.pine    # CURRENT oscillator (Market Cipher B / VuManChu replacement)
 │   ├── capital-flow-oscillator-v1.2-v3.3    # Previous versions
 │   └── capital-flow-combined-strategy-v1.0.pine  # Backtest of the v2.1 Cloud Edge playbook (retired, off the chart)
-├── public/
-│   ├── index.html              # Landing page (MDX branding), still static HTML served at "/"
-│   ├── strategies.html / methodology.html / about.html  # Guides (some figures are old manual counts)
-│   ├── reports.html            # Substack-style reports archive
-│   ├── privacy.html            # Privacy policy
-│   ├── disclaimer.html         # Trading risk disclaimer
+├── public/                     # Static assets only (no HTML pages since the React port)
 │   ├── reports-data.json       # Archive of daily reports (auto-generated)
 │   ├── Daily 4H BTC Screenshots/   # Chart screenshots for reports
 │   └── images/                 # Curated indicator screenshots
@@ -90,14 +89,14 @@ node scripts/generate-report.js
 
 **URL:** https://capital-flow-filter.vercel.app/
 
-**Framework:** Next.js (App Router for new React pages, `pages/api` for the API). The older pages are still static HTML in `public/` and are served as-is; port them to React one at a time. Run locally with `npm run dev`, check with `npm run build`.
+**Framework:** Next.js (App Router pages, `pages/api` for the API). All pages were ported from static HTML to React on 2026-10-15; a side-by-side check showed every element at the same position and size as the old HTML, widgets included. Each page imports its own CSS and links between pages are plain `<a>` tags (full page loads), so page stylesheets never mix; switching to `next/link` would need the CSS scoped first. Run locally with `npm run dev`, check with `npm run build`. Strategies/methodology/about still contain some old manual figures (e.g. "82% Win Rate").
 
 **Pages:**
-- `/` - Landing page with features, signal types, roadmap, recent signals feed
+- `/` - Landing page with features, signal types, roadmap, recent signals feed (old `/x.html` addresses redirect to `/x`)
 - `/oscillator` - CF Osc page (React): Capital Flow signal, reading the pane, money flow test, engine, install, FAQ. Linked from the nav/footers; `/suite.html` (the old two-indicator page) redirects here
-- `/reports.html` - Archive of daily reports (Substack-style)
-- `/privacy.html` - Privacy policy
-- `/disclaimer.html` - Trading risk disclaimer
+- `/reports` - Archive of daily reports (Substack-style)
+- `/privacy` - Privacy policy
+- `/disclaimer` - Trading risk disclaimer
 
 **Branding:** Dark theme with orange accents (#ff6b00) matching MDX ALGO style.
 

@@ -286,7 +286,7 @@ export default function OscillatorPage() {
                 the oscillator carries the capital flow band and flip dots on its own.
               </p>
             </div>
-            <a href="/methodology.html" className="btn btn-ghost">How the engine works</a>
+            <a href="/methodology" className="btn btn-ghost">How the engine works</a>
           </div>
         </div>
       </section>
@@ -390,7 +390,7 @@ export default function OscillatorPage() {
                   {q.startsWith('Is this financial') && (
                     <>
                       {' '}
-                      <a href="/disclaimer.html" style={{ color: 'var(--orange-light)' }}>
+                      <a href="/disclaimer" style={{ color: 'var(--orange-light)' }}>
                         Read the disclaimer
                       </a>
                       .
@@ -422,7 +422,7 @@ export default function OscillatorPage() {
             <strong>Risk disclaimer.</strong> Trading crypto, stocks, forex and other instruments involves substantial
             risk, and you can lose some or all of your capital. Leverage magnifies losses. The indicators, signals and
             reports on this site are for education only and are not financial advice. Past performance doesn&apos;t
-            predict future results. <a href="/disclaimer.html">Read the full disclaimer</a>.
+            predict future results. <a href="/disclaimer">Read the full disclaimer</a>.
           </div>
         </div>
       </section>
@@ -431,13 +431,13 @@ export default function OscillatorPage() {
         <div className="wrap">
           <div className="foot-links">
             <a href="/">Home</a>
-            <a href="/strategies.html">Strategies</a>
-            <a href="/methodology.html">Methodology</a>
-            <a href="/reports.html">Reports</a>
-            <a href="/about.html">About</a>
+            <a href="/strategies">Strategies</a>
+            <a href="/methodology">Methodology</a>
+            <a href="/reports">Reports</a>
+            <a href="/about">About</a>
             <a href={TELEGRAM} target="_blank" rel="noopener">Telegram</a>
-            <a href="/privacy.html">Privacy</a>
-            <a href="/disclaimer.html">Disclaimer</a>
+            <a href="/privacy">Privacy</a>
+            <a href="/disclaimer">Disclaimer</a>
           </div>
           <p className="disclosure">
             <strong>Affiliate disclosure:</strong> The Capital Flow Oscillator is a free, independent project. It
