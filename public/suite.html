@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Capital Flow Suite | Free TradingView Indicators</title>
-  <meta name="description" content="Two free, non-repainting TradingView indicators that read where capital is moving: Capital Flow Filter v4.6 and Capital Flow Oscillator v3.2. Backtests published with their caveats.">
+  <meta name="description" content="Two free, non-repainting TradingView indicators that read where capital is moving: Capital Flow Filter v4.6 and Capital Flow Oscillator v3.4. Backtests published with their caveats.">
   <meta property="og:title" content="Capital Flow Suite: free TradingView indicators">
   <meta property="og:description" content="Blend macro, crypto leaders and sector flows into one score. Free, standalone, no repaint.">
   <meta property="og:type" content="website">
@@ -271,7 +271,7 @@
   <header class="hero">
     <div class="wrap hero-grid">
       <div>
-        <div class="pill"><span class="dot"></span>Free on TradingView · v4.6 + Oscillator v3.2</div>
+        <div class="pill"><span class="dot"></span>Free on TradingView · v4.6 + Oscillator v3.4</div>
         <h1>See where the <span>money is moving</span> before you take the trade.</h1>
         <p class="lead">The Capital Flow suite blends eight capital-flow inputs (the dollar, volatility, gold, yields, BTC, ETH, dominance and altcoin cap) into one score from &minus;100% to +100%. Then it puts that score next to your momentum signals so you can tell when they agree.</p>
         <div class="hero-ctas">
@@ -286,7 +286,7 @@
         </div>
       </div>
 
-      <div class="hero-visual" role="img" aria-label="Illustration of the Capital Flow Oscillator pane with momentum waves, money flow, capital flow strip and setup dots">
+      <div class="hero-visual" role="img" aria-label="Illustration of the Capital Flow Oscillator pane with momentum waves, money flow, the capital flow band and signal dots">
         <div class="vis-head"><span><b>CF Osc</b> · BTCUSDT · 4H</span><span>Illustration</span></div>
         <svg viewBox="0 0 520 260" aria-hidden="true">
           <defs>
@@ -311,26 +311,24 @@
           <path d="M0 140 C40 165 72 186 104 182 S152 132 196 104 S256 62 296 64 S344 112 374 130 S432 86 474 66 S512 58 520 60" fill="none" stroke="#2a5d99" stroke-width="2"/>
           <!-- RSI edge cue -->
           <path d="M455 64 C470 57 495 52 520 55" fill="none" stroke="#ff4d4d" stroke-width="3"/>
-          <!-- dots -->
-          <circle cx="104" cy="181" r="6" fill="#00d27a"/>
-          <circle cx="372" cy="127" r="6" fill="#00d27a"/>
-          <circle cx="372" cy="127" r="11" fill="none" stroke="#ff6b00" stroke-width="2"/>
-          <text x="384" y="146" fill="#ff8533" font-size="11" font-family="Inter" font-weight="700">A</text>
-          <circle cx="292" cy="66" r="5" fill="#ff4d4d"/>
-          <!-- TP marks -->
-          <text x="412" y="80" fill="#f2f2f2" font-size="10" font-family="Inter" font-weight="600">TP1</text>
-          <text x="470" y="44" fill="#f2f2f2" font-size="10" font-family="Inter" font-weight="600">TP2</text>
           <!-- divergence -->
           <line x1="104" y1="181" x2="372" y2="127" stroke="#00d27a" stroke-width="1.2" stroke-dasharray="4 4"/>
-          <text x="226" y="166" fill="#00d27a" font-size="10" font-family="Inter" font-weight="700">D</text>
+          <!-- dots: small cross dots, A dot, and the Capital Flow signal (gold ring) -->
+          <circle cx="104" cy="181" r="4" fill="#00d27a"/>
+          <circle cx="292" cy="66" r="4" fill="#ff4d4d"/>
+          <circle cx="372" cy="127" r="4.5" fill="#f5c542"/>
+          <circle cx="372" cy="127" r="8" fill="none" stroke="#FFD54F" stroke-width="1.2"/>
+          <text x="384" y="150" fill="#FFD54F" font-size="10" font-family="Inter" font-weight="600">Capital Flow</text>
           <!-- capital flow strip -->
           <g>
             <rect x="0" y="232" width="150" height="14" fill="#5a1d1d"/>
             <rect x="150" y="232" width="70" height="14" fill="#2a2a2a"/>
             <rect x="220" y="232" width="110" height="14" fill="#134a33"/>
             <rect x="330" y="232" width="190" height="14" fill="#00a862"/>
+            <circle cx="220" cy="239" r="3.5" fill="#00d27a" stroke="#0d0d0d" stroke-width="1"/>
           </g>
-          <text x="6" y="226" fill="#9a9a9a" font-size="10" font-family="Inter">capital flow strip</text>
+          <text x="6" y="226" fill="#9a9a9a" font-size="10" font-family="Inter">capital flow band</text>
+          <text x="514" y="226" fill="#00d27a" font-size="10" font-family="Inter" font-weight="600" text-anchor="end">&#9650; CAPITAL FLOW IN</text>
         </svg>
         <div class="score-panel">
           <div>Flow score<strong style="color:var(--green)">+62%</strong></div>
@@ -384,14 +382,16 @@
         <article class="card product">
           <span class="tag">FREE</span>
           <div class="kind">Pane · below your chart</div>
-          <h3>Capital Flow Oscillator v3.2</h3>
+          <h3>Capital Flow Oscillator v3.4</h3>
           <p>A free alternative to Cipher-style wave oscillators, with the capital-flow engine built in to grade every signal.</p>
           <ul class="ticks">
             <li><b>Momentum waves</b> (WaveTrend maths) with a smooth <b>higher-timeframe wave</b> behind them.</li>
-            <li><b>Real money flow.</b> Buying vs selling volume from lower-timeframe candles, smoothed into a clean curve. A "Cipher B" mode is there for side-by-side comparison.</li>
+            <li><b>Money flow tested against real data.</b> Buying vs selling volume estimated from lower-timeframe candles, smoothed into a clean curve. We checked it against Binance's actual buy/sell (taker) volume on BTC and ETH: it tracked real flow better than the classic Cipher B formula, though any candle-based estimate is only roughly right.</li>
+            <li><b>The Capital Flow signal.</b> A thin gold ring on the dot when momentum, money and macro agree on one bar: a stretched wave turning, money flow turning the same way, and capital flow on the same side. Rare by design.</li>
+            <li><b>Blue Wave setup.</b> A deep first dip, a shallower second dip, then a turn with money flow behind it. Marked with a small blue diamond.</li>
             <li><b>Graded dots, A, B or C.</b> Each wave turn is scored on five checks: stretched wave, higher-timeframe wave, money flow, capital flow and recent divergence.</li>
             <li><b>Divergence engine.</b> Price swings vs wave, RSI and money flow, regular and hidden, with a 1–3 strength.</li>
-            <li><b>Capital-flow band</b> along the bottom and a compact readout, plus alerts that carry the grade and the reasons.</li>
+            <li><b>Capital-flow band</b> along the bottom with flip dots and an "IN / OUT" tag, a compact status box, and alerts that carry the grade and the reasons.</li>
           </ul>
           <a href="#install" class="btn btn-ghost">Add the Oscillator</a>
         </article>
@@ -456,8 +456,10 @@
           <li><span class="sw" style="background:#b4a7d6"></span><span><b>Higher-timeframe wave.</b> A soft lavender line: 1H waves on 15m charts, 4H on 1H, daily on 4H. Closed bars only.</span></li>
           <li><span class="sw" style="background:var(--green);opacity:.6"></span><span><b>Money flow.</b> Buy vs sell volume from lower-timeframe candles, smoothed so it reads as a curve, not a sawtooth.</span></li>
           <li><span class="sw" style="background:var(--yellow);opacity:.7"></span><span><b>Yellow momentum area.</b> A second, smoother read of momentum.</span></li>
-          <li><span class="sw" style="background:#00a862"></span><span><b>Capital-flow band.</b> The same engine and presets as the overlay. It only changes shade when the reading holds for 3 bars.</span></li>
-          <li><span class="sw" style="background:var(--orange)"></span><span><b>Graded dots.</b> A = gold or pink, B = outlined dot, C = small dot. Small by design, so they don't bury the waves.</span></li>
+          <li><span class="sw" style="background:#00a862"></span><span><b>Capital-flow band.</b> The same engine and presets as the overlay. It only changes shade when the reading holds for 3 bars. Green or red dots on the band mark flips (±20% for 2 bars, the same rule as the overlay), and a tag at the right edge reads "CAPITAL FLOW IN", "OUT", "leaning" or "neutral".</span></li>
+          <li><span class="sw" style="background:var(--orange)"></span><span><b>Graded dots.</b> A small dot on every wave cross. A = gold or pink, B = outlined dot, C = small dot. Small by design, so they don't bury the waves.</span></li>
+          <li><span class="sw" style="background:transparent;border:1.5px solid #FFD54F;border-radius:50%"></span><span><b>Capital Flow signal.</b> A thin gold ring around the dot when the wave turns from a stretched level, money flow turns the same way and capital flow is on the same side.</span></li>
+          <li><span class="sw" style="background:#4aa3ff;transform:rotate(45deg) scale(.7)"></span><span><b>Blue Wave.</b> A small blue diamond when a shallower second dip turns after a deep first one, with money flow behind it.</span></li>
           <li><span class="sw" style="background:var(--red)"></span><span><b>Divergence and RSI cue.</b> Divergence lines (bold when wave, RSI and money flow all agree), and a wave edge that changes colour at RSI extremes.</span></li>
         </ul>
       </div>
@@ -562,7 +564,7 @@
       <div class="steps">
         <div class="card step"><h3>Open a chart</h3><p>Open any symbol on TradingView. BTCUSDT on the 1H–4H is a good place to start.</p></div>
         <div class="card step"><h3>Add the overlay</h3><p>Go to Indicators, then search <code>Capital Flow Filter [v4.6.0]</code> and add it.</p></div>
-        <div class="card step"><h3>Add the pane</h3><p>Search <code>Capital Flow Oscillator [v3.2]</code> and add it below the chart.</p></div>
+        <div class="card step"><h3>Add the pane</h3><p>Search <code>Capital Flow Oscillator [v3.4]</code> and add it below the chart.</p></div>
         <div class="card step"><h3>Set alerts</h3><p>Create alerts for Standard (50%+) or Full Send (70%+). You can also follow the signals in our Telegram channel.</p></div>
       </div>
       <div style="text-align:center;margin-top:32px">

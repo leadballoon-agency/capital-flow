@@ -23,12 +23,12 @@ capital-flow/
 │   ├── TRADINGVIEW-DESCRIPTION.md           # Published script description
 │   └── INDICATOR-IMPROVEMENTS.md            # Feature wishlist & roadmap
 ├── Capital Flow Oscillator/
-│   ├── capital-flow-oscillator-v3.2.pine    # CURRENT oscillator (Market Cipher B / VuManChu replacement)
-│   ├── capital-flow-oscillator-v1.2-v3.1    # Previous versions
+│   ├── capital-flow-oscillator-v3.4.pine    # CURRENT oscillator (Market Cipher B / VuManChu replacement)
+│   ├── capital-flow-oscillator-v1.2-v3.3    # Previous versions
 │   └── capital-flow-combined-strategy-v1.0.pine  # Backtest of the v2.1 Cloud Edge playbook (retired, off the chart)
 ├── public/
 │   ├── index.html              # Landing page (MDX branding)
-│   ├── suite.html              # Suite page: Filter v4.6 + Oscillator v3.2, backtest with caveats (not linked from nav yet)
+│   ├── suite.html              # Suite page: Filter v4.6 + Oscillator v3.4 (Capital Flow signal, Blue Wave, tested money flow), backtest with caveats (not linked from nav yet)
 │   ├── strategies.html / methodology.html / about.html  # Guides (some figures are old manual counts)
 │   ├── reports.html            # Substack-style reports archive
 │   ├── privacy.html            # Privacy policy
@@ -102,7 +102,7 @@ node scripts/generate-report.js
 
 TradingView script names:
 - Overlay: "Capital Flow Filter [v4.6.0]" (legend "CF Filter v4.6")
-- Oscillator: "Capital Flow Oscillator [v3.2]" (legend "CF Osc")
+- Oscillator: "Capital Flow Oscillator [v3.4]" (legend "CF Osc")
 - Backtest: "Capital Flow Filter Strategy [v4.6.0]"
 
 ### What It Does
@@ -168,17 +168,22 @@ Auto-detects based on chart timeframe:
 
   So the 3H/4H edge rests on an accidental, fragile interaction. The code is left as written, with a comment warning against "simplifying" it. Treat the 3H/4H numbers as unproven.
 
-## The Oscillator (Capital Flow Oscillator v3.2)
+## The Oscillator (Capital Flow Oscillator v3.4)
 
 A Market Cipher B / VuManChu Cipher B replacement, Classic (MC-style) look by default:
 - **Waves:** WaveTrend momentum (same maths as Cipher B), or "Cloud Position" inside the Keltner cloud
 - **Higher-timeframe wave:** smooth soft-glow lavender line behind (Auto: up to 15m -> 1H, up to 1H -> 4H, up to 4H -> 1D, daily -> 1W); closed bars only
-- **Money flow:** real buy vs sell volume from lower-timeframe candles (volume delta), falling back to candle pressure; volume-weighted EMA plus an Ehlers super smoother ("Money Flow Smoothing", default 12) so it draws as a smooth curve, not a sawtooth; normalised to its own typical size. "Money Flow Source → Cipher B" swaps in VuManChu Cipher B's exact formula (60-bar SMA of body/range × 150, minus 2.5) for comparison
-- **Yellow momentum area**, RSI wave-edge cue, optional Stoch RSI
+- **Money flow:** buy vs sell volume estimated from lower-timeframe candles (volume delta: each candle's volume x body / range), falling back to candle pressure. Tested 2026-10-15 against Binance's real taker buy/sell volume (BTC + ETH, 15m-4H): body/range tracked real flow best (smoothed correlation ~0.45-0.6, turns agree ~70-75%), the old close-location split worse (~0.25-0.45, ~60-70%) and the Cipher B formula worst (~0.2-0.4, ~55-60%). Even the best estimate is only roughly right; true aggressor data needs TradingView's request.footprint (Premium plans); volume-weighted EMA plus an Ehlers super smoother ("Money Flow Smoothing", default 12) so it draws as a smooth curve, not a sawtooth; normalised to its own typical size. "Money Flow Source → Cipher B" swaps in VuManChu Cipher B's exact formula (60-bar SMA of body/range × 150, minus 2.5) for comparison
+- **Yellow momentum area** and an RSI wave-edge cue (no Stoch RSI / RSI lines)
 - **Graded dots:** every wave turn is scored on 5 checks (stretched wave, HTF wave, money flow, capital flow, recent divergence). Only turns from a stretched wave grade above C. A = gold/pink, B = outlined dot, C = small dot
 - **Divergence engine:** price swings vs wave, RSI and money flow; regular and hidden, strength 1-3. Lines only (bold = all three agree); hidden ones count for grading but aren't drawn by default
 - **Readout:** compact two-column box (capital flow, wave + HTF arrows, volume delta + latest divergence, last graded signal); alerts carry the grade and reasons
 - **Capital flow band** along the bottom (same engine and Market presets as the overlay); continuous, changes shade only when conviction holds 3 bars ("Bars" option keeps the old columns)
+- **Capital flow pressure + flip dots (v3.3):** faint green/red pane tint following the score (the overlay's cloud colour, "Pressure Tint Strength"), and green/red dots on the bottom band using the overlay's flip rule (±20% for 2 bars, inputs "Flip Threshold"/"Flip Confirmation" must match the overlay). Verified on BTC 1H: all 9 flips land on the same bars as the overlay's dots. Alerts "Capital Flow Flip Bullish/Bearish"
+- **MC B look (v3.4):** clean background (pressure tint off by default; if turned on it follows the confirmed flip state), small green/red dot on every wave cross like MC B (C grade; on by default again since 2026-10-15 after a weekly MC B red dot was missing), status box top right with ages as clock time ("B-grade long  2h ago"), MC-style level lines at 100 / ±60 / ±53, A dots the same small size as B (gold/pink), money flow drawn over the yellow momentum at 25% transparency ("Money Flow Transparency"). The Stoch RSI and RSI lines were removed (2026-10-15): the user tried a guessed MC look and then VuManChu's exact K/D ribbon and found both "not useful". RSI survives only as the wave-edge colour cue
+- **Capital Flow signal (v3.4, the signature signal):** a thin gold ring around the dot (replaced a ✦ star the user found "too cartoonish"). It fires when momentum, money and macro agree on one bar: the wave turns from a stretched level (touched the setup edge), money flow is turning the same way (vs 3 bars ago), and capital flow is on the same side (confirmed flip state and score). Named "Capital Flow" by the user. Status box shows "Capital Flow long/short" in gold; alerts "Capital Flow LONG/SHORT". The capital flow band is thicker (-101 to -115), with stronger shades and a right-edge tag ("CAPITAL FLOW IN / OUT / leaning / neutral"), because capital flow is what no other Cipher-style oscillator has
+- **Blue Wave setup (v3.4):** Market Cipher's core strategy. The anchor is the deepest fast-wave dip in the 40 bars before the current dip, and must reach past ±53 ("Anchor Depth"). The current dip (the trigger) must be at most 0.8x as deep, and the bounce between them must stay ≤20 past zero. The signal fires on the trigger's turn (light blue crosses dark blue) if money flow has moved the trade's way over 5 bars. Shown as a blue diamond plus a dashed anchor-trigger line; the status box shows "Blue Wave long/short"; alerts "Blue Wave LONG/SHORT". One signal per anchor (later dips off the same anchor don't fire again). In the lab, before that rule (BTC 1H, last ~6 weeks) it fired 3 longs and 5 shorts; a stricter "no money flow wobble" rule fired zero times, so it was dropped. Making room: series-coloured plotshapes count as 2 plots, and the Setup/Signal Score/Trade State/Money Flow/Wave Value data exports were removed (only Flow Score is left); removing the Stoch RSI freed ~4 plots
+- Plot budget is at the 64 limit (v3.4 hit 65 once; a transparent "Cross Dot Outline" plot was removed)
 - TP1/TP2 marks still exist but are off by default
 
 The user wants it to replace Cipher B as a discretionary tool, not to be tuned by backtests. Keep dots small (the user found the big ones too large).
@@ -382,4 +387,4 @@ See `/Indicator script/INDICATOR-IMPROVEMENTS.md` for:
 
 ---
 
-*Last updated: October 15, 2026*
+*Last updated: October 15, 2026 (Oscillator v3.4 final passes, gold-ring Capital Flow signal)*
