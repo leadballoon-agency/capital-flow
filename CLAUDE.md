@@ -11,9 +11,14 @@ This project provides a **free trading signals service** built around the Capita
 ## Project Structure
 
 ```
-capital-flow/
-├── api/
-│   └── webhook.js              # TradingView webhook -> Telegram
+capital-flow/                   # Next.js 16 (React 19) app on Vercel since 2026-10-15
+├── app/
+│   ├── layout.jsx              # Root layout (fonts)
+│   └── oscillator/             # /oscillator: CF Osc landing page (React; page.jsx, HeroVisual.jsx, osc.css)
+├── pages/api/                  # API routes (moved from api/ for Next): webhook, signals, suggestions,
+│   └── webhook.js              #   fear-greed, long-short-ratio, economic-calendar, cron/economic-alerts
+├── next.config.mjs             # "/" -> /index.html rewrite; /suite.html -> /oscillator redirect
+├── vercel.json                 # framework: nextjs + the daily economic-alerts cron
 ├── Indicator script/
 │   ├── mdx-capital-flow-filter-v4.6.0.txt   # CURRENT overlay (Pine v6, standalone)
 │   ├── mdx-capital-flow-filter-v4.5.x.txt   # Previous versions (4.5.0 - 4.5.2)
@@ -27,8 +32,7 @@ capital-flow/
 │   ├── capital-flow-oscillator-v1.2-v3.3    # Previous versions
 │   └── capital-flow-combined-strategy-v1.0.pine  # Backtest of the v2.1 Cloud Edge playbook (retired, off the chart)
 ├── public/
-│   ├── index.html              # Landing page (MDX branding)
-│   ├── suite.html              # Suite page: Filter v4.6 + Oscillator v3.4 (Capital Flow signal, Blue Wave, tested money flow), backtest with caveats (not linked from nav yet)
+│   ├── index.html              # Landing page (MDX branding), still static HTML served at "/"
 │   ├── strategies.html / methodology.html / about.html  # Guides (some figures are old manual counts)
 │   ├── reports.html            # Substack-style reports archive
 │   ├── privacy.html            # Privacy policy
@@ -48,7 +52,7 @@ capital-flow/
 
 ## Key Components
 
-### 1. TradingView Webhook (`/api/webhook.js`)
+### 1. TradingView Webhook (`/pages/api/webhook.js`)
 
 Receives alerts from TradingView and forwards to Telegram.
 
@@ -86,8 +90,11 @@ node scripts/generate-report.js
 
 **URL:** https://capital-flow-filter.vercel.app/
 
+**Framework:** Next.js (App Router for new React pages, `pages/api` for the API). The older pages are still static HTML in `public/` and are served as-is; port them to React one at a time. Run locally with `npm run dev`, check with `npm run build`.
+
 **Pages:**
 - `/` - Landing page with features, signal types, roadmap, recent signals feed
+- `/oscillator` - CF Osc page (React): Capital Flow signal, reading the pane, money flow test, engine, install, FAQ. Linked from the nav/footers; `/suite.html` (the old two-indicator page) redirects here
 - `/reports.html` - Archive of daily reports (Substack-style)
 - `/privacy.html` - Privacy policy
 - `/disclaimer.html` - Trading risk disclaimer

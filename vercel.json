@@ -1,12 +1,5 @@
 {
-  "version": 2,
-  "routes": [
-    {
-      "src": "/api/webhook",
-      "methods": ["POST", "GET"],
-      "dest": "/api/webhook.js"
-    }
-  ],
+  "framework": "nextjs",
   "crons": [
     {
       "path": "/api/cron/economic-alerts",
