@@ -3,6 +3,7 @@
 // Saves signals to Neon Postgres for delayed feed display
 
 import { neon } from '@neondatabase/serverless';
+import { parseSignalMessage } from '../../lib/parseSignal';
 
 export default async function handler(req, res) {
   const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
@@ -61,7 +62,7 @@ export default async function handler(req, res) {
     console.log('Received alert:', message);
 
     // Parse signal metadata from message
-    const signalData = parseSignalMessage(message);
+    const signalData = { ...parseSignalMessage(message), timestamp: new Date().toISOString() };
 
     // Send to Telegram
     const telegramUrl = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
@@ -73,7 +74,7 @@ export default async function handler(req, res) {
       },
       body: JSON.stringify({
         chat_id: TELEGRAM_CHAT_ID,
-        text: message,
+        text: toTelegramHtml(message),
         parse_mode: 'HTML',
         disable_web_page_preview: true,
       }),
@@ -108,67 +109,6 @@ export default async function handler(req, res) {
   }
 }
 
-// Parse signal message to extract metadata
-function parseSignalMessage(message) {
-  const now = new Date().toISOString();
-
-  // Try to detect signal type from message content
-  let signalType = 'signal';
-  let direction = 'neutral';
-  let timeframe = 'unknown';
-  let ticker = 'BTC';
-
-  const msgLower = message.toLowerCase();
-
-  // Detect direction
-  if (msgLower.includes('bullish') || msgLower.includes('long') || msgLower.includes('🟢') || msgLower.includes('📈')) {
-    direction = 'bullish';
-  } else if (msgLower.includes('bearish') || msgLower.includes('short') || msgLower.includes('🔴') || msgLower.includes('📉')) {
-    direction = 'bearish';
-  }
-
-  // Detect signal type
-  if (msgLower.includes('full send') || msgLower.includes('🚀')) {
-    signalType = 'full_send';
-  } else if (msgLower.includes('confluence')) {
-    signalType = 'confluence';
-  } else if (msgLower.includes('manipulation') || msgLower.includes('🐋')) {
-    signalType = 'manipulation';
-  } else if (msgLower.includes('divergence')) {
-    signalType = 'divergence';
-  } else if (msgLower.includes('flip')) {
-    signalType = 'flip';
-  }
-
-  // Detect timeframe
-  if (msgLower.includes('5m') || msgLower.includes('scalp')) {
-    timeframe = '5m';
-  } else if (msgLower.includes('15m')) {
-    timeframe = '15m';
-  } else if (msgLower.includes('1h') || msgLower.includes('intraday')) {
-    timeframe = '1H';
-  } else if (msgLower.includes('4h') || msgLower.includes('swing')) {
-    timeframe = '4H';
-  } else if (msgLower.includes('1d') || msgLower.includes('daily')) {
-    timeframe = '1D';
-  }
-
-  // Detect ticker
-  const tickerMatch = message.match(/\b(BTC|ETH|SOL|XRP|ADA|DOGE|AVAX|DOT|LINK|MATIC)\b/i);
-  if (tickerMatch) {
-    ticker = tickerMatch[1].toUpperCase();
-  }
-
-  return {
-    timestamp: now,
-    message: message,
-    signalType,
-    direction,
-    timeframe,
-    ticker
-  };
-}
-
 // Save signal to Neon Postgres
 async function saveSignalToNeon(signalData, databaseUrl) {
   const sql = neon(databaseUrl);
@@ -196,6 +136,13 @@ async function saveSignalToNeon(signalData, databaseUrl) {
   await sql`
     DELETE FROM signals WHERE timestamp < NOW() - INTERVAL '7 days'
   `;
+}
+
+// Telegram parses the text as HTML. CF Osc messages are plain text, so a stray "<", ">" or "&"
+// would make Telegram reject them; escape those unless the message already uses HTML tags.
+function toTelegramHtml(message) {
+  if (/<\/?(b|i|u|s|a|code|pre|strong|em)\b/i.test(message)) return message;
+  return message.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
 // Helper to get raw body if needed

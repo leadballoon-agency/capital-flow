@@ -2,6 +2,7 @@
 // Returns signals older than 24 hours for the public feed
 
 import { neon } from '@neondatabase/serverless';
+import { parseSignalMessage } from '../../lib/parseSignal';
 
 export default async function handler(req, res) {
   // CORS headers
@@ -41,8 +42,15 @@ export default async function handler(req, res) {
       LIMIT 20
     `;
 
+    // Re-read type/direction/timeframe from the message, so rows saved by older parsers
+    // (timeframe "unknown" for "BTCUSDT 60") show correctly
+    const parsed = signals.map((s) => {
+      const p = parseSignalMessage(s.message);
+      return { ...s, signalType: p.signalType, direction: p.direction, timeframe: p.timeframe, ticker: p.ticker };
+    });
+
     return res.status(200).json({
-      signals: signals,
+      signals: parsed,
       total: signals.length,
       delayed: true,
       delayHours: 24

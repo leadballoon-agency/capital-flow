@@ -5,6 +5,11 @@ import { useEffect, useState } from 'react';
 // Delayed signals feed: shows signals from 24+ hours ago (from /api/signals)
 
 function getSignalIcon(signalType, direction) {
+  if (signalType === 'capital_flow') return '◉';
+  if (signalType === 'grade_a' || signalType === 'grade_b') return direction === 'bearish' ? '▼' : '▲';
+  if (signalType === 'blue_wave') return '◆';
+  if (signalType === 'target') return '◇';
+  if (signalType === 'exit') return '×';
   if (signalType === 'full_send') return '🚀';
   if (signalType === 'confluence') return '⭐';
   if (signalType === 'manipulation') return '🐋';
@@ -24,8 +29,9 @@ function formatTimeAgo(timestamp) {
 }
 
 function cleanMessage(message) {
-  // Strip HTML tags and emojis for cleaner display
+  // Headline only (CF Osc alerts are multi-line), without HTML tags and emojis
   return message
+    .split('\n')[0]
     .replace(/<[^>]*>/g, '')
     .replace(/[\u{1F300}-\u{1F9FF}]/gu, '')
     .trim()
@@ -73,7 +79,7 @@ export default function SignalsFeed() {
               <span className="feed-item-tf">{signal.timeframe}</span>
               <span className={`feed-item-type ${signal.direction}`}>{signal.direction.toUpperCase()}</span>
             </div>
-            <div className="feed-item-message">{cleanMessage(signal.message)}</div>
+            <div className="feed-item-message" title={signal.message.replace(/<[^>]*>/g, '')}>{cleanMessage(signal.message)}</div>
           </div>
           <span className="feed-item-time">{formatTimeAgo(signal.timestamp)}</span>
         </div>
