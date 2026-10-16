@@ -92,7 +92,7 @@ node scripts/generate-report.js
 **Framework:** Next.js (App Router pages, `pages/api` for the API). All pages were ported from static HTML to React on 2026-10-15; a side-by-side check showed every element at the same position and size as the old HTML, widgets included. Each page imports its own CSS and links between pages are plain `<a>` tags (full page loads), so page stylesheets never mix; switching to `next/link` would need the CSS scoped first. Run locally with `npm run dev`, check with `npm run build`. Strategies/methodology/about still contain some old manual figures (e.g. "82% Win Rate").
 
 **Pages:**
-- `/` - Homepage = the CF Osc page (made the homepage 2026-10-16 at the user's request): Capital Flow signal, reading the pane, money flow test, engine, install, FAQ. `/oscillator` and `/suite.html` redirect here; old `/x.html` addresses redirect to `/x`
+- `/` - Homepage = the CF Osc page (made the homepage 2026-10-16 at the user's request): Capital Flow signal, reading the pane, money flow test, engine, install, FAQ. No "Cipher", Market Cipher or LuxAlgo wording or comparison table on the site (removed 2026-10-16 when the user said "im not sure we should be mentioning 'Cipher style waves'"); credits name only LazyBear's WaveTrend and VuManChu's open-source oscillator. `/oscillator` and `/suite.html` redirect here; old `/x.html` addresses redirect to `/x`
 - `/signals` - The previous homepage: live signals feed, features, signal types, Fear & Greed, long/short, economic calendar. Linked as "Live signals" from the CF Osc nav and "Live Signals" from the other pages' footers
 - `/reports` - Archive of daily reports (Substack-style)
 - `/privacy` - Privacy policy

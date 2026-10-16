@@ -4,7 +4,7 @@ import HeroVisual from './components/HeroVisual';
 export const metadata = {
   title: 'Capital Flow Oscillator | Free TradingView Indicator',
   description:
-    'A free Cipher-style wave oscillator with a cross-market capital flow engine built in. Graded dots, the Capital Flow signal, Blue Wave setups and money flow tested against real buy/sell volume.',
+    'A free wave oscillator with a cross-market capital flow engine built in. Graded dots, the Capital Flow signal, Blue Wave setups and money flow tested against real buy/sell volume.',
   openGraph: {
     title: 'Capital Flow Oscillator: free TradingView indicator',
     description: 'Momentum, money flow and macro capital flow in one pane. Free, standalone, no repaint.',
@@ -15,7 +15,7 @@ export const metadata = {
 const TELEGRAM = 'https://t.me/fivedaytrader';
 
 const legend = [
-  { sw: { background: 'var(--blue)' }, title: 'Momentum waves.', text: 'WaveTrend maths, the same as Cipher B, or a "Cloud Position" view inside the Keltner cloud.' },
+  { sw: { background: 'var(--blue)' }, title: 'Momentum waves.', text: 'WaveTrend maths (LazyBear\'s open-source formula), or a "Cloud Position" view inside the Keltner cloud.' },
   { sw: { background: '#b4a7d6' }, title: 'Higher-timeframe wave.', text: 'A soft lavender line behind the waves: 1H on 15m charts, 4H on 1H, daily on 4H. Closed bars only.' },
   { sw: { background: 'var(--green)', opacity: 0.6 }, title: 'Money flow.', text: 'Buy vs sell volume estimated from lower-timeframe candles, smoothed into a curve rather than a sawtooth.' },
   { sw: { background: 'var(--yellow)', opacity: 0.7 }, title: 'Yellow momentum area.', text: 'A second, smoother read of momentum, drawn behind the money flow.' },
@@ -29,7 +29,7 @@ const legend = [
 const mfTest = [
   { name: 'CF Osc (volume × body / range)', corr: '0.45–0.60', turns: '70–75%', best: true },
   { name: 'Close-location split (our old method)', corr: '0.25–0.45', turns: '60–70%' },
-  { name: 'Classic Cipher B formula', corr: '0.20–0.40', turns: '55–60%' },
+  { name: 'Classic 60-bar candle-body average', corr: '0.20–0.40', turns: '55–60%' },
 ];
 
 const inputs = [
@@ -41,7 +41,7 @@ const inputs = [
 const faqs = [
   ['Is it really free?', 'Yes. No paid tier, no locked features and no dependency on any paid indicator. It fetches its own data on TradingView, and the free TradingView plan works.'],
   ['Does it repaint?', 'Higher-timeframe data (the lavender wave and the capital flow inputs) only uses closed bars, so past signals stay where they were drawn. Like any oscillator, the current bar’s values move until that bar closes, so wait for the close before acting on a dot.'],
-  ['Is it a copy of Market Cipher B?', 'No. Market Cipher B is closed source. The waves use the public WaveTrend formula (by LazyBear), and the layout takes ideas from the open-source VuManChu Cipher B. The capital flow engine, the grading, the Capital Flow signal and the money flow method are our own.'],
+  ['Where do the waves come from?', 'The waves use the public WaveTrend formula by LazyBear, and the layout takes ideas from VuManChu’s open-source oscillator. The capital flow engine, the grading, the Capital Flow signal and the money flow method are our own.'],
   ['How accurate is the money flow?', 'Roughly right, not exact. It tracked real buy/sell volume better than the alternatives we tested, but true aggressor data needs TradingView’s footprint data on paid plans. Treat it as a guide to who is in control, not a precise count.'],
   ['How often does the Capital Flow signal fire?', 'Rarely, by design. All three conditions have to line up on the same bar, so some days it won’t appear at all. The graded dots cover the everyday turns.'],
   ['Is this financial advice?', 'No. Everything here is educational. Please read the full disclaimer before using any signal.'],
@@ -77,10 +77,10 @@ export default function HomePage() {
               Free on TradingView · Capital Flow Oscillator v3.4
             </div>
             <h1>
-              Cipher-style waves, with <span>the money behind them</span>.
+              Momentum waves, with <span>the money behind them</span>.
             </h1>
             <p className="lead">
-              The Capital Flow Oscillator gives you the wave oscillator you know: momentum waves, money flow and
+              The Capital Flow Oscillator gives you the wave oscillator you know: waves, money flow and
               divergence dots. It adds a cross-market capital flow engine that reads the dollar, volatility, gold,
               yields, BTC, ETH, dominance and altcoin cap, so you can see whether the bigger flows agree with the turn.
             </p>
@@ -233,7 +233,6 @@ export default function HomePage() {
               <ul>
                 <li><b>Best of the estimates, still an estimate.</b> It gets the turns right about three times in four. Exact aggressor data needs TradingView&apos;s footprint data on paid plans.</li>
                 <li><b>One exchange, two coins.</b> We tested on Binance BTC and ETH. Other markets may behave differently.</li>
-                <li><b>Compare for yourself.</b> A &quot;Cipher B&quot; money flow option is still in the settings so you can see the difference on your own charts.</li>
               </ul>
             </div>
           </div>
@@ -292,50 +291,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="compare" aria-labelledby="cmp-h">
-        <div className="wrap">
-          <div className="section-head">
-            <span className="eyebrow">How it compares</span>
-            <h2 id="cmp-h">A free tool with a narrow focus.</h2>
-            <p className="lead">
-              Paid suites give you a lot: many indicators, education, communities and support. This oscillator does one
-              thing, which is putting capital flow next to your momentum, and it&apos;s free.
-            </p>
-          </div>
-          <div className="card table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th />
-                  <th className="us">Capital Flow Oscillator</th>
-                  <th>Market Cipher</th>
-                  <th>LuxAlgo</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>Listed price</td>
-                  <td className="us">Free</td>
-                  <td>$120 / 3 months, $600 / year</td>
-                  <td>Free tier; paid plans $24.99–$119.99 / month</td>
-                </tr>
-                <tr>
-                  <td>Main focus</td>
-                  <td className="us">Wave oscillator plus cross-market capital flow</td>
-                  <td>Oscillator, trend and S/R indicator package plus community</td>
-                  <td>Charting platform, indicator library, AI strategy builder</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-          <p className="fine">
-            Prices and descriptions come from each company&apos;s public website as of 14 Oct 2026 and may have changed.
-            Market Cipher and LuxAlgo are trademarks of their respective owners. This project isn&apos;t affiliated
-            with or endorsed by either.
-          </p>
-        </div>
-      </section>
-
       <section id="install" aria-labelledby="inst-h">
         <div className="wrap">
           <div className="section-head center">
@@ -357,7 +312,7 @@ export default function HomePage() {
             </div>
             <div className="card step">
               <h3>Set Money Flow Source</h3>
-              <p>Leave it on Volume Delta, the tested default. Switch to Cipher B only to compare.</p>
+              <p>Leave it on Volume Delta, the tested default.</p>
             </div>
             <div className="card step">
               <h3>Set alerts</h3>
@@ -438,11 +393,10 @@ export default function HomePage() {
             <a href="/disclaimer">Disclaimer</a>
           </div>
           <p className="disclosure">
-            The Capital Flow Oscillator is a free, independent project. It isn&apos;t made or endorsed by Market Cipher
-            or LuxAlgo.
+            The Capital Flow Oscillator is a free, independent project.
           </p>
           <p>
-            WaveTrend by LazyBear; layout ideas from the open-source VuManChu Cipher B. TradingView is a trademark of
+            WaveTrend by LazyBear; layout ideas from VuManChu&apos;s open-source oscillator. TradingView is a trademark of
             TradingView, Inc.
           </p>
         </div>
