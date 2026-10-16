@@ -418,7 +418,7 @@ export default function AboutPage() {
           {' '}
           <a href="/about">About</a>
           {' '}
-          <a href="/oscillator">Oscillator</a>
+          <a href="/signals">Live Signals</a>
           {' '}
           <a href="/strategies">Strategies</a>
           {' '}

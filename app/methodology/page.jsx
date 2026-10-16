@@ -585,7 +585,7 @@ export default function MethodologyPage() {
           {' '}
           <a href="/methodology">Methodology</a>
           {' '}
-          <a href="/oscillator">Oscillator</a>
+          <a href="/signals">Live Signals</a>
           {' '}
           <a href="/strategies">Strategies</a>
           {' '}

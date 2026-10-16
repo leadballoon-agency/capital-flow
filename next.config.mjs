@@ -8,7 +8,9 @@ const nextConfig = {
     return [
       { source: '/index.html', destination: '/', permanent: true },
       ...pages.map((p) => ({ source: `/${p}.html`, destination: `/${p}`, permanent: true })),
-      { source: '/suite.html', destination: '/oscillator', permanent: false },
+      // The CF Osc page became the homepage on 2026-10-16; the old dashboard homepage lives at /signals
+      { source: '/oscillator', destination: '/', permanent: false },
+      { source: '/suite.html', destination: '/', permanent: false },
     ];
   },
 };

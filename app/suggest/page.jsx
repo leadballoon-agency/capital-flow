@@ -18,7 +18,7 @@ export default function SuggestPage() {
           <div className="nav-links">
             <a href="/">Home</a>
             {' '}
-            <a href="/oscillator">Oscillator</a>
+            <a href="/signals">Live Signals</a>
             {' '}
             <a href="/reports">Reports</a>
             {' '}

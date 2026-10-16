@@ -443,7 +443,7 @@ export default function StrategiesPage() {
           {' '}
           <a href="/reports">Reports</a>
           {' '}
-          <a href="/oscillator">Oscillator</a>
+          <a href="/signals">Live Signals</a>
           {' '}
           <a href="/strategies">Strategies</a>
           {' '}
