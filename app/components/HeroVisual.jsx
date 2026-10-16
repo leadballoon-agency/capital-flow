@@ -66,7 +66,7 @@ export default function HeroVisual() {
         {/* dots: small cross dots, A dot, and the Capital Flow signal (gold ring) */}
         <circle cx="104" cy="181" r="4" fill="#00d27a" />
         <circle cx="292" cy="66" r="4" fill="#ff4d4d" />
-        <circle cx="372" cy="127" r="4.5" fill="#f5c542" />
+        <circle cx="372" cy="127" r="4.5" fill="#00d27a" />
         <circle cx="372" cy="127" r="8" fill="none" stroke="#FFD54F" strokeWidth="1.2" />
         <text x="384" y="150" fill="#FFD54F" fontSize="10" fontFamily="Inter" fontWeight="600">
           Capital Flow
