@@ -7,7 +7,9 @@
 //       volume delta splits each lower-timeframe candle by body / range (closer to real taker volume),
 //       small dots on every wave cross again, status box top right with clock-time ages, one Blue Wave per anchor;
 //       A-grade = a green / red ring around the dot (the pink A-short dot was too close to the plain red dot);
-//       divergence lines join the wave's own troughs / peaks and are only drawn when the wave itself diverges
+//       divergence lines join the wave's own troughs / peaks and are only drawn when the wave itself diverges;
+//       inputs hidden from the legend and alert names (display.none) so alerts read "CF Osc: ..." not a 60-value list;
+//       alert messages rewritten in plain words: signal, symbol + timeframe, price, why, capital flow
 // v3.4: closer to the Market Cipher B look - clean background (pressure tint off by default; when on it follows the confirmed flip state (calm blocks,
 //       no bar-to-bar stripes)), MC-style level lines (100 / 60 / 53),
 //       smaller A-grade dots, money flow slightly see-through (25%) and drawn over the yellow momentum, Stoch RSI and RSI lines removed (the user found them not useful; the RSI wave-edge cue stays)
@@ -37,7 +39,7 @@ indicator("Capital Flow Oscillator [v3.4]", shorttitle="CF Osc", overlay=false, 
 tradingModeInput = input.string("Auto", "Trading Mode",
      options=["Auto", "Swing", "Intraday", "Scalp"],
      group="Mode",
-     tooltip="Auto: Detects chart timeframe automatically\nSwing: 4H/D/W data, slower signals\nIntraday: 15m/1H/4H data, faster signals\nScalp: 5m/15m/1H data (macro 1H/4H/1D backdrop), fastest signals")
+     tooltip="Auto: Detects chart timeframe automatically\nSwing: 4H/D/W data, slower signals\nIntraday: 15m/1H/4H data, faster signals\nScalp: 5m/15m/1H data (macro 1H/4H/1D backdrop), fastest signals", display=display.none)
 
 autoDetectedMode = timeframe.in_seconds() <= 900 ? "Scalp" : timeframe.in_seconds() <= 14400 ? "Intraday" : "Swing"
 tradingMode = tradingModeInput == "Auto" ? autoDetectedMode : tradingModeInput
@@ -49,19 +51,19 @@ tradingMode = tradingModeInput == "Auto" ? autoDetectedMode : tradingModeInput
 // Market preset: picks the 8 capital flow inputs (and which way each one counts) for the
 // instrument on the chart. Variable names below are slots - src_dxy is "macro 1", etc.
 marketInput = input.string("Auto", "Market", options=["Auto", "Crypto", "Equities", "Metals", "Forex", "Custom"], group="Market",
-     tooltip="Auto picks the basket from the chart's instrument.\nCrypto: DXY, VIX, Gold, US10Y | BTC, ETH | BTC.D, TOTAL3\nEquities: DXY, VIX, US10Y, HYG | SPY, QQQ | IWM, XLU\nMetals: DXY, US10Y, VIX, SPX | Gold, Silver | GDX, TIP\nForex: US10Y, VIX, SPX, Gold | base & quote currency index | AUDJPY, Oil\nCustom: the 8 symbols below (macro and slot 7 count inverted)")
+     tooltip="Auto picks the basket from the chart's instrument.\nCrypto: DXY, VIX, Gold, US10Y | BTC, ETH | BTC.D, TOTAL3\nEquities: DXY, VIX, US10Y, HYG | SPY, QQQ | IWM, XLU\nMetals: DXY, US10Y, VIX, SPX | Gold, Silver | GDX, TIP\nForex: US10Y, VIX, SPX, Gold | base & quote currency index | AUDJPY, Oil\nCustom: the 8 symbols below (macro and slot 7 count inverted)", display=display.none)
 
 orderFlowInput = input.bool(true, "Scalp Order Flow (crypto)", group="Market",
-     tooltip="On Scalp mode, crypto swaps its leader/sector inputs for fast order flow: open interest x price, Coinbase premium and perp basis (Binance perps). Macro becomes a 1H/4H/1D backdrop at lower weight")
+     tooltip="On Scalp mode, crypto swaps its leader/sector inputs for fast order flow: open interest x price, Coinbase premium and perp basis (Binance perps). Macro becomes a 1H/4H/1D backdrop at lower weight", display=display.none)
 
-cust_1 = input.symbol("TVC:DXY", "Macro 1", group="Market - Custom Symbols")
-cust_2 = input.symbol("TVC:VIX", "Macro 2", group="Market - Custom Symbols")
-cust_3 = input.symbol("OANDA:XAUUSD", "Macro 3", group="Market - Custom Symbols")
-cust_4 = input.symbol("TVC:US10Y", "Macro 4", group="Market - Custom Symbols")
-cust_5 = input.symbol("BINANCE:BTCUSDT", "Leader 1", group="Market - Custom Symbols")
-cust_6 = input.symbol("BINANCE:ETHUSDT", "Leader 2", group="Market - Custom Symbols")
-cust_7 = input.symbol("CRYPTOCAP:BTC.D", "Sector 1 (inverted)", group="Market - Custom Symbols")
-cust_8 = input.symbol("CRYPTOCAP:TOTAL3", "Sector 2", group="Market - Custom Symbols")
+cust_1 = input.symbol("TVC:DXY", "Macro 1", group="Market - Custom Symbols", display=display.none)
+cust_2 = input.symbol("TVC:VIX", "Macro 2", group="Market - Custom Symbols", display=display.none)
+cust_3 = input.symbol("OANDA:XAUUSD", "Macro 3", group="Market - Custom Symbols", display=display.none)
+cust_4 = input.symbol("TVC:US10Y", "Macro 4", group="Market - Custom Symbols", display=display.none)
+cust_5 = input.symbol("BINANCE:BTCUSDT", "Leader 1", group="Market - Custom Symbols", display=display.none)
+cust_6 = input.symbol("BINANCE:ETHUSDT", "Leader 2", group="Market - Custom Symbols", display=display.none)
+cust_7 = input.symbol("CRYPTOCAP:BTC.D", "Sector 1 (inverted)", group="Market - Custom Symbols", display=display.none)
+cust_8 = input.symbol("CRYPTOCAP:TOTAL3", "Sector 2", group="Market - Custom Symbols", display=display.none)
 
 mktTick = str.upper(syminfo.ticker)
 isMetalSym = str.contains(mktTick, "XAU") or str.contains(mktTick, "XAG") or str.contains(mktTick, "GOLD") or str.contains(mktTick, "SILVER") or mktTick == "GLD" or mktTick == "SLV" or ((str.startswith(mktTick, "GC") or str.startswith(mktTick, "SI") or str.startswith(mktTick, "MGC")) and str.contains(mktTick, "!"))
@@ -145,174 +147,174 @@ lbl_8 = market == "Equities" ? "XLU" : market == "Metals" ? "TIP" : market == "F
 grp_2 = market == "Equities" ? "LEADERS" : market == "Metals" ? "METALS" : market == "Forex" ? "CURRENCIES" : market == "Custom" ? "LEADERS" : "CRYPTO"
 grp_3 = market == "Equities" ? "BREADTH" : market == "Metals" ? "MINERS / REAL" : market == "Forex" ? "RISK" : "SECTORS"
 
-flowLength = input.int(14, "Flow Calculation Length", minval=5, maxval=50, group="Settings")
+flowLength = input.int(14, "Flow Calculation Length", minval=5, maxval=50, group="Settings", display=display.none)
 thresholdMode = input.string("Auto", "Signal Threshold", options=["Auto", "Adaptive", "Fixed"], group="Settings",
-     tooltip="Auto: adaptive on Scalp, fixed +/-0.5% on Intraday/Swing (tested better there)\nAdaptive: judge each input against its own typical move\nFixed: +/-0.5% flow (v4.5 behaviour)")
+     tooltip="Auto: adaptive on Scalp, fixed +/-0.5% on Intraday/Swing (tested better there)\nAdaptive: judge each input against its own typical move\nFixed: +/-0.5% flow (v4.5 behaviour)", display=display.none)
 adaptiveThreshold = thresholdMode == "Adaptive" or (thresholdMode == "Auto" and tradingMode == "Scalp")
 neutralWhenClosed = input.bool(false, "Neutral When Market Closed", group="Settings",
-     tooltip="Count DXY/VIX/yields as neutral while their market is shut (weekends, overnight).\nOff = keep their last reading (tested better)")
+     tooltip="Count DXY/VIX/yields as neutral while their market is shut (weekends, overnight).\nOff = keep their last reading (tested better)", display=display.none)
 adaptiveLevel = input.float(0.5, "Adaptive Sensitivity", minval=0.2, maxval=1.5, step=0.1, group="Settings",
-     tooltip="How big a move counts as a signal, as a multiple of the input's typical move. Lower = more signals")
-lookbackMode = input.string("Auto", "Lookback Mode", options=["Auto", "Manual"], group="Settings")
-lookbackManual = input.int(100, "Manual Lookback", minval=20, maxval=500, group="Settings")
-smoothingMode = input.string("Auto", "Smoothing", options=["Auto", "Manual"], group="Settings")
-smoothingManual = input.int(5, "Manual Smoothing", minval=1, maxval=20, group="Settings")
+     tooltip="How big a move counts as a signal, as a multiple of the input's typical move. Lower = more signals", display=display.none)
+lookbackMode = input.string("Auto", "Lookback Mode", options=["Auto", "Manual"], group="Settings", display=display.none)
+lookbackManual = input.int(100, "Manual Lookback", minval=20, maxval=500, group="Settings", display=display.none)
+smoothingMode = input.string("Auto", "Smoothing", options=["Auto", "Manual"], group="Settings", display=display.none)
+smoothingManual = input.int(5, "Manual Smoothing", minval=1, maxval=20, group="Settings", display=display.none)
 flipLevel = input.float(0.2, "Flip Threshold", minval=0.05, maxval=0.7, step=0.05, group="Settings",
-     tooltip="Same as the CF Filter overlay: the score must pass +/- this level to flip direction. Keep both indicators on the same value so their flip dots line up")
+     tooltip="Same as the CF Filter overlay: the score must pass +/- this level to flip direction. Keep both indicators on the same value so their flip dots line up", display=display.none)
 flipConfirm = input.int(2, "Flip Confirmation (bars)", minval=1, maxval=10, group="Settings",
-     tooltip="Bars the score must stay past the threshold before the flip counts (same as the overlay)")
+     tooltip="Bars the score must stay past the threshold before the flip counts (same as the overlay)", display=display.none)
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // INPUTS - WAVE
 // ═══════════════════════════════════════════════════════════════════════════════
 
 waveType = input.string("Momentum", "Wave Type", options=["Momentum", "Cloud Position"], group="Wave",
-     tooltip="Momentum: smooth, cycling waves (WaveTrend-style momentum on price)\nCloud Position: where price sits inside the Keltner cloud (-100 = bottom edge, +100 = top edge) - the exact Cloud Edge strategy")
-momChannelLen = input.int(10, "Momentum Channel Length", minval=3, maxval=50, group="Wave - Momentum")
-momAvgLen = input.int(21, "Momentum Average Length", minval=3, maxval=50, group="Wave - Momentum")
+     tooltip="Momentum: smooth, cycling waves (WaveTrend-style momentum on price)\nCloud Position: where price sits inside the Keltner cloud (-100 = bottom edge, +100 = top edge) - the exact Cloud Edge strategy", display=display.none)
+momChannelLen = input.int(10, "Momentum Channel Length", minval=3, maxval=50, group="Wave - Momentum", display=display.none)
+momAvgLen = input.int(21, "Momentum Average Length", minval=3, maxval=50, group="Wave - Momentum", display=display.none)
 momEdgeLevel = input.int(53, "Momentum Extreme Level", minval=20, maxval=100, group="Wave - Momentum",
-     tooltip="Momentum level that counts as stretched (the 'edge') for setups")
+     tooltip="Momentum level that counts as stretched (the 'edge') for setups", display=display.none)
 
 keltnerLength = input.int(20, "Keltner Length", minval=5, maxval=50, group="Wave - Cloud Position",
-     tooltip="Keep the same as the overlay so -100/+100 line up with its cloud edges. Also used for TP1/TP2 in both wave types")
-keltnerMult = input.float(2.0, "Keltner Multiplier", minval=0.5, maxval=5.0, step=0.1, group="Wave - Cloud Position")
+     tooltip="Keep the same as the overlay so -100/+100 line up with its cloud edges. Also used for TP1/TP2 in both wave types", display=display.none)
+keltnerMult = input.float(2.0, "Keltner Multiplier", minval=0.5, maxval=5.0, step=0.1, group="Wave - Cloud Position", display=display.none)
 waveFastLen = input.int(4, "Wave Smoothing", minval=1, maxval=20, group="Wave - Cloud Position",
-     tooltip="Higher = smoother waves, slightly later turns")
+     tooltip="Higher = smoother waves, slightly later turns", display=display.none)
 waveSlowLen = input.int(6, "Slow Wave Lag", minval=2, maxval=15, group="Wave - Cloud Position",
-     tooltip="Higher = more gap between the waves, so the light leading edge stands out more")
+     tooltip="Higher = more gap between the waves, so the light leading edge stands out more", display=display.none)
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // INPUTS - SETUPS
 // ═══════════════════════════════════════════════════════════════════════════════
 
 edgeLevel = input.int(90, "Cloud Edge Level", minval=50, maxval=150, group="Setups",
-     tooltip="Cloud Position only: wave level that counts as price touching the cloud edge. 100 = exactly on the outer Keltner band")
-obosLevel = input.int(60, "Overbought / Oversold Level", minval=20, maxval=100, group="Setups")
+     tooltip="Cloud Position only: wave level that counts as price touching the cloud edge. 100 = exactly on the outer Keltner band", display=display.none)
+obosLevel = input.int(60, "Overbought / Oversold Level", minval=20, maxval=100, group="Setups", display=display.none)
 edgeMemory = input.int(5, "Edge Touch Memory (bars)", minval=1, maxval=20, group="Setups",
-     tooltip="How recently the wave must have touched the edge for a turn to count as a setup")
+     tooltip="How recently the wave must have touched the edge for a turn to count as a setup", display=display.none)
 minFlow = input.float(0.05, "Min Flow for Setup", minval=0.0, maxval=0.5, step=0.05, group="Setups",
-     tooltip="Flow score needed to call the cloud green (long) or red (short)")
+     tooltip="Flow score needed to call the cloud green (long) or red (short)", display=display.none)
 strongFlow = input.float(0.5, "A+ Flow Threshold", minval=0.2, maxval=0.9, step=0.05, group="Setups",
-     tooltip="Not used for grading since v3.0 (kept so saved settings still load)")
+     tooltip="Not used for grading since v3.0 (kept so saved settings still load)", display=display.none)
 setupGrade = input.string("B", "Setup Grade (TP tracking + setup alerts)", options=["A", "B"], group="Setups",
-     tooltip="Every wave turn is graded on 5 checks: wave stretched, higher-timeframe wave, money flow, capital flow, recent divergence.\nOnly turns from a stretched wave can grade above C.\nA = stretched + 3 more (green / red ring), B = stretched + 2 more (outlined dot), C = the rest (small dot)")
+     tooltip="Every wave turn is graded on 5 checks: wave stretched, higher-timeframe wave, money flow, capital flow, recent divergence.\nOnly turns from a stretched wave can grade above C.\nA = stretched + 3 more (green / red ring), B = stretched + 2 more (outlined dot), C = the rest (small dot)", display=display.none)
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // INPUTS - HIGHER-TIMEFRAME WAVE
 // ═══════════════════════════════════════════════════════════════════════════════
 
 htfInput = input.string("Auto", "Higher Timeframe", options=["Auto", "Off", "60", "240", "1D", "1W"], group="Higher-Timeframe Wave",
-     tooltip="A faint wave behind the main waves: the same momentum wave on a higher timeframe (closed bars only, no repaint).\nAuto: 15m and below -> 1H, up to 1H -> 4H, up to 4H -> 1D, daily -> 1W")
-showHtfWave = input.bool(true, "Show Higher-Timeframe Wave", group="Higher-Timeframe Wave")
+     tooltip="A faint wave behind the main waves: the same momentum wave on a higher timeframe (closed bars only, no repaint).\nAuto: 15m and below -> 1H, up to 1H -> 4H, up to 4H -> 1D, daily -> 1W", display=display.none)
+showHtfWave = input.bool(true, "Show Higher-Timeframe Wave", group="Higher-Timeframe Wave", display=display.none)
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // INPUTS - DIVERGENCE ENGINE
 // ═══════════════════════════════════════════════════════════════════════════════
 
 divPivotLeft = input.int(5, "Pivot Lookback (bars left)", minval=2, maxval=20, group="Divergence",
-     tooltip="A price swing low/high must be the lowest/highest of this many bars before it (and 2 bars after)")
-divMaxGap = input.int(60, "Max Bars Between Swings", minval=10, maxval=200, group="Divergence")
+     tooltip="A price swing low/high must be the lowest/highest of this many bars before it (and 2 bars after)", display=display.none)
+divMaxGap = input.int(60, "Max Bars Between Swings", minval=10, maxval=200, group="Divergence", display=display.none)
 divMinStrength = input.int(2, "Min Strength to Draw", minval=1, maxval=3, group="Divergence",
-     tooltip="Strength = how many of wave / RSI / money flow show the divergence (1-3). Weaker ones still count for grading")
+     tooltip="Strength = how many of wave / RSI / money flow show the divergence (1-3). Weaker ones still count for grading", display=display.none)
 divHidden = input.bool(true, "Include Hidden Divergences", group="Divergence",
-     tooltip="Hidden: price makes a higher low (lower high) while the oscillators make a lower low (higher high) - trend continuation")
+     tooltip="Hidden: price makes a higher low (lower high) while the oscillators make a lower low (higher high) - trend continuation", display=display.none)
 divDrawHidden = input.bool(false, "Draw Hidden Divergences", group="Divergence",
-     tooltip="Hidden divergences always count towards signal grades; this only controls whether their lines are drawn")
-divMemory = input.int(12, "Divergence Counts for Grading (bars)", minval=2, maxval=50, group="Divergence")
+     tooltip="Hidden divergences always count towards signal grades; this only controls whether their lines are drawn", display=display.none)
+divMemory = input.int(12, "Divergence Counts for Grading (bars)", minval=2, maxval=50, group="Divergence", display=display.none)
 
 // Blue Wave (Market Cipher's core setup): a deep anchor wave, then a smaller trigger wave,
 // entry where the trigger turns (light blue -> dark blue), with smooth money flow behind it
 showCF = input.bool(true, "Show Capital Flow Signals", group="Capital Flow Signal",
-     tooltip="The signature signal: momentum, money and macro agree.\nA wave turn from a stretched level (past the setup edge), money flow turning the same way, and capital flow on the same side (confirmed flip state + score). Shown as a thin gold ring around the dot")
-alertCF = input.bool(true, "Capital Flow Signal Alerts", group="Capital Flow Signal")
+     tooltip="The signature signal: momentum, money and macro agree.\nA wave turn from a stretched level (past the setup edge), money flow turning the same way, and capital flow on the same side (confirmed flip state + score). Shown as a thin gold ring around the dot", display=display.none)
+alertCF = input.bool(true, "Capital Flow Signal Alerts", group="Capital Flow Signal", display=display.none)
 showBlueWave = input.bool(true, "Show Blue Wave Setups", group="Blue Wave",
-     tooltip="Blue diamond (below the wave for longs, above for shorts) where a deep anchor wave is followed by a smaller trigger wave and the trigger turns. A dashed blue line links the anchor and trigger")
+     tooltip="Blue diamond (below the wave for longs, above for shorts) where a deep anchor wave is followed by a smaller trigger wave and the trigger turns. A dashed blue line links the anchor and trigger", display=display.none)
 bwAnchorDepth = input.int(53, "Anchor Depth", minval=20, maxval=100, group="Blue Wave",
-     tooltip="The anchor wave must reach past this level (53 = the inner MC line, 60 = the outer one)")
+     tooltip="The anchor wave must reach past this level (53 = the inner MC line, 60 = the outer one)", display=display.none)
 bwTriggerRatio = input.float(0.8, "Trigger Max Size (x anchor)", minval=0.3, maxval=1.0, step=0.05, group="Blue Wave",
-     tooltip="The trigger wave must be at most this fraction as deep as the anchor - noticeably smaller")
+     tooltip="The trigger wave must be at most this fraction as deep as the anchor - noticeably smaller", display=display.none)
 bwMaxBounce = input.int(20, "Max Bounce Between Waves", minval=-40, maxval=60, group="Blue Wave",
-     tooltip="How far the wave may bounce (past zero, towards the other side) between the anchor and the trigger. Bigger bounces mean the two waves are not one setup")
+     tooltip="How far the wave may bounce (past zero, towards the other side) between the anchor and the trigger. Bigger bounces mean the two waves are not one setup", display=display.none)
 bwMaxGap = input.int(40, "Anchor Lookback (bars)", minval=5, maxval=200, group="Blue Wave",
-     tooltip="The anchor is the deepest dip within this many bars before the trigger wave starts")
+     tooltip="The anchor is the deepest dip within this many bars before the trigger wave starts", display=display.none)
 bwNeedMF = input.bool(true, "Require Money Flow Turning", group="Blue Wave",
-     tooltip="Money flow must be moving the trade's way over the last few bars (rising for longs, falling for shorts)")
-bwMfLen = input.int(5, "Money Flow Check (bars)", minval=2, maxval=20, group="Blue Wave")
-showBwLines = input.bool(true, "Draw Anchor-Trigger Line", group="Blue Wave")
-alertBW = input.bool(true, "Blue Wave Alerts", group="Blue Wave")
+     tooltip="Money flow must be moving the trade's way over the last few bars (rising for longs, falling for shorts)", display=display.none)
+bwMfLen = input.int(5, "Money Flow Check (bars)", minval=2, maxval=20, group="Blue Wave", display=display.none)
+showBwLines = input.bool(true, "Draw Anchor-Trigger Line", group="Blue Wave", display=display.none)
+alertBW = input.bool(true, "Blue Wave Alerts", group="Blue Wave", display=display.none)
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // INPUTS - VISUALS
 // ═══════════════════════════════════════════════════════════════════════════════
 
 displayStyle = input.string("Classic", "Display Style", options=["Clean", "Classic"], group="Visuals",
-     tooltip="Clean: thin glowing wave lines, soft money-flow wash, solid capital flow band, fewer marks, score cards\nClassic: Market Cipher-style filled waves with the bright yellow momentum area")
+     tooltip="Clean: thin glowing wave lines, soft money-flow wash, solid capital flow band, fewer marks, score cards\nClassic: Market Cipher-style filled waves with the bright yellow momentum area", display=display.none)
 isClean = displayStyle == "Clean"
-cleanYellow = input.bool(false, "Show Yellow Momentum in Clean Style", group="Visuals")
+cleanYellow = input.bool(false, "Show Yellow Momentum in Clean Style", group="Visuals", display=display.none)
 showMomentum = input.bool(true, "Show Yellow Momentum Area", group="Visuals",
-     tooltip="MC-style yellow area: the gap between the fast and slow waves. Flips sign slightly before the waves cross")
+     tooltip="MC-style yellow area: the gap between the fast and slow waves. Flips sign slightly before the waves cross", display=display.none)
 momScale = input.float(1.0, "Yellow Momentum Height", minval=0.2, maxval=2.0, step=0.1, group="Visuals",
-     tooltip="Lower = slimmer yellow area, so more of the money flow shows through")
-showMoneyFlow = input.bool(true, "Show Money Flow Area", group="Visuals")
+     tooltip="Lower = slimmer yellow area, so more of the money flow shows through", display=display.none)
+showMoneyFlow = input.bool(true, "Show Money Flow Area", group="Visuals", display=display.none)
 stripStyle = input.string("Band", "Capital Flow Strip Style", options=["Band", "Bars"], group="Visuals",
-     tooltip="Band: one continuous band that only changes shade when conviction holds for 3 bars\nBars: the original bar-by-bar columns")
+     tooltip="Band: one continuous band that only changes shade when conviction holds for 3 bars\nBars: the original bar-by-bar columns", display=display.none)
 showFlowStrip = input.bool(true, "Show Capital Flow Strip", group="Visuals",
-     tooltip="Green/red strip along the bottom: the macro capital flow regime that gates setups")
+     tooltip="Green/red strip along the bottom: the macro capital flow regime that gates setups", display=display.none)
 showPressure = input.bool(false, "Show Capital Flow Pressure", group="Visuals",
-     tooltip="Green/red tint behind the waves - the CF Filter overlay's cloud colour")
+     tooltip="Green/red tint behind the waves - the CF Filter overlay's cloud colour", display=display.none)
 pressureMode = input.string("Flip State", "Pressure Tint Follows", options=["Flip State", "Live Score"], group="Visuals",
-     tooltip="Flip State: one steady colour from flip to flip (the same as the flip dots) - calm blocks.\nLive Score: follows the score bar by bar, stronger flow = stronger tint (can look stripy)")
-pressureStrength = input.float(1.0, "Pressure Tint Strength", minval=0.2, maxval=2.0, step=0.1, group="Visuals")
+     tooltip="Flip State: one steady colour from flip to flip (the same as the flip dots) - calm blocks.\nLive Score: follows the score bar by bar, stronger flow = stronger tint (can look stripy)", display=display.none)
+pressureStrength = input.float(1.0, "Pressure Tint Strength", minval=0.2, maxval=2.0, step=0.1, group="Visuals", display=display.none)
 showFlipDots = input.bool(true, "Show Capital Flow Flip Dots", group="Visuals",
-     tooltip="Green/red dots on the bottom band where capital flow flips - the same bars as the overlay's Bull/Bear Flip dots")
+     tooltip="Green/red dots on the bottom band where capital flow flips - the same bars as the overlay's Bull/Bear Flip dots", display=display.none)
 showSmallDots = input.bool(true, "Show C-Grade Dots", group="Visuals",
-     tooltip="Small green/red dot on every other wave cross (C grade), like Cipher B's small dots. B and A turns get their own dots")
+     tooltip="Small green/red dot on every other wave cross (C grade), like Cipher B's small dots. B and A turns get their own dots", display=display.none)
 dotMinLevel = input.int(0, "Hide Cross Dots Inside ±", minval=0, maxval=80, group="Visuals",
-     tooltip="Crosses near zero are mostly noise - hide their dots")
+     tooltip="Crosses near zero are mostly noise - hide their dots", display=display.none)
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // INPUTS - MONEY FLOW
 // ═══════════════════════════════════════════════════════════════════════════════
 
 mfLength = input.int(60, "Money Flow Length", minval=5, maxval=200, group="Money Flow",
-     tooltip="Bars averaged. Higher = slower")
+     tooltip="Bars averaged. Higher = slower", display=display.none)
 mfSmooth = input.int(12, "Money Flow Smoothing", minval=1, maxval=50, group="Money Flow",
-     tooltip="Extra low-lag smoothing (super smoother) on top of the average. Higher = smoother curve. 1 = off")
+     tooltip="Extra low-lag smoothing (super smoother) on top of the average. Higher = smoother curve. 1 = off", display=display.none)
 mfMult = input.float(200.0, "Money Flow Height", minval=10.0, maxval=400.0, step=10.0, group="Money Flow",
-     tooltip="Money flow is scaled to its own typical size; 200 = a typical reading of about 24")
+     tooltip="Money flow is scaled to its own typical size; 200 = a typical reading of about 24", display=display.none)
 mfSource = input.string("Volume Delta", "Money Flow Source", options=["Volume Delta", "Candle Pressure", "Cipher B"], group="Money Flow",
-     tooltip="Volume Delta: buying vs selling volume, estimated from the lower-timeframe candles inside each bar (volume x body / range). Closest of these to real exchange buy/sell volume when tested.\nCandle Pressure: candle body as a share of its range, through our smoothing.\nCipher B: VuManChu Cipher B's exact formula - a plain 60-bar SMA of body/range x 150, shifted down 2.5. Ignores volume, smoothing and normalising; Length and Height still apply (60 and 200 = theirs). Tracked real buy/sell volume worst of the three when tested.\nVolume Delta falls back to Candle Pressure where lower-timeframe data is missing")
+     tooltip="Volume Delta: buying vs selling volume, estimated from the lower-timeframe candles inside each bar (volume x body / range). Closest of these to real exchange buy/sell volume when tested.\nCandle Pressure: candle body as a share of its range, through our smoothing.\nCipher B: VuManChu Cipher B's exact formula - a plain 60-bar SMA of body/range x 150, shifted down 2.5. Ignores volume, smoothing and normalising; Length and Height still apply (60 and 200 = theirs). Tracked real buy/sell volume worst of the three when tested.\nVolume Delta falls back to Candle Pressure where lower-timeframe data is missing", display=display.none)
 mfLtfInput = input.string("Auto", "Delta Timeframe", options=["Auto", "1", "5", "15", "60"], group="Money Flow",
-     tooltip="Lower timeframe used for volume delta. Auto aims for ~12-24 lower-timeframe candles per bar")
+     tooltip="Lower timeframe used for volume delta. Auto aims for ~12-24 lower-timeframe candles per bar", display=display.none)
 mfUseVolume = input.bool(true, "Weight by Volume", group="Money Flow",
-     tooltip="Bigger-volume candles count more. Ignored on symbols without volume")
+     tooltip="Bigger-volume candles count more. Ignored on symbols without volume", display=display.none)
 showMcLevels = input.bool(true, "MC-Style Level Lines", group="Visuals",
-     tooltip="Cipher B style lines at 100, +/-60 and +/-53 (Momentum wave only)")
+     tooltip="Cipher B style lines at 100, +/-60 and +/-53 (Momentum wave only)", display=display.none)
 mfTransp = input.int(25, "Money Flow Transparency", minval=0, maxval=80, group="Visuals",
-     tooltip="0 = solid, higher = more see-through (v3.3 used 32)")
-showTPMarks = input.bool(false, "Show TP1 / TP2 / Exit Marks", group="Visuals")
+     tooltip="0 = solid, higher = more see-through (v3.3 used 32)", display=display.none)
+showTPMarks = input.bool(false, "Show TP1 / TP2 / Exit Marks", group="Visuals", display=display.none)
 showDivergence = input.bool(true, "Show Divergences", group="Visuals",
-     tooltip="D marks plus a line joining the two wave pivots: wave higher low while price makes a lower low (bull), or the reverse (bear)")
-showKey = input.bool(false, "Show Key", group="Visuals", tooltip="Boxed legend explaining each element. Off by default to keep the pane clean")
-keyPos = input.string("Bottom Left", "Key Position", options=["Bottom Left", "Top Left", "Top Right", "Bottom Right"], group="Visuals")
+     tooltip="D marks plus a line joining the two wave pivots: wave higher low while price makes a lower low (bull), or the reverse (bear)", display=display.none)
+showKey = input.bool(false, "Show Key", group="Visuals", tooltip="Boxed legend explaining each element. Off by default to keep the pane clean", display=display.none)
+keyPos = input.string("Bottom Left", "Key Position", options=["Bottom Left", "Top Left", "Top Right", "Bottom Right"], group="Visuals", display=display.none)
 rsiCueStyle = input.string("Wave Edge", "RSI Cue", options=["Wave Edge", "Dots", "Off"], group="RSI",
-     tooltip="Wave Edge: the wave's light leading edge turns red while RSI is overbought, green while oversold\nDots: small faint dots on the wave instead\nOff: no RSI cue")
-rsiCueLen = input.int(14, "RSI Length", minval=2, maxval=50, group="RSI")
-rsiOB = input.int(70, "Overbought", minval=50, maxval=95, group="RSI")
-rsiOS = input.int(30, "Oversold", minval=5, maxval=50, group="RSI")
-showLabel = input.bool(true, "Show Status Box", group="Visuals")
-labelPos = input.string("Top Right", "Status Box Position", options=["Top Right", "Bottom Right", "Top Left", "Bottom Left"], group="Visuals")
+     tooltip="Wave Edge: the wave's light leading edge turns red while RSI is overbought, green while oversold\nDots: small faint dots on the wave instead\nOff: no RSI cue", display=display.none)
+rsiCueLen = input.int(14, "RSI Length", minval=2, maxval=50, group="RSI", display=display.none)
+rsiOB = input.int(70, "Overbought", minval=50, maxval=95, group="RSI", display=display.none)
+rsiOS = input.int(30, "Oversold", minval=5, maxval=50, group="RSI", display=display.none)
+showLabel = input.bool(true, "Show Status Box", group="Visuals", display=display.none)
+labelPos = input.string("Top Right", "Status Box Position", options=["Top Right", "Bottom Right", "Top Left", "Bottom Left"], group="Visuals", display=display.none)
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // INPUTS - ALERTS
 // ═══════════════════════════════════════════════════════════════════════════════
 
-alertSetups = input.bool(true, "Setup Alerts (graded)", group="Alerts")
-alertAPlusOnly = input.bool(false, "Only Alert A-Grade Setups", group="Alerts")
-alertDiv = input.bool(false, "Divergence Alerts", group="Alerts")
-alertTP = input.bool(true, "TP1 / TP2 Alerts", group="Alerts")
-alertExit = input.bool(true, "Flow Exit Alerts", group="Alerts")
-alertCooldown = input.int(3, "Setup Alert Cooldown (bars)", minval=1, maxval=50, group="Alerts")
+alertSetups = input.bool(true, "Setup Alerts (graded)", group="Alerts", display=display.none)
+alertAPlusOnly = input.bool(false, "Only Alert A-Grade Setups", group="Alerts", display=display.none)
+alertDiv = input.bool(false, "Divergence Alerts", group="Alerts", display=display.none)
+alertTP = input.bool(true, "TP1 / TP2 Alerts", group="Alerts", display=display.none)
+alertExit = input.bool(true, "Flow Exit Alerts", group="Alerts", display=display.none)
+alertCooldown = input.int(3, "Setup Alert Cooldown (bars)", minval=1, maxval=50, group="Alerts", display=display.none)
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // COLORS
@@ -1159,31 +1161,49 @@ fireExit = alertExit and flowExit
 if fireLong or fireShort
     lastSetupAlertBar := bar_index
 
-scoreText = str.tostring(math.round(flowScore * 100)) + "%"
-tickerText = syminfo.ticker + " " + timeframe.period
+// Alert messages are written for a person reading them on a phone: what happened, where, the price, and why
+tfText = timeframe.isminutes ? (timeframe.multiplier % 60 == 0 ? str.tostring(timeframe.multiplier / 60) + "H" : timeframe.period + "m") : timeframe.isdaily ? (timeframe.multiplier == 1 ? "Daily" : timeframe.period) : timeframe.isweekly ? "Weekly" : timeframe.ismonthly ? "Monthly" : timeframe.period
+htfText = htfRes == "1W" ? "weekly" : htfRes == "1M" ? "monthly" : timeframe.in_seconds(htfRes) % 86400 == 0 ? "daily" : str.tostring(timeframe.in_seconds(htfRes) / 3600) + "H"
+scoreText = (flowScore >= 0 ? "+" : "") + str.tostring(math.round(flowScore * 100)) + "%"
+agreeText = str.tostring(flowScore >= 0 ? bullCount : bearCount) + " of 8 markets agree"
+flowWord = flowScore > minFlow ? "bullish" : flowScore < -minFlow ? "bearish" : "neutral"
+tickerText = syminfo.ticker + " " + tfText
+priceText = "Price " + str.tostring(close, "#,##0.########")
+flowLine = "Capital flow " + flowWord + " " + scoreText + " (" + agreeText + ")"
+
+// The checks behind a graded dot, in plain words
+whyText(bool isLong, bool stretched, bool htf, bool mf, bool cf, bool dv) =>
+    t = (stretched ? (isLong ? "turned up from oversold, " : "turned down from overbought, ") : "") +
+         (htf ? htfText + " wave " + (isLong ? "rising" : "falling") + ", " : "") +
+         (mf ? (isLong ? "buyers stepping in, " : "sellers stepping in, ") : "") +
+         (cf ? "capital flow " + (isLong ? "bullish" : "bearish") + ", " : "") +
+         (dv ? (isLong ? "bullish" : "bearish") + " divergence, " : "")
+    str.length(t) > 2 ? str.substring(t, 0, str.length(t) - 2) : "momentum turn only"
+
+tradeWord = tradeDir[1] == 1 ? "long" : "short"
 
 if fireLong
-    alert((longAPlus ? "🟡 A-GRADE LONG | " : "🟢 B-GRADE LONG | ") + tickerText + " | " + reasons(touchedLower, htfUp, mfRising, flowBull, recentBullDiv) + " | capital flow " + scoreText, alert.freq_once_per_bar_close)
+    alert("🟢 " + (longAPlus ? "A" : "B") + "-grade LONG · " + tickerText + "\n" + priceText + "\nWhy: " + whyText(true, touchedLower, htfUp, mfRising, flowBull, recentBullDiv) + "\n" + flowLine, alert.freq_once_per_bar_close)
 if fireShort
-    alert((shortAPlus ? "🔴 A-GRADE SHORT | " : "🔴 B-GRADE SHORT | ") + tickerText + " | " + reasons(touchedUpper, htfDn, mfFalling, flowBear, recentBearDiv) + " | capital flow " + scoreText, alert.freq_once_per_bar_close)
+    alert("🔴 " + (shortAPlus ? "A" : "B") + "-grade SHORT · " + tickerText + "\n" + priceText + "\nWhy: " + whyText(false, touchedUpper, htfDn, mfFalling, flowBear, recentBearDiv) + "\n" + flowLine, alert.freq_once_per_bar_close)
 if alertDiv and bullDiv and bullDivStrength >= divMinStrength
-    alert("📈 " + str.upper(lastBullDivTxt) + " | " + tickerText + " | strength " + str.tostring(bullDivStrength) + "/3", alert.freq_once_per_bar_close)
+    alert("📈 Bullish divergence · " + tickerText + "\n" + priceText + (str.contains(lastBullDivTxt, "hidden") ? "\nHidden divergence: price made a higher low while momentum made a lower low (uptrend continuation)" : "\nPrice made a lower low but momentum did not") + " · strength " + str.tostring(bullDivStrength) + " of 3", alert.freq_once_per_bar_close)
 if alertDiv and bearDiv and bearDivStrength >= divMinStrength
-    alert("📉 " + str.upper(lastBearDivTxt) + " | " + tickerText + " | strength " + str.tostring(bearDivStrength) + "/3", alert.freq_once_per_bar_close)
+    alert("📉 Bearish divergence · " + tickerText + "\n" + priceText + (str.contains(lastBearDivTxt, "hidden") ? "\nHidden divergence: price made a lower high while momentum made a higher high (downtrend continuation)" : "\nPrice made a higher high but momentum did not") + " · strength " + str.tostring(bearDivStrength) + " of 3", alert.freq_once_per_bar_close)
 if fireTP1
-    alert("🎯 TP1 (basis) | " + tickerText + " | Consider moving stop to breakeven", alert.freq_once_per_bar_close)
+    alert("🎯 Target 1 reached · " + tickerText + "\n" + priceText + "\nThe last " + tradeWord + " signal has reached the middle of the Keltner channel. Consider moving your stop to breakeven.", alert.freq_once_per_bar_close)
 if fireTP2
-    alert("🎯 TP2 (opposite band) | " + tickerText, alert.freq_once_per_bar_close)
+    alert("🎯 Target 2 reached · " + tickerText + "\n" + priceText + "\nThe last " + tradeWord + " signal has reached the far edge of the Keltner channel.", alert.freq_once_per_bar_close)
 if alertBW and bwLong
-    alert("🔵 BLUE WAVE LONG | " + tickerText + " | anchor " + str.tostring(math.round(bwLAV)) + ", trigger " + str.tostring(math.round(bwLTV)) + " | capital flow " + scoreText, alert.freq_once_per_bar_close)
+    alert("🔵 BLUE WAVE LONG · " + tickerText + "\n" + priceText + "\nA second, shallower dip (wave " + str.tostring(math.round(bwLTV)) + " after " + str.tostring(math.round(bwLAV)) + ") has turned up with buyers behind it\n" + flowLine, alert.freq_once_per_bar_close)
 if alertCF and cfLong
-    alert("CAPITAL FLOW LONG | " + tickerText + " | stretched wave turning up, money flow rising, capital flow " + scoreText, alert.freq_once_per_bar_close)
+    alert("🟡 CAPITAL FLOW LONG · " + tickerText + "\n" + priceText + "\nAll three agree: momentum turned up from oversold, buyers stepping in, capital flow bullish\n" + flowLine, alert.freq_once_per_bar_close)
 if alertCF and cfShort
-    alert("CAPITAL FLOW SHORT | " + tickerText + " | stretched wave turning down, money flow falling, capital flow " + scoreText, alert.freq_once_per_bar_close)
+    alert("🟡 CAPITAL FLOW SHORT · " + tickerText + "\n" + priceText + "\nAll three agree: momentum turned down from overbought, sellers stepping in, capital flow bearish\n" + flowLine, alert.freq_once_per_bar_close)
 if alertBW and bwShort
-    alert("🔵 BLUE WAVE SHORT | " + tickerText + " | anchor " + str.tostring(math.round(bwSAV)) + ", trigger " + str.tostring(math.round(bwSTV)) + " | capital flow " + scoreText, alert.freq_once_per_bar_close)
+    alert("🔵 BLUE WAVE SHORT · " + tickerText + "\n" + priceText + "\nA second, smaller peak (wave " + str.tostring(math.round(bwSTV)) + " after " + str.tostring(math.round(bwSAV)) + ") has turned down with sellers behind it\n" + flowLine, alert.freq_once_per_bar_close)
 if fireExit
-    alert("✕ FLOW EXIT | " + tickerText + " | Capital flow flipped against the open setup", alert.freq_once_per_bar_close)
+    alert("✕ Capital flow turned against the last " + tradeWord + " · " + tickerText + "\n" + priceText + "\n" + flowLine, alert.freq_once_per_bar_close)
 
 alertcondition(fireLong, title="Graded LONG", message="Graded long signal on {{ticker}} {{interval}} (B or A grade)")
 alertcondition(fireShort, title="Graded SHORT", message="Graded short signal on {{ticker}} {{interval}} (B or A grade)")
