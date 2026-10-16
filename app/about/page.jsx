@@ -1,4 +1,5 @@
 import './about.css';
+import Logo from '../components/Logo';
 import SuggestWidget from '../components/SuggestWidget';
 
 export const metadata = {
@@ -12,7 +13,7 @@ export default function AboutPage() {
       <nav>
         <div className="nav-content">
           <a href="/" className="logo">
-            <span className="logo-icon">CF</span>
+            <Logo />
             {' '}Capital Flow
           </a>
           {' '}
@@ -96,7 +97,7 @@ export default function AboutPage() {
           {' '}
           <br />
           {' '}
-          <span className="flow-step" style={{ background: "linear-gradient(135deg, var(--orange), var(--orange-light))", border: "none" }}>🎯 Capital Flow Signal</span>
+          <span className="flow-step" style={{ background: "linear-gradient(135deg, var(--brand), var(--brand-light))", border: "none", color: "#17130a" }}>🎯 Capital Flow Signal</span>
         </div>
         <h3>The Data Sources</h3>
         <ul>
@@ -424,7 +425,7 @@ export default function AboutPage() {
           <a href="/disclaimer">Disclaimer</a>
         </div>
         <p className="copyright" style={{ maxWidth: "500px", margin: "0 auto 1rem", fontSize: "0.7rem" }}>
-          <strong style={{ color: "var(--orange)" }}>Disclosure:</strong>
+          <strong style={{ color: "var(--brand)" }}>Disclosure:</strong>
           {' '}Capital Flow is a free, independent project.
         </p>
         <p className="copyright">Built by traders, for traders.</p>

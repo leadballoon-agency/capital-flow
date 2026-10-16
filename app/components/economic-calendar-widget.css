@@ -63,8 +63,8 @@
 }
 
 .econ-cal-event.today {
-  border-left-color: #ff6b00;
-  background: rgba(255, 107, 0, 0.05);
+  border-left-color: #f3c754;
+  background: rgba(243, 199, 84, 0.05);
 }
 
 .econ-cal-event.past {
@@ -83,7 +83,7 @@
 }
 
 .econ-cal-event.today .econ-cal-time-relative {
-  color: #ff6b00;
+  color: #f3c754;
 }
 
 .econ-cal-event.vip .econ-cal-time-relative {

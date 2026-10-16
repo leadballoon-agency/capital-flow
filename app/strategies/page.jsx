@@ -1,4 +1,5 @@
 import './strategies.css';
+import Logo from '../components/Logo';
 import SuggestWidget from '../components/SuggestWidget';
 
 export const metadata = {
@@ -12,7 +13,7 @@ export default function StrategiesPage() {
       <nav>
         <div className="nav-content">
           <a href="/" className="logo">
-            <span className="logo-icon">CF</span>
+            <Logo />
             {' '}Capital Flow
           </a>
           {' '}
@@ -307,7 +308,7 @@ export default function StrategiesPage() {
                   <td>$89,500</td>
                   <td className="highlight">+1.7%</td>
                   <td>BE</td>
-                  <td style={{ color: "var(--orange)" }}>Partial</td>
+                  <td style={{ color: "var(--brand)" }}>Partial</td>
                 </tr>
                 <tr>
                   <td>#6</td>
@@ -448,7 +449,7 @@ export default function StrategiesPage() {
           <a href="/strategies">Strategies</a>
         </div>
         <p className="copyright" style={{ maxWidth: "500px", margin: "0 auto 1rem", fontSize: "0.7rem" }}>
-          <strong style={{ color: "var(--orange)" }}>Disclaimer:</strong>
+          <strong style={{ color: "var(--brand)" }}>Disclaimer:</strong>
           {' '}These strategies are for educational purposes. Past performance does not guarantee future results. Always manage your risk.
         </p>
         <p className="copyright">Built by traders, for traders.</p>

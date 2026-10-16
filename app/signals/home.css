@@ -1,7 +1,7 @@
 :root {
-  --orange: #ff6b00;
-  --orange-light: #ff8533;
-  --orange-glow: rgba(255, 107, 0, 0.3);
+  --brand: #f3c754;
+  --brand-light: #f7d77e;
+  --brand-glow: rgba(243, 199, 84, 0.3);
   --dark: #0a0a0a;
   --dark-card: #111111;
   --dark-border: #1a1a1a;
@@ -60,17 +60,6 @@ nav {
   color: #fff;
 }
 
-.logo-icon {
-  width: 32px;
-  height: 32px;
-  background: linear-gradient(135deg, var(--orange), var(--orange-light));
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 800;
-  font-size: 0.875rem;
-}
 
 .nav-links {
   display: flex;
@@ -90,15 +79,15 @@ nav {
 }
 
 .nav-cta {
-  background: var(--orange) !important;
-  color: #fff !important;
+  background: var(--brand) !important;
+  color: #17130a !important;
   padding: 0.5rem 1rem;
   border-radius: 6px;
   font-weight: 500;
 }
 
 .nav-cta:hover {
-  background: var(--orange-light) !important;
+  background: var(--brand-light) !important;
 }
 
 /* Hero Section */
@@ -120,7 +109,7 @@ nav {
   left: -50%;
   width: 200%;
   height: 200%;
-  background: radial-gradient(circle at 50% 50%, var(--orange-glow) 0%, transparent 50%);
+  background: radial-gradient(circle at 50% 50%, var(--brand-glow) 0%, transparent 50%);
   animation: pulse 8s ease-in-out infinite;
 }
 
@@ -140,11 +129,11 @@ nav {
   align-items: center;
   gap: 0.5rem;
   padding: 0.5rem 1rem;
-  background: rgba(255, 107, 0, 0.1);
-  border: 1px solid rgba(255, 107, 0, 0.3);
+  background: rgba(243, 199, 84, 0.1);
+  border: 1px solid rgba(243, 199, 84, 0.3);
   border-radius: 50px;
   font-size: 0.875rem;
-  color: var(--orange);
+  color: var(--brand);
   margin-bottom: 1.5rem;
 }
 
@@ -170,7 +159,7 @@ h1 {
 }
 
 .gradient-text {
-  background: linear-gradient(135deg, #fff 0%, var(--orange) 100%);
+  background: linear-gradient(135deg, #fff 0%, var(--brand) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -203,15 +192,15 @@ h1 {
 }
 
 .btn-primary {
-  background: var(--orange);
-  color: #fff;
-  box-shadow: 0 4px 20px var(--orange-glow);
+  background: var(--brand);
+  color: #17130a;
+  box-shadow: 0 4px 20px var(--brand-glow);
 }
 
 .btn-primary:hover {
-  background: var(--orange-light);
+  background: var(--brand-light);
   transform: translateY(-2px);
-  box-shadow: 0 6px 30px var(--orange-glow);
+  box-shadow: 0 6px 30px var(--brand-glow);
 }
 
 .btn-secondary {
@@ -243,7 +232,7 @@ h1 {
 .stat-value {
   font-size: 2rem;
   font-weight: 700;
-  color: var(--orange);
+  color: var(--brand);
 }
 
 .stat-label {
@@ -410,8 +399,8 @@ h1 {
 .feed-cta {
   margin-top: 1.5rem;
   padding: 1.25rem;
-  background: linear-gradient(135deg, rgba(255, 107, 0, 0.08), rgba(255, 107, 0, 0.02));
-  border: 1px solid rgba(255, 107, 0, 0.15);
+  background: linear-gradient(135deg, rgba(243, 199, 84, 0.08), rgba(243, 199, 84, 0.02));
+  border: 1px solid rgba(243, 199, 84, 0.15);
   border-radius: 12px;
   display: flex;
   align-items: center;
@@ -427,7 +416,7 @@ h1 {
 }
 
 .feed-cta strong {
-  color: var(--orange);
+  color: var(--brand);
 }
 
 .feed-cta-btn {
@@ -435,8 +424,8 @@ h1 {
   align-items: center;
   gap: 0.5rem;
   padding: 0.625rem 1.25rem;
-  background: var(--orange);
-  color: #fff;
+  background: var(--brand);
+  color: #17130a;
   text-decoration: none;
   border-radius: 6px;
   font-size: 0.8125rem;
@@ -446,7 +435,7 @@ h1 {
 }
 
 .feed-cta-btn:hover {
-  background: var(--orange-light);
+  background: var(--brand-light);
   transform: translateY(-1px);
 }
 
@@ -543,7 +532,7 @@ h1 {
 }
 
 .sentiment-source a {
-  color: var(--orange);
+  color: var(--brand);
   text-decoration: none;
 }
 
@@ -675,7 +664,7 @@ h1 {
 }
 
 .panel-pct {
-  color: var(--orange);
+  color: var(--brand);
 }
 
 @media (max-width: 768px) {
@@ -694,7 +683,7 @@ h1 {
 }
 
 .view-all-link {
-  color: var(--orange);
+  color: var(--brand);
   text-decoration: none;
   font-size: 0.875rem;
   display: flex;
@@ -749,14 +738,14 @@ h1 {
 }
 
 .feature-card:hover {
-  border-color: rgba(255, 107, 0, 0.3);
+  border-color: rgba(243, 199, 84, 0.3);
   transform: translateY(-4px);
 }
 
 .feature-icon {
   width: 48px;
   height: 48px;
-  background: rgba(255, 107, 0, 0.1);
+  background: rgba(243, 199, 84, 0.1);
   border-radius: 12px;
   display: flex;
   align-items: center;
@@ -965,7 +954,7 @@ h1 {
 }
 
 .use-card p strong {
-  color: var(--orange);
+  color: var(--brand);
 }
 
 @media (max-width: 1024px) {
@@ -1055,7 +1044,7 @@ h1 {
 .reports-features span {
   background: rgba(255, 136, 0, 0.1);
   border: 1px solid rgba(255, 136, 0, 0.3);
-  color: var(--orange);
+  color: var(--brand);
   padding: 0.4rem 0.8rem;
   border-radius: 6px;
   font-size: 0.8125rem;
@@ -1072,9 +1061,9 @@ h1 {
 }
 
 .report-card:hover {
-  border-color: rgba(255, 107, 0, 0.5);
+  border-color: rgba(243, 199, 84, 0.5);
   transform: translateY(-4px);
-  box-shadow: 0 12px 40px rgba(255, 107, 0, 0.15);
+  box-shadow: 0 12px 40px rgba(243, 199, 84, 0.15);
 }
 
 .report-card-image {
@@ -1120,7 +1109,7 @@ h1 {
 }
 
 .report-card-date {
-  color: var(--orange);
+  color: var(--brand);
   font-size: 0.75rem;
   font-weight: 600;
   text-transform: uppercase;
@@ -1162,7 +1151,7 @@ h1 {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  color: var(--orange);
+  color: var(--brand);
   text-decoration: none;
   font-weight: 600;
   transition: gap 0.2s;
@@ -1201,7 +1190,7 @@ h1 {
 }
 
 .phase-card.active {
-  border-color: var(--orange);
+  border-color: var(--brand);
 }
 
 .phase-card.active::before {
@@ -1211,13 +1200,13 @@ h1 {
   left: 0;
   right: 0;
   height: 3px;
-  background: linear-gradient(90deg, var(--orange), var(--orange-light));
+  background: linear-gradient(90deg, var(--brand), var(--brand-light));
 }
 
 .phase-number {
   font-size: 0.75rem;
   font-weight: 600;
-  color: var(--orange);
+  color: var(--brand);
   text-transform: uppercase;
   letter-spacing: 0.1em;
   margin-bottom: 0.5rem;
@@ -1254,7 +1243,7 @@ h1 {
 }
 
 .phase-card.active li::before {
-  background: var(--orange);
+  background: var(--brand);
 }
 
 /* CTA Section */
@@ -1266,8 +1255,8 @@ h1 {
 .cta-box {
   max-width: 700px;
   margin: 0 auto;
-  background: linear-gradient(135deg, rgba(255, 107, 0, 0.1) 0%, rgba(255, 107, 0, 0.05) 100%);
-  border: 1px solid rgba(255, 107, 0, 0.2);
+  background: linear-gradient(135deg, rgba(243, 199, 84, 0.1) 0%, rgba(243, 199, 84, 0.05) 100%);
+  border: 1px solid rgba(243, 199, 84, 0.2);
   border-radius: 24px;
   padding: 4rem 2rem;
 }
@@ -1338,7 +1327,7 @@ footer {
 }
 
 .footer-link {
-  color: var(--orange);
+  color: var(--brand);
   text-decoration: none;
 }
 

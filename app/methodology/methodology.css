@@ -1,6 +1,6 @@
 :root {
-  --orange: #ff6b00;
-  --orange-light: #ff8533;
+  --brand: #f3c754;
+  --brand-light: #f7d77e;
   --dark: #0a0a0a;
   --dark-card: #111111;
   --dark-border: #1a1a1a;
@@ -56,17 +56,6 @@ nav {
   color: #fff;
 }
 
-.logo-icon {
-  width: 32px;
-  height: 32px;
-  background: linear-gradient(135deg, var(--orange), var(--orange-light));
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 800;
-  font-size: 0.875rem;
-}
 
 .back-link {
   color: var(--gray-light);
@@ -95,11 +84,11 @@ nav {
   align-items: center;
   gap: 0.5rem;
   padding: 0.5rem 1rem;
-  background: rgba(255, 107, 0, 0.1);
-  border: 1px solid rgba(255, 107, 0, 0.3);
+  background: rgba(243, 199, 84, 0.1);
+  border: 1px solid rgba(243, 199, 84, 0.3);
   border-radius: 50px;
   font-size: 0.875rem;
-  color: var(--orange);
+  color: var(--brand);
   margin-bottom: 1.5rem;
 }
 
@@ -130,7 +119,7 @@ h3 {
   font-weight: 600;
   margin-top: 2rem;
   margin-bottom: 0.75rem;
-  color: var(--orange);
+  color: var(--brand);
 }
 
 p {
@@ -143,7 +132,7 @@ strong {
 }
 
 a {
-  color: var(--orange);
+  color: var(--brand);
   text-decoration: none;
 }
 
@@ -187,7 +176,7 @@ a:hover {
 }
 
 .category-icon.macro { background: rgba(74, 158, 255, 0.15); }
-.category-icon.crypto { background: rgba(255, 107, 0, 0.15); }
+.category-icon.crypto { background: rgba(243, 199, 84, 0.15); }
 .category-icon.sector { background: rgba(168, 85, 247, 0.15); }
 
 .category-title {
@@ -242,7 +231,7 @@ a:hover {
 
 .input-tag.risk-off { background: rgba(255, 68, 102, 0.15); color: var(--red); }
 .input-tag.risk-on { background: rgba(0, 255, 136, 0.15); color: var(--green); }
-.input-tag.leader { background: rgba(255, 107, 0, 0.15); color: var(--orange); }
+.input-tag.leader { background: rgba(243, 199, 84, 0.15); color: var(--brand); }
 .input-tag.rotation { background: rgba(168, 85, 247, 0.15); color: var(--purple); }
 
 .input-description {
@@ -346,7 +335,7 @@ a:hover {
 }
 
 .preset-card:hover {
-  border-color: rgba(255, 107, 0, 0.3);
+  border-color: rgba(243, 199, 84, 0.3);
 }
 
 .preset-card.coming-soon {
@@ -400,8 +389,8 @@ a:hover {
 
 /* Framework Box */
 .framework-box {
-  background: linear-gradient(135deg, rgba(255, 107, 0, 0.08), rgba(255, 107, 0, 0.02));
-  border: 1px solid rgba(255, 107, 0, 0.2);
+  background: linear-gradient(135deg, rgba(243, 199, 84, 0.08), rgba(243, 199, 84, 0.02));
+  border: 1px solid rgba(243, 199, 84, 0.2);
   border-radius: 16px;
   padding: 2rem;
   margin: 2rem 0;
@@ -461,7 +450,7 @@ a:hover {
 }
 
 .phase-badge.now { background: rgba(0, 255, 136, 0.15); color: var(--green); }
-.phase-badge.next { background: rgba(255, 107, 0, 0.15); color: var(--orange); }
+.phase-badge.next { background: rgba(243, 199, 84, 0.15); color: var(--brand); }
 .phase-badge.future { background: rgba(74, 158, 255, 0.15); color: var(--blue); }
 
 .roadmap-content h4 {
@@ -478,8 +467,8 @@ a:hover {
 
 /* CTA */
 .cta-section {
-  background: linear-gradient(135deg, rgba(255, 107, 0, 0.1), rgba(255, 107, 0, 0.05));
-  border: 1px solid rgba(255, 107, 0, 0.2);
+  background: linear-gradient(135deg, rgba(243, 199, 84, 0.1), rgba(243, 199, 84, 0.05));
+  border: 1px solid rgba(243, 199, 84, 0.2);
   border-radius: 16px;
   padding: 2.5rem;
   margin: 3rem 0;
@@ -512,8 +501,8 @@ a:hover {
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, var(--orange), var(--orange-light));
-  color: #fff;
+  background: linear-gradient(135deg, var(--brand), var(--brand-light));
+  color: #17130a;
 }
 
 .btn-primary:hover {
@@ -528,7 +517,7 @@ a:hover {
 }
 
 .btn-secondary:hover {
-  border-color: var(--orange);
+  border-color: var(--brand);
   text-decoration: none;
 }
 

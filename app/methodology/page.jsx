@@ -1,4 +1,5 @@
 import './methodology.css';
+import Logo from '../components/Logo';
 import SuggestWidget from '../components/SuggestWidget';
 
 export const metadata = {
@@ -12,7 +13,7 @@ export default function MethodologyPage() {
       <nav>
         <div className="nav-content">
           <a href="/" className="logo">
-            <span className="logo-icon">CF</span>
+            <Logo />
             {' '}Capital Flow
           </a>
           {' '}

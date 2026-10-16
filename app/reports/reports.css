@@ -1,7 +1,7 @@
 :root {
-  --orange: #ff6b00;
-  --orange-light: #ff8533;
-  --orange-glow: rgba(255, 107, 0, 0.3);
+  --brand: #f3c754;
+  --brand-light: #f7d77e;
+  --brand-glow: rgba(243, 199, 84, 0.3);
   --dark: #0a0a0a;
   --dark-card: #111111;
   --dark-border: #1a1a1a;
@@ -61,17 +61,6 @@ nav {
   color: #fff;
 }
 
-.logo-icon {
-  width: 32px;
-  height: 32px;
-  background: linear-gradient(135deg, var(--orange), var(--orange-light));
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 800;
-  font-size: 0.875rem;
-}
 
 .nav-links {
   display: flex;
@@ -108,7 +97,7 @@ nav {
   font-size: 2.75rem;
   font-weight: 800;
   margin-bottom: 0.75rem;
-  background: linear-gradient(135deg, #fff 0%, var(--orange) 100%);
+  background: linear-gradient(135deg, #fff 0%, var(--brand) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -286,7 +275,7 @@ nav {
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: var(--orange);
+  color: var(--brand);
 }
 
 .data-row {
@@ -335,15 +324,15 @@ nav {
 
 /* Analysis Card */
 .analysis-card {
-  background: linear-gradient(135deg, rgba(255, 107, 0, 0.08), rgba(255, 107, 0, 0.02));
-  border: 1px solid rgba(255, 107, 0, 0.2);
+  background: linear-gradient(135deg, rgba(243, 199, 84, 0.08), rgba(243, 199, 84, 0.02));
+  border: 1px solid rgba(243, 199, 84, 0.2);
   border-radius: 16px;
   padding: 1.5rem;
   margin-bottom: 1.5rem;
 }
 
 .analysis-card .section-header {
-  border-bottom-color: rgba(255, 107, 0, 0.2);
+  border-bottom-color: rgba(243, 199, 84, 0.2);
 }
 
 .analysis-text {

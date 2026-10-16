@@ -1,4 +1,5 @@
 import './suggest.css';
+import Logo from '../components/Logo';
 import SuggestionsBoard from '../components/SuggestionsBoard';
 
 export const metadata = {
@@ -12,7 +13,7 @@ export default function SuggestPage() {
       <nav>
         <div className="nav-content">
           <a href="/" className="logo">
-            <span className="logo-icon">CF</span>
+            <Logo />
             {' '}Capital Flow
           </a>
           <div className="nav-links">

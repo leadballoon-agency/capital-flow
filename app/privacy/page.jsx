@@ -1,4 +1,5 @@
 import './privacy.css';
+import Logo from '../components/Logo';
 
 export const metadata = {
   title: "Privacy Policy | Capital Flow",
@@ -11,7 +12,7 @@ export default function PrivacyPage() {
       <nav>
         <div className="nav-content">
           <a href="/" className="logo">
-            <span className="logo-icon">CF</span>
+            <Logo />
             {' '}Capital Flow
           </a>
           {' '}
@@ -121,7 +122,7 @@ export default function PrivacyPage() {
           <a href="/disclaimer">Disclaimer</a>
         </div>
         <p className="copyright" style={{ maxWidth: "500px", margin: "0 auto 1rem", fontSize: "0.7rem" }}>
-          <strong style={{ color: "var(--orange)" }}>Disclosure:</strong>
+          <strong style={{ color: "var(--brand)" }}>Disclosure:</strong>
           {' '}Capital Flow is a free, independent project.
         </p>
         <p className="copyright">Built by traders, for traders.</p>

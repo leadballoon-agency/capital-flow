@@ -98,7 +98,7 @@ node scripts/generate-report.js
 - `/privacy` - Privacy policy
 - `/disclaimer` - Trading risk disclaimer
 
-**Branding:** Dark theme with orange accents (#ff6b00). No MDX ALGO mentions anywhere on the site (removed 2026-10-16, see below).
+**Branding (2026-10-16):** Dark theme with gold accents (#f3c754, light #f7d77e; CSS tokens `--brand` / `--brand-light` / `--brand-glow`, which replaced orange #ff6b00 / `--orange`). Buttons on gold use dark text (#17130a). The logo is `app/components/Logo.jsx`: an open "C" with the gold signal dot in its mouth wearing a thin ring (the user's pick, "option E"). The ring spins on its vertical axis once on load and again on hover (SMIL `rx` animation, still for reduced motion). Favicon `app/icon.svg` (heavier strokes for 16px) and `app/apple-icon.png`. No MDX ALGO mentions anywhere on the site (removed 2026-10-16, see below).
 
 ---
 

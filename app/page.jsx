@@ -1,4 +1,5 @@
 import './osc.css';
+import Logo from './components/Logo';
 import HeroVisual from './components/HeroVisual';
 
 export const metadata = {
@@ -20,7 +21,7 @@ const legend = [
   { sw: { background: 'var(--green)', opacity: 0.6 }, title: 'Money flow.', text: 'Buy vs sell volume estimated from lower-timeframe candles, smoothed into a curve rather than a sawtooth.' },
   { sw: { background: 'var(--yellow)', opacity: 0.7 }, title: 'Yellow momentum area.', text: 'A second, smoother read of momentum, drawn behind the money flow.' },
   { sw: { background: '#00a862' }, title: 'Capital flow band.', text: 'Along the bottom. It changes shade only when the reading holds for 3 bars, and green or red dots mark flips (±20% for 2 bars). A tag at the right edge reads "CAPITAL FLOW IN", "OUT", "leaning" or "neutral".' },
-  { sw: { background: 'var(--orange)' }, title: 'Graded dots.', text: 'A small dot on every wave cross. A = a thin green or red ring around the dot, B = outlined dot, C = small dot. Small by design, so they don’t bury the waves.' },
+  { sw: { background: 'var(--green)' }, title: 'Graded dots.', text: 'A small dot on every wave cross. A = a thin green or red ring around the dot, B = outlined dot, C = small dot. Small by design, so they don’t bury the waves.' },
   { sw: { background: 'transparent', border: '1.5px solid var(--gold)', borderRadius: '50%' }, title: 'Capital Flow signal.', text: 'A thin gold ring around the dot when momentum, money flow and capital flow all agree.' },
   { sw: { background: 'var(--blue)', transform: 'rotate(45deg) scale(.7)' }, title: 'Blue Wave.', text: 'A small blue diamond when a shallower second dip turns after a deep first one, with money flow behind it.' },
   { sw: { background: 'var(--red)' }, title: 'Divergence and RSI cue.', text: 'Divergence lines (bold when wave, RSI and money flow all agree), and a wave edge that changes colour at RSI extremes.' },
@@ -53,7 +54,7 @@ export default function HomePage() {
       <nav aria-label="Main">
         <div className="wrap nav-inner">
           <a href="/" className="logo">
-            <span className="logo-icon">CF</span>Capital Flow
+            <Logo />Capital Flow
           </a>
           <div className="nav-links">
             <a href="#signal">The signal</a>
@@ -342,7 +343,7 @@ export default function HomePage() {
                   {q.startsWith('Is this financial') && (
                     <>
                       {' '}
-                      <a href="/disclaimer" style={{ color: 'var(--orange-light)' }}>
+                      <a href="/disclaimer" style={{ color: 'var(--brand-light)' }}>
                         Read the disclaimer
                       </a>
                       .

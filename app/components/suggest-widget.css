@@ -5,11 +5,11 @@
   right: 24px;
   width: 56px;
   height: 56px;
-  background: linear-gradient(135deg, #ff6b00, #ff8533);
+  background: linear-gradient(135deg, #f3c754, #f7d77e);
   border: none;
   border-radius: 50%;
   cursor: pointer;
-  box-shadow: 0 4px 20px rgba(255, 107, 0, 0.4);
+  box-shadow: 0 4px 20px rgba(243, 199, 84, 0.4);
   z-index: 9999;
   display: flex;
   align-items: center;
@@ -19,13 +19,13 @@
 
 .cf-widget-btn:hover {
   transform: scale(1.1);
-  box-shadow: 0 6px 30px rgba(255, 107, 0, 0.5);
+  box-shadow: 0 6px 30px rgba(243, 199, 84, 0.5);
 }
 
 .cf-widget-btn svg {
   width: 24px;
   height: 24px;
-  fill: white;
+  fill: #17130a;
   transition: transform 0.3s;
 }
 
@@ -62,7 +62,7 @@
 /* Panel Header */
 .cf-widget-header {
   padding: 1.25rem 1.5rem;
-  background: linear-gradient(135deg, rgba(255, 107, 0, 0.1), transparent);
+  background: linear-gradient(135deg, rgba(243, 199, 84, 0.1), transparent);
   border-bottom: 1px solid #1a1a1a;
 }
 
@@ -127,9 +127,9 @@
 }
 
 .cf-category.selected {
-  background: #ff6b00;
-  border-color: #ff6b00;
-  color: #fff;
+  background: #f3c754;
+  border-color: #f3c754;
+  color: #17130a;
 }
 
 /* Input Fields */
@@ -159,8 +159,8 @@
 
 .cf-input:focus {
   outline: none;
-  border-color: #ff6b00;
-  box-shadow: 0 0 0 3px rgba(255, 107, 0, 0.2);
+  border-color: #f3c754;
+  box-shadow: 0 0 0 3px rgba(243, 199, 84, 0.2);
 }
 
 .cf-input::placeholder {
@@ -176,19 +176,19 @@ textarea.cf-input {
 .cf-submit {
   width: 100%;
   padding: 0.75rem 1rem;
-  background: linear-gradient(135deg, #ff6b00, #ff8533);
+  background: linear-gradient(135deg, #f3c754, #f7d77e);
   border: none;
   border-radius: 8px;
   font-size: 0.875rem;
   font-weight: 600;
-  color: #fff;
+  color: #17130a;
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .cf-submit:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 4px 15px rgba(255, 107, 0, 0.3);
+  box-shadow: 0 4px 15px rgba(243, 199, 84, 0.3);
 }
 
 .cf-submit:disabled {

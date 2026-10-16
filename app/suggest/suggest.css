@@ -1,7 +1,7 @@
 :root {
-  --orange: #ff6b00;
-  --orange-light: #ff8533;
-  --orange-glow: rgba(255, 107, 0, 0.3);
+  --brand: #f3c754;
+  --brand-light: #f7d77e;
+  --brand-glow: rgba(243, 199, 84, 0.3);
   --dark: #0a0a0a;
   --dark-card: #111111;
   --dark-border: #1a1a1a;
@@ -61,17 +61,6 @@ nav {
   color: #fff;
 }
 
-.logo-icon {
-  width: 32px;
-  height: 32px;
-  background: linear-gradient(135deg, var(--orange), var(--orange-light));
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 800;
-  font-size: 0.875rem;
-}
 
 .nav-links {
   display: flex;
@@ -107,7 +96,7 @@ nav {
   font-size: 2.5rem;
   font-weight: 800;
   margin-bottom: 0.75rem;
-  background: linear-gradient(135deg, #fff 0%, var(--orange) 100%);
+  background: linear-gradient(135deg, #fff 0%, var(--brand) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -166,7 +155,7 @@ nav {
 }
 
 .form-label .required {
-  color: var(--orange);
+  color: var(--brand);
 }
 
 /* Category Pills */
@@ -196,9 +185,9 @@ nav {
 }
 
 .category-pill.selected {
-  background: var(--orange);
-  border-color: var(--orange);
-  color: #fff;
+  background: var(--brand);
+  border-color: var(--brand);
+  color: #17130a;
 }
 
 .category-pill input {
@@ -224,8 +213,8 @@ nav {
 
 .text-input:focus {
   outline: none;
-  border-color: var(--orange);
-  box-shadow: 0 0 0 3px var(--orange-glow);
+  border-color: var(--brand);
+  box-shadow: 0 0 0 3px var(--brand-glow);
 }
 
 .text-input::placeholder {
@@ -248,19 +237,19 @@ textarea.text-input {
 .submit-btn {
   width: 100%;
   padding: 0.875rem 1.5rem;
-  background: linear-gradient(135deg, var(--orange), var(--orange-light));
+  background: linear-gradient(135deg, var(--brand), var(--brand-light));
   border: none;
   border-radius: 8px;
   font-size: 0.9375rem;
   font-weight: 600;
-  color: #fff;
+  color: #17130a;
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .submit-btn:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 4px 20px var(--orange-glow);
+  box-shadow: 0 4px 20px var(--brand-glow);
 }
 
 .submit-btn:disabled {

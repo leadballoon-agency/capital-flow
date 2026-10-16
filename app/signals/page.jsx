@@ -1,4 +1,5 @@
 import './home.css';
+import Logo from '../components/Logo';
 import ScrollToTop from '../components/ScrollToTop';
 import SignalsFeed from '../components/SignalsFeed';
 import LatestReportCard from '../components/LatestReportCard';
@@ -23,7 +24,7 @@ export default function SignalsPage() {
       <nav>
         <div className="nav-content">
           <a href="/" className="logo">
-            <span className="logo-icon">CF</span>
+            <Logo />
             {' '}Capital Flow
           </a>
           <div className="nav-links">
@@ -599,7 +600,7 @@ export default function SignalsPage() {
         </div>
         <div style={{ maxWidth: "600px", margin: "0 auto 1.5rem", padding: "1rem", background: "rgba(255,255,255,0.03)", borderRadius: "8px", border: "1px solid var(--dark-border)" }}>
           <p style={{ color: "var(--gray-light)", fontSize: "0.75rem", margin: "0" }}>
-            <strong style={{ color: "var(--orange)" }}>Disclosure:</strong>
+            <strong style={{ color: "var(--brand)" }}>Disclosure:</strong>
             {' '}Capital Flow is a free, independent project.
           </p>
         </div>
