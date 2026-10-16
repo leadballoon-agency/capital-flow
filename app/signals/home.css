@@ -1356,3 +1356,41 @@ footer {
     justify-content: center;
   }
 }
+
+/* Example alert message and note under "What the channel posts" */
+.signal-example {
+  margin-top: 1.5rem;
+  background: var(--dark-card);
+  border: 1px solid var(--dark-border);
+  border-radius: 12px;
+  padding: 1.25rem 1.5rem;
+}
+
+.signal-example-label {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--gray);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 0.5rem;
+}
+
+.signal-example pre {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 0.8125rem;
+  line-height: 1.6;
+  color: var(--gray-light);
+  white-space: pre-wrap;
+  word-break: break-word;
+  margin: 0;
+}
+
+.signals-note {
+  margin-top: 1rem;
+  font-size: 0.8125rem;
+  color: var(--gray);
+}
+
+.signals-note a {
+  color: var(--brand-light);
+}

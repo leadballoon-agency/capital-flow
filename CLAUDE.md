@@ -57,6 +57,8 @@ Receives alerts from TradingView and forwards to Telegram.
 
 **Endpoint:** `https://capital-flow-filter.vercel.app/api/webhook`
 
+**Since 2026-10-16 the channel is fed by one TradingView alert, "CF Osc 1H Channel"** (BITGET:BTCUSDT.P, 1H, Any alert() function call, webhook on; A-grade only, TP alerts off, Volume Delta money flow). The old overlay alerts (MDX Capital Flow Filter v4.4 and "Capital Flow", 1H/4H) are stopped, not deleted. The user's 5m CF Osc alert has no webhook (private). `lib/parseSignal.js` reads type/direction/ticker/timeframe from both message formats; `/api/signals` re-parses old rows on read. Plain-text alerts are HTML-escaped before Telegram (parse_mode HTML).
+
 **TradingView Alert Setup:**
 - Webhook URL: `https://capital-flow-filter.vercel.app/api/webhook`
 - Message: The alert message text (supports HTML formatting)
@@ -93,7 +95,7 @@ node scripts/generate-report.js
 
 **Pages:**
 - `/` - Homepage = the CF Osc page (made the homepage 2026-10-16 at the user's request): Capital Flow signal, reading the pane, money flow test, engine, install, FAQ. No "Cipher", Market Cipher or LuxAlgo wording or comparison table on the site (removed 2026-10-16 when the user said "im not sure we should be mentioning 'Cipher style waves'"); credits name only LazyBear's WaveTrend and VuManChu's open-source oscillator. `/oscillator` and `/suite.html` redirect here; old `/x.html` addresses redirect to `/x`
-- `/signals` - The previous homepage: live signals feed, features, signal types, Fear & Greed, long/short, economic calendar. Linked as "Live signals" from the CF Osc nav and "Live Signals" from the other pages' footers
+- `/signals` - Live signals page (rewritten 2026-10-16): the 24h-delayed feed of the Telegram channel's alerts, "What the channel posts" (CF Osc 1H: Capital Flow, A-grade, Blue Wave, capital-flow exit, with an example message), Fear & Greed, long/short (OKX), economic calendar. The old overlay copy ("Institutional-Grade", made-up win-rate table, signal types, roadmap, daily-reports claim) was removed. Linked as "Live signals" from the CF Osc nav and "Live Signals" from the other pages' footers
 - `/reports` - Archive of daily reports (Substack-style)
 - `/privacy` - Privacy policy
 - `/disclaimer` - Trading risk disclaimer
