@@ -6,7 +6,8 @@
 // v3.4 (final passes): Capital Flow signal (gold ring on the dot: stretched wave turn + money flow + capital flow agree), thicker labelled band;
 //       volume delta splits each lower-timeframe candle by body / range (closer to real taker volume),
 //       small dots on every wave cross again, status box top right with clock-time ages, one Blue Wave per anchor;
-//       A-grade = a green / red ring around the dot (the pink A-short dot was too close to the plain red dot)
+//       A-grade = a green / red ring around the dot (the pink A-short dot was too close to the plain red dot);
+//       divergence lines join the wave's own troughs / peaks and are only drawn when the wave itself diverges
 // v3.4: closer to the Market Cipher B look - clean background (pressure tint off by default; when on it follows the confirmed flip state (calm blocks,
 //       no bar-to-bar stripes)), MC-style level lines (100 / 60 / 53),
 //       smaller A-grade dots, money flow slightly see-through (25%) and drawn over the yellow momentum, Stoch RSI and RSI lines removed (the user found them not useful; the RSI wave-edge cue stays)
@@ -687,7 +688,14 @@ divScan(bool isBull, float swing, color col) =>
     int st = 0
     string txt = ""
     if not na(swing)
-        w = wt2[2]
+        // Anchor on the wave's own trough / peak near the price swing (the wave lags price by a bar
+        // or two), so lines join the wave's turning points instead of a point on its slope
+        float w = wt2[2]
+        int wOff = 2
+        for i = 0 to divPivotLeft + 2
+            if s * (wt2[i] - w) < 0
+                w := wt2[i]
+                wOff := i
         r = rsiDiv[2]
         m = moneyFlow[2]
         if not na(pPrice) and bar_index - 2 - pBar <= divMaxGap
@@ -705,11 +713,13 @@ divScan(bool isBull, float swing, color col) =>
             st := math.max(regS, hidS)
             if st > 0
                 txt := (isHidden ? "hidden " : "") + (isBull ? "bull" : "bear") + " div (" + (isHidden ? divParts(hw, hr, hm) : divParts(rw, rr, rm)) + ")"
-                if showDivergence and st >= divMinStrength and (not isHidden or divDrawHidden)
-                    line.new(pBar, pW, bar_index - 2, w, color=color.new(col, isHidden ? 55 : st >= 3 ? 0 : 30),
+                // Lines are drawn on the wave, so only when the wave itself diverges
+                waveDiv = isHidden ? hw : rw
+                if showDivergence and waveDiv and st >= divMinStrength and (not isHidden or divDrawHidden)
+                    line.new(pBar, pW, bar_index - wOff, w, color=color.new(col, isHidden ? 55 : st >= 3 ? 0 : 30),
                          width=st >= 3 ? 2 : 1, style=isHidden ? line.style_dotted : line.style_solid)
         pPrice := swing
-        pBar := bar_index - 2
+        pBar := bar_index - wOff
         pW := w
         pR := r
         pM := m
