@@ -398,11 +398,6 @@ export default function AboutPage() {
         <p>
           This project is not affiliated with any paid signal service or trading group. The indicator and daily reports are provided free of charge. We believe good trading tools should be accessible to everyone.
         </p>
-        <p>
-          If you're interested in professional-grade trading tools and education, we recommend checking out{' '}
-          <a href="https://mdxalgo.com/?ref=CsMGq" target="_blank">MDX ALGO</a>
-          {' '}— a comprehensive trading suite that inspired some of the concepts behind this indicator.
-        </p>
         <div className="highlight-box">
           <p>
             <strong>Disclaimer:</strong>
@@ -427,12 +422,10 @@ export default function AboutPage() {
           <a href="/privacy">Privacy Policy</a>
           {' '}
           <a href="/disclaimer">Disclaimer</a>
-          {' '}
-          <a href="https://mdxalgo.com/?ref=CsMGq" target="_blank">MDX ALGO</a>
         </div>
         <p className="copyright" style={{ maxWidth: "500px", margin: "0 auto 1rem", fontSize: "0.7rem" }}>
           <strong style={{ color: "var(--orange)" }}>Disclosure:</strong>
-          {' '}Capital Flow Filter is a free, independent indicator. Not affiliated with MDX ALGO. Affiliate links used.
+          {' '}Capital Flow is a free, independent project.
         </p>
         <p className="copyright">Built by traders, for traders.</p>
       </footer>

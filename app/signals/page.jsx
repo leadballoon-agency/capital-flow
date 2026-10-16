@@ -11,7 +11,7 @@ export const metadata = {
   title: "Live Signals & Market Dashboard | Capital Flow",
   description: "Multi-timeframe capital flow analysis for crypto traders. Real-time signals powered by macro, sector rotation, and manipulation detection.",
   openGraph: {
-    title: "MDX Capital Flow",
+    title: "Capital Flow",
     description: "Institutional-grade capital flow analysis for crypto traders",
     type: "website"
   }
@@ -45,8 +45,6 @@ export default function SignalsPage() {
             {' '}
             <a href="/about">About</a>
             {' '}
-            <a href="https://mdxalgo.com/?ref=CsMGq" target="_blank">MDX ALGO</a>
-            {' '}
             <a href="https://t.me/fivedaytrader" target="_blank" className="nav-cta">Join Telegram</a>
           </div>
         </div>
@@ -71,7 +69,7 @@ export default function SignalsPage() {
               {' '}Get Free Signals
             </a>
             {' '}
-            <a href="https://mdxalgo.com/?ref=CsMGq" target="_blank" className="btn btn-secondary">Learn More</a>
+            <a href="#features" className="btn btn-secondary">Learn More</a>
           </div>
           <div className="stats-bar">
             <div className="stat">
@@ -199,7 +197,7 @@ export default function SignalsPage() {
                   {' '}— Win rate, last signal & streak
                 </li>
               </ul>
-              <a href="https://mdxalgo.com/?ref=CsMGq" target="_blank" className="btn btn-secondary" style={{ marginTop: "1rem" }}>Get the Indicator →</a>
+              <a href="/#install" className="btn btn-secondary" style={{ marginTop: "1rem" }}>Get the Indicator →</a>
             </div>
             <div className="indicator-panel-image">
               <img src="/images/capital-flow-lean-bull.png" alt="Capital Flow Indicator Panel showing LEAN BULL signal at 25%" />
@@ -593,11 +591,7 @@ export default function SignalsPage() {
           {' '}
           <a href="/reports">Reports</a>
           {' '}
-          <a href="https://mdxalgo.com/?ref=CsMGq" target="_blank">MDX ALGO</a>
-          {' '}
           <a href="https://t.me/fivedaytrader" target="_blank">Telegram</a>
-          {' '}
-          <a href="https://twitter.com/MDX_ALGO" target="_blank">Twitter</a>
           {' '}
           <a href="/privacy">Privacy Policy</a>
           {' '}
@@ -606,13 +600,13 @@ export default function SignalsPage() {
         <div style={{ maxWidth: "600px", margin: "0 auto 1.5rem", padding: "1rem", background: "rgba(255,255,255,0.03)", borderRadius: "8px", border: "1px solid var(--dark-border)" }}>
           <p style={{ color: "var(--gray-light)", fontSize: "0.75rem", margin: "0" }}>
             <strong style={{ color: "var(--orange)" }}>Disclosure:</strong>
-            {' '}Capital Flow Filter is a free, independent indicator created by a member of the MDX ALGO community. It is not an official MDX ALGO product. Inspired by the MDX Capital Flow Index methodology. Links to MDX ALGO are affiliate links — I'm a paying member and genuine fan of their platform.
+            {' '}Capital Flow is a free, independent project.
           </p>
         </div>
         <p className="copyright">Built by traders, for traders.</p>
         <p className="copyright" style={{ marginTop: "1rem", fontSize: "0.75rem" }}>
           Trading cryptocurrencies involves substantial risk. Past performance is not indicative of future results.{' '}
-          <a href="/disclaimer" className="mdx-link">Read full disclaimer</a>
+          <a href="/disclaimer" className="footer-link">Read full disclaimer</a>
           .
         </p>
       </footer>

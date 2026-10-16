@@ -590,8 +590,6 @@ export default function MethodologyPage() {
           <a href="/strategies">Strategies</a>
           {' '}
           <a href="/reports">Reports</a>
-          {' '}
-          <a href="https://mdxalgo.com/?ref=CsMGq" target="_blank">MDX ALGO</a>
         </div>
         <p className="copyright">Built by traders, for traders.</p>
       </footer>

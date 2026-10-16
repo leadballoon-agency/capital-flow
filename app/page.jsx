@@ -310,7 +310,6 @@ export default function HomePage() {
                   <th className="us">Capital Flow Oscillator</th>
                   <th>Market Cipher</th>
                   <th>LuxAlgo</th>
-                  <th>MDX ALGO</th>
                 </tr>
               </thead>
               <tbody>
@@ -319,23 +318,20 @@ export default function HomePage() {
                   <td className="us">Free</td>
                   <td>$120 / 3 months, $600 / year</td>
                   <td>Free tier; paid plans $24.99–$119.99 / month</td>
-                  <td>Ultimate plan $299 / month</td>
                 </tr>
                 <tr>
                   <td>Main focus</td>
                   <td className="us">Wave oscillator plus cross-market capital flow</td>
                   <td>Oscillator, trend and S/R indicator package plus community</td>
                   <td>Charting platform, indicator library, AI strategy builder</td>
-                  <td>Trading tools, bots, community and academy</td>
                 </tr>
               </tbody>
             </table>
           </div>
           <p className="fine">
             Prices and descriptions come from each company&apos;s public website as of 14 Oct 2026 and may have changed.
-            Market Cipher, LuxAlgo and MDX ALGO are trademarks of their respective owners. This project isn&apos;t
-            affiliated with or endorsed by Market Cipher or LuxAlgo. The owner is an MDX ALGO community member and
-            affiliate (see the disclosure below), but the Capital Flow Oscillator is not an MDX ALGO product.
+            Market Cipher and LuxAlgo are trademarks of their respective owners. This project isn&apos;t affiliated
+            with or endorsed by either.
           </p>
         </div>
       </section>
@@ -442,14 +438,8 @@ export default function HomePage() {
             <a href="/disclaimer">Disclaimer</a>
           </div>
           <p className="disclosure">
-            <strong>Affiliate disclosure:</strong> The Capital Flow Oscillator is a free, independent project. It
-            isn&apos;t an MDX ALGO product, and it isn&apos;t made or endorsed by MDX ALGO, Market Cipher or LuxAlgo.
-            The owner is a paying MDX ALGO community member and an MDX ALGO affiliate, and may earn a commission if you
-            sign up through{' '}
-            <a href="https://mdxalgo.com/?ref=CsMGq" target="_blank" rel="noopener sponsored">
-              this affiliate link
-            </a>
-            .
+            The Capital Flow Oscillator is a free, independent project. It isn&apos;t made or endorsed by Market Cipher
+            or LuxAlgo.
           </p>
           <p>
             WaveTrend by LazyBear; layout ideas from the open-source VuManChu Cipher B. TradingView is a trademark of

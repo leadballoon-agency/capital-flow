@@ -1,8 +1,8 @@
 import './disclaimer.css';
 
 export const metadata = {
-  title: "Disclaimer | MDX Capital Flow",
-  description: "Risk disclaimer and terms for MDX Capital Flow trading signals service."
+  title: "Disclaimer | Capital Flow",
+  description: "Risk disclaimer and terms for Capital Flow trading signals service."
 };
 
 export default function DisclaimerPage() {
@@ -28,7 +28,7 @@ export default function DisclaimerPage() {
         </div>
         <h2>1. Not Financial Advice</h2>
         <p>
-          MDX Capital Flow and all affiliated parties are{' '}
+          Capital Flow and all affiliated parties are{' '}
           <strong>not registered as financial advisors</strong>
           . The signals, analysis, and information provided through our service are for{' '}
           <strong>educational and informational purposes only</strong>
@@ -96,7 +96,7 @@ export default function DisclaimerPage() {
         </ul>
         <h2>7. Limitation of Liability</h2>
         <p>
-          To the maximum extent permitted by law, MDX Capital Flow, its owners, operators, affiliates, and partners shall not be liable for any:
+          To the maximum extent permitted by law, Capital Flow, its owners, operators, affiliates, and partners shall not be liable for any:
         </p>
         <ul>
           <li>Direct, indirect, incidental, special, or consequential damages</li>
@@ -106,7 +106,7 @@ export default function DisclaimerPage() {
         </ul>
         <h2>8. Indemnification</h2>
         <p>
-          You agree to indemnify and hold harmless MDX Capital Flow and its affiliates from any claims, damages, or expenses arising from your use of our service or violation of these terms.
+          You agree to indemnify and hold harmless Capital Flow and its affiliates from any claims, damages, or expenses arising from your use of our service or violation of these terms.
         </p>
         <h2>9. Jurisdiction</h2>
         <p>
@@ -120,14 +120,12 @@ export default function DisclaimerPage() {
         <p>
           For questions about this disclaimer, please contact us through our{' '}
           <a href="https://t.me/fivedaytrader" target="_blank" rel="noopener">Telegram channel</a>
-          {' '}or via{' '}
-          <a href="https://mdxalgo.com/?ref=CsMGq" target="_blank" rel="noopener">MDX ALGO</a>
           .
         </p>
         <div className="highlight-box">
           <p>
             <strong>
-              By using MDX Capital Flow, you confirm that you have read, understood, and agree to this disclaimer.
+              By using Capital Flow, you confirm that you have read, understood, and agree to this disclaimer.
             </strong>
           </p>
         </div>
@@ -139,12 +137,10 @@ export default function DisclaimerPage() {
           <a href="/privacy">Privacy Policy</a>
           {' '}
           <a href="/disclaimer">Disclaimer</a>
-          {' '}
-          <a href="https://mdxalgo.com/?ref=CsMGq" target="_blank">MDX ALGO</a>
         </div>
         <p className="copyright" style={{ maxWidth: "500px", margin: "0 auto 1rem", fontSize: "0.7rem" }}>
           <strong style={{ color: "var(--orange)" }}>Disclosure:</strong>
-          {' '}Capital Flow Filter is a free, independent indicator. Not affiliated with MDX ALGO. Affiliate links used.
+          {' '}Capital Flow is a free, independent project.
         </p>
         <p className="copyright">Built by traders, for traders.</p>
       </footer>

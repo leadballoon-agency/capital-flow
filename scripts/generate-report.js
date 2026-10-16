@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * MDX Capital Flow Daily Report Generator
+ * Capital Flow Daily Report Generator
  *
  * Usage: node scripts/generate-report.js [screenshot-path]
  *
@@ -248,7 +248,7 @@ Include the L/S Ratio in your report using this format:
           },
           {
             type: 'text',
-            text: `You are an expert crypto trading analyst. Analyze this BTC/USDT 4H chart with the MDX Capital Flow indicator.
+            text: `You are an expert crypto trading analyst. Analyze this BTC/USDT 4H chart with the Capital Flow indicator.
 
 TODAY'S DATE IS: ${reportDate}
 
@@ -274,7 +274,7 @@ Look at:
 
 Generate a concise daily market report in this EXACT format (use these emojis and headers):
 
-📊 <b>MDX CAPITAL FLOW — DAILY BTC REPORT</b>
+📊 <b>CAPITAL FLOW — DAILY BTC REPORT</b>
 📅 ${reportDate}
 
 <b>🎯 SIGNAL:</b> [Read from panel: BULLISH 🟢 / BEARISH 🔴 / NEUTRAL 🟡 / LEAN BULL 🟢 / LEAN BEAR 🔴] + percentage
@@ -314,7 +314,7 @@ Generate a concise daily market report in this EXACT format (use these emojis an
 • Monthly: $XX,XXX — [✅ Holding / ❌ Lost] — [context]
 
 <i>Not financial advice. Trade at your own risk.</i>
-#BTC #CapitalFlow #MDX
+#BTC #CapitalFlow
 
 OPEN LEVELS INTERPRETATION:
 - ✅ Holding Daily = bullish intraday momentum, buyers defending today's start
@@ -396,7 +396,7 @@ async function sendTelegramMessage(text) {
 // Send full report (photo + text)
 async function sendTelegramReport(imagePath, report) {
   // Send photo first with short caption
-  await sendTelegramPhoto(imagePath, '📊 <b>MDX Capital Flow — BTC 4H Analysis</b>');
+  await sendTelegramPhoto(imagePath, '📊 <b>Capital Flow — BTC 4H Analysis</b>');
 
   // Then send full report as text message
   await sendTelegramMessage(report);
@@ -462,7 +462,7 @@ function saveReportToArchive(screenshot, chartDate, report, fearGreedData, longS
 
 // Main execution
 async function main() {
-  console.log('🚀 MDX Capital Flow Report Generator\n');
+  console.log('🚀 Capital Flow Report Generator\n');
 
   // Check environment variables
   if (!ANTHROPIC_API_KEY) {

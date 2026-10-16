@@ -446,8 +446,6 @@ export default function StrategiesPage() {
           <a href="/signals">Live Signals</a>
           {' '}
           <a href="/strategies">Strategies</a>
-          {' '}
-          <a href="https://mdxalgo.com/?ref=CsMGq" target="_blank">MDX ALGO</a>
         </div>
         <p className="copyright" style={{ maxWidth: "500px", margin: "0 auto 1rem", fontSize: "0.7rem" }}>
           <strong style={{ color: "var(--orange)" }}>Disclaimer:</strong>

@@ -1,8 +1,8 @@
 import './privacy.css';
 
 export const metadata = {
-  title: "Privacy Policy | MDX Capital Flow",
-  description: "Privacy Policy for MDX Capital Flow trading signals service."
+  title: "Privacy Policy | Capital Flow",
+  description: "Privacy Policy for Capital Flow trading signals service."
 };
 
 export default function PrivacyPage() {
@@ -22,7 +22,7 @@ export default function PrivacyPage() {
         <h1>Privacy Policy</h1>
         <p className="last-updated">Last updated: December 2024</p>
         <p>
-          MDX Capital Flow ("we," "our," or "us") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, and safeguard your information when you use our trading signals service and website.
+          Capital Flow ("we," "our," or "us") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, and safeguard your information when you use our trading signals service and website.
         </p>
         <h2>1. Information We Collect</h2>
         <p>We collect minimal information necessary to provide our services:</p>
@@ -109,8 +109,6 @@ export default function PrivacyPage() {
         <p>
           If you have any questions about this Privacy Policy, please contact us through our{' '}
           <a href="https://t.me/fivedaytrader" target="_blank" rel="noopener">Telegram channel</a>
-          {' '}or via{' '}
-          <a href="https://mdxalgo.com/?ref=CsMGq" target="_blank" rel="noopener">MDX ALGO</a>
           .
         </p>
       </div>
@@ -121,12 +119,10 @@ export default function PrivacyPage() {
           <a href="/privacy">Privacy Policy</a>
           {' '}
           <a href="/disclaimer">Disclaimer</a>
-          {' '}
-          <a href="https://mdxalgo.com/?ref=CsMGq" target="_blank">MDX ALGO</a>
         </div>
         <p className="copyright" style={{ maxWidth: "500px", margin: "0 auto 1rem", fontSize: "0.7rem" }}>
           <strong style={{ color: "var(--orange)" }}>Disclosure:</strong>
-          {' '}Capital Flow Filter is a free, independent indicator. Not affiliated with MDX ALGO. Affiliate links used.
+          {' '}Capital Flow is a free, independent project.
         </p>
         <p className="copyright">Built by traders, for traders.</p>
       </footer>

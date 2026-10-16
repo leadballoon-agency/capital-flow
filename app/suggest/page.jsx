@@ -2,7 +2,7 @@ import './suggest.css';
 import SuggestionsBoard from '../components/SuggestionsBoard';
 
 export const metadata = {
-  title: "Suggest a Feature | MDX Capital Flow",
+  title: "Suggest a Feature | Capital Flow",
   description: "Help shape the future of Capital Flow Filter. Submit your ideas and vote on community suggestions."
 };
 
@@ -46,8 +46,6 @@ export default function SuggestPage() {
           <a href="/about">About</a>
           {' '}
           <a href="https://t.me/fivedaytrader" target="_blank">Telegram</a>
-          {' '}
-          <a href="https://mdxalgo.com/?ref=CsMGq" target="_blank">MDX ALGO</a>
         </div>
         <p className="copyright">Built by traders, for traders.</p>
       </footer>

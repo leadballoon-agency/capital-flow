@@ -3,8 +3,8 @@ import SuggestWidget from '../components/SuggestWidget';
 import ReportsArchive from '../components/ReportsArchive';
 
 export const metadata = {
-  title: "Daily Reports | MDX Capital Flow",
-  description: "Daily BTC market analysis powered by MDX Capital Flow indicator. Charts, signals, and institutional-grade capital flow insights."
+  title: "Daily Reports | Capital Flow",
+  description: "Daily BTC market analysis powered by Capital Flow indicator. Charts, signals, and institutional-grade capital flow insights."
 };
 
 export default function ReportsPage() {
@@ -46,15 +46,13 @@ export default function ReportsPage() {
           {' '}
           <a href="https://t.me/fivedaytrader" target="_blank">Telegram</a>
           {' '}
-          <a href="https://mdxalgo.com/?ref=CsMGq" target="_blank">MDX ALGO</a>
-          {' '}
           <a href="/privacy">Privacy</a>
           {' '}
           <a href="/disclaimer">Disclaimer</a>
         </div>
         <p className="copyright" style={{ maxWidth: "500px", margin: "0 auto 1rem", fontSize: "0.7rem", color: "var(--gray)" }}>
           <strong style={{ color: "var(--orange)" }}>Disclosure:</strong>
-          {' '}Capital Flow Filter is a free, independent indicator. Not affiliated with MDX ALGO. Affiliate links used.
+          {' '}Capital Flow is a free, independent project.
         </p>
         <p className="copyright">Built by traders, for traders.</p>
       </footer>

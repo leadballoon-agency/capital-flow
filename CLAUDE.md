@@ -15,7 +15,7 @@ capital-flow/                   # Next.js 16 (React 19) app on Vercel since 2026
 ├── app/                        # Every page is React (App Router); each route has page.jsx + its own CSS file
 │   ├── layout.jsx              # Root layout (fonts)
 │   ├── page.jsx + osc.css      # / homepage = the CF Osc page (since 2026-10-16; hero art in components/HeroVisual.jsx)
-│   ├── signals/                # /signals: the old dashboard homepage (live feed, sentiment, calendar; MDX branding)
+│   ├── signals/                # /signals: the old dashboard homepage (live feed, sentiment, calendar)
 │   ├── about/ methodology/ strategies/ reports/ suggest/ privacy/ disclaimer/
 │   └── components/             # Client components: HeroVisual, SignalsFeed, LatestReportCard, FearGreedWidget, LongShortWidget,
 │                               #   EconomicCalendarWidget, SuggestWidget (floating feedback), ReportsArchive, SuggestionsBoard
@@ -98,7 +98,7 @@ node scripts/generate-report.js
 - `/privacy` - Privacy policy
 - `/disclaimer` - Trading risk disclaimer
 
-**Branding:** Dark theme with orange accents (#ff6b00) matching MDX ALGO style.
+**Branding:** Dark theme with orange accents (#ff6b00). No MDX ALGO mentions anywhere on the site (removed 2026-10-16, see below).
 
 ---
 
@@ -223,7 +223,7 @@ There is no room for D/W/M opens as plots; use lines/labels or remove other plot
 The AI-generated report includes:
 
 ```
-📊 MDX CAPITAL FLOW — DAILY BTC REPORT
+📊 CAPITAL FLOW — DAILY BTC REPORT
 📅 [Date]
 
 🎯 SIGNAL: [BULLISH/BEARISH/NEUTRAL] [%]
@@ -321,10 +321,9 @@ curl -X POST https://capital-flow-filter.vercel.app/api/webhook \
 
 ## Affiliate & Disclosure
 
-- **MDX ALGO Affiliate Link:** https://mdxalgo.com/?ref=CsMGq
-- The Capital Flow Filter is FREE and independent
-- Clear disclosure on website footer and disclaimer page
-- Owner is MDX ALGO community member, not affiliated with MDX ALGO product development
+- **2026-10-16: all MDX ALGO mentions and affiliate links were removed from the site, the report generator and the saved reports at the user's request** ("Why are you even mentioning MDX ALGO?"). The CF Osc doesn't depend on MDX in any way. Don't add MDX branding, comparisons or the affiliate link back unless asked.
+- Footers now just say "Capital Flow is a free, independent project."
+- The affiliate link (https://mdxalgo.com/?ref=CsMGq) still exists; the owner is an MDX ALGO community member and affiliate. If a link is ever re-added, an affiliate disclosure must go with it.
 
 ---
 
@@ -389,7 +388,6 @@ See `/Indicator script/INDICATOR-IMPROVEMENTS.md` for:
 
 - **Telegram Channel:** https://t.me/fivedaytrader
 - **Invite Link:** https://t.me/+j_Edhqf3jxE1OWU0
-- **MDX ALGO:** https://mdxalgo.com/?ref=CsMGq
 
 ---
 
