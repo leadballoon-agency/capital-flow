@@ -926,8 +926,11 @@ hline(-100, "Lower Cloud Edge", color=isMomentum ? na : color.new(flow_bull, 55)
 // Higher-timeframe wave: soft lavender area + thin line, drawn first so it sits behind
 htf_col = #B39DDB
 // Smoothed over about half a higher-timeframe bar so it reads as a curve, not a staircase
-htfRatio = math.max(1, math.round(timeframe.in_seconds(htfRes) / secs / 2))
-htfLine = ta.ema(htfW1, htfRatio)
+// The higher-timeframe wave only changes when a higher-timeframe bar closes (every 20 bars on a 3m chart with a 1H
+// wave). A short EMA settled between those steps and drew a staircase; a super smoother over about two
+// higher-timeframe bars gives one continuous curve (still closed bars only, so no repaint)
+htfRatio = math.max(2, math.round(timeframe.in_seconds(htfRes) / secs * 2))
+htfLine = superSmooth(htfW1, htfRatio)
 plot(showHtfWave and htfOn ? htfLine : na, "HTF Wave Glow", color=color.new(htf_col, 88), linewidth=6, display=display.pane)
 plot(showHtfWave and htfOn ? htfLine : na, "HTF Wave", color=color.new(htf_col, 30), linewidth=1, display=display.pane)
 
