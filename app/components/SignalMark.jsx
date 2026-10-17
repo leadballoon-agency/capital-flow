@@ -1,4 +1,4 @@
-// The CF Osc's chart marks, drawn small for the site: Capital Flow = dot in a thin gold ring, A-grade = dot in a
+// The CF Osc's chart marks, drawn small for the site: Capital Flow = gold dot in a thin gold ring, A-grade = dot in a
 // thin green / red ring, Blue Wave = blue diamond, flow exit = grey x. Same colours as the indicator.
 const GREEN = '#00d27a';
 const RED = '#ff4d4d';
@@ -13,7 +13,7 @@ export default function SignalMark({ kind, dir = 'bullish', size = 18 }) {
     body = (
       <>
         <circle cx="10" cy="10" r="7.4" fill="none" stroke={GOLD} strokeWidth="1.6" />
-        <circle cx="10" cy="10" r="3.6" fill={c} />
+        <circle cx="10" cy="10" r="3.6" fill={GOLD} />
       </>
     );
   } else if (kind === 'grade_a') {

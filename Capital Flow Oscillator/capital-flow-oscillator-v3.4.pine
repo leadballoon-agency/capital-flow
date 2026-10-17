@@ -1,7 +1,8 @@
 // This Pine Script code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
 // (c) MarkTaylor
 // Capital Flow Oscillator v3.4
-// v3.4 (2026-10-17): TP1 / TP2 marks and alerts removed (the flow exit x stays); status box shows the higher timeframe
+// v3.4 (2026-10-17): Capital Flow signal is a gold dot in a gold ring (was the green / red dot in a gold ring);
+//       TP1 / TP2 marks and alerts removed (the flow exit x stays); status box shows the higher timeframe
 //       as "4H" not "240", and only divergences strong enough to draw, marked "hidden" when they are
 // v3.4 (later): Blue Wave setup - Market Cipher's core strategy: deep anchor wave, smaller trigger wave,
 //       entry on the trigger's turn, smooth money flow behind it (blue diamond + dashed anchor-trigger line)
@@ -1067,7 +1068,9 @@ plotchar(longAPlus ? wt2 : na, "A Ring Long", "○", location.absolute, dot_bull
 plotchar(shortAPlus ? wt2 : na, "A Ring Short", "○", location.absolute, dot_bear, size=size.tiny, display=display.pane)
 
 // Blue Wave: blue diamond just beyond the turn - below the wave for longs, above for shorts
-// Capital Flow signal: a thin gold ring around the dot itself (a halo, not a separate mark)
+// Capital Flow signal: a gold dot in a thin gold ring, long or short (drawn after the graded dots and A rings so
+// gold covers them; the user wanted the signature signal all gold, 2026-10-17)
+plotshape(cfLong or cfShort ? wt2 : na, "Capital Flow Dot", shape.circle, location.absolute, cf_color, size=size.tiny, display=display.pane)
 plotchar(cfLong or cfShort ? wt2 : na, "Capital Flow Signal", "○", location.absolute, cf_color, size=size.tiny, display=display.pane)
 bwY = bwLong ? wt2 - 14 : bwShort ? wt2 + 14 : na
 plotshape(bwY, "Blue Wave", shape.diamond, location.absolute, bw_color, size=size.tiny, display=display.pane)
@@ -1154,7 +1157,7 @@ if barstate.islast and showKey
     keyRow(8, "x: flow exit (capital flow turned against the last setup)", exit_color)
     keyRow(9, "Lines: divergence (bold = wave, RSI and flow agree)", div_bear)
     keyRow(10, "Lavender wave: higher-timeframe wave", #B39DDB)
-    keyRow(11, "Gold ring: Capital Flow signal (stretched wave turn + money flow + capital flow agree)", cf_color)
+    keyRow(11, "Gold dot in a gold ring: Capital Flow signal (stretched wave turn + money flow + capital flow agree)", cf_color)
     keyRow(12, "Green / red tint: capital flow pressure (" + (pressureMode == "Flip State" ? "since the last flip)" : "live score)"), flow_bull)
     keyRow(13, "Dots on the bottom band: capital flow flips (the overlay's flip dots)", flow_bear)
     keyRow(14, "Blue diamond + dashed line: Blue Wave (deep anchor wave, smaller trigger, smooth money flow)", bw_color)

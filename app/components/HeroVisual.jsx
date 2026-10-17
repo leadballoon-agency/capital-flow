@@ -63,10 +63,10 @@ export default function HeroVisual() {
         <path d="M455 64 C470 57 495 52 520 55" fill="none" stroke="#ff4d4d" strokeWidth="3" />
         {/* divergence */}
         <line x1="104" y1="181" x2="372" y2="127" stroke="#00d27a" strokeWidth="1.2" strokeDasharray="4 4" />
-        {/* dots: small cross dots, A dot, and the Capital Flow signal (gold ring) */}
+        {/* dots: small cross dots, A dot, and the Capital Flow signal (gold dot in a gold ring) */}
         <circle cx="104" cy="181" r="4" fill="#00d27a" />
         <circle cx="292" cy="66" r="4" fill="#ff4d4d" />
-        <circle cx="372" cy="127" r="4.5" fill="#00d27a" />
+        <circle cx="372" cy="127" r="4.5" fill="#FFD54F" />
         <circle cx="372" cy="127" r="8" fill="none" stroke="#FFD54F" strokeWidth="1.2" />
         <text x="384" y="150" fill="#FFD54F" fontSize="10" fontFamily="Inter" fontWeight="600">
           Capital Flow

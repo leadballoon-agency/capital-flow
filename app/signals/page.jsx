@@ -120,10 +120,10 @@ export default function SignalsPage() {
           </div>
           <div className="signal-grid">
             <div className="signal-card">
-              <span className="signal-icon"><SignalMark kind="capital_flow" dir="bullish" size={20} /><SignalMark kind="capital_flow" dir="bearish" size={20} /></span>
+              <span className="signal-icon"><SignalMark kind="capital_flow" size={22} /></span>
               <div className="signal-info">
                 <h4>Capital Flow long / short</h4>
-                <p>The signature signal, a gold ring around the dot: momentum turns from a stretched level, money flow turns with it, and capital flow is on the same side.</p>
+                <p>The signature signal, a gold dot in a gold ring, long or short: momentum turns from a stretched level, money flow turns with it, and capital flow is on the same side.</p>
               </div>
             </div>
             <div className="signal-card">
