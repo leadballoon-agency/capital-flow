@@ -973,13 +973,14 @@ isRolling = vwapAnchor == "Rolling"
 vwapValue = isRolling ? rollVwap : anchVwap
 vwapAtr = ta.atr(50)
 vwapSd = math.max(nz(isRolling ? rollSd : anchUpper - anchVwap), nz(vwapAtr))
-vwapZ = not na(vwapValue) and vwapSd > 0 ? (close - vwapValue) / vwapSd : na
+vwapZ = not na(vwapValue) and vwapSd > 0 ? (hlc3 - vwapValue) / vwapSd : na   // hlc3: steadier than the close
 softCap(float x, float cap) =>
     e = math.exp(2 * x / cap)
     cap * (e - 1) / (e + 1)
 vwapDist = na(vwapZ) ? na : softCap(vwapZ * 12, 30)
 momEma = ta.ema(momentum, 3)
-vwapEma = ta.ema(nz(vwapDist), 5)   // a little smoother than the momentum: the shape of the zero cross is what counts
+// Super smoother (as the money flow): removes the bar-to-bar jitter with little lag, so the curve through zero reads cleanly
+vwapEma = superSmooth(nz(vwapDist), 10)
 useVwap = yellowSource == "VWAP Distance" and not na(vwapDist)
 momentumDisplay = (useVwap ? vwapEma : momEma) * momScale
 plot(showMomentum and (not isClean or cleanYellow) ? momentumDisplay : na, "Momentum", color=color.new(momentum_color, 8), style=plot.style_area, display=display.pane)
