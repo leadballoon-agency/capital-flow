@@ -125,7 +125,8 @@
 
 .econ-cal-meta {
   display: flex;
-  gap: 1rem;
+  flex-wrap: wrap;
+  gap: 0.25rem 1rem;
   font-size: 0.6875rem;
   color: #666;
 }
@@ -136,6 +137,11 @@
 
 .econ-cal-previous {
   color: #666;
+}
+
+.econ-cal-actual {
+  color: #f2f2f2;
+  font-weight: 600;
 }
 
 .econ-cal-empty {

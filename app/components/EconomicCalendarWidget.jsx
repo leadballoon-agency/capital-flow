@@ -40,6 +40,7 @@ function CalendarEvent({ event }) {
         <div className="econ-cal-meta">
           <span>{formatDate(event.date)} {formatTime(event.date)}</span>
           {event.forecast ? <span className="econ-cal-forecast">Fcst: {event.forecast}</span> : null}
+          {event.actual ? <span className="econ-cal-actual">Actual: {event.actual}</span> : null}
           {event.previous ? <span className="econ-cal-previous">Prev: {event.previous}</span> : null}
         </div>
       </div>
@@ -52,6 +53,7 @@ export default function EconomicCalendarWidget() {
   const [status, setStatus] = useState('loading');
   const [events, setEvents] = useState([]);
   const [updatedText, setUpdatedText] = useState('');
+  const [source, setSource] = useState('fmp');
 
   useEffect(() => {
     let cancelled = false;
@@ -61,6 +63,7 @@ export default function EconomicCalendarWidget() {
         const response = await fetch('/api/economic-calendar');
         const data = await response.json();
         if (cancelled) return;
+        if (data.source) setSource(data.source);
 
         if (!data.upcoming || data.upcoming.length === 0) {
           setEvents((data.recent || []).slice(0, 4));
@@ -97,7 +100,7 @@ export default function EconomicCalendarWidget() {
   } else if (status === 'empty') {
     list = (
       <>
-        <div className="econ-cal-empty">No more high-impact events this week{events.length ? '. Most recent:' : ''}</div>
+        <div className="econ-cal-empty">No more high-impact events scheduled{events.length ? '. Most recent:' : ''}</div>
         {events.map((event, i) => (
           <CalendarEvent key={`${event.date}-${event.title}-${i}`} event={event} />
         ))}
@@ -126,7 +129,12 @@ export default function EconomicCalendarWidget() {
         </div>
         <div className="econ-cal-footer">
           <span className="econ-cal-source">
-            Data: <a href="https://www.forexfactory.com/calendar" target="_blank">Forex Factory</a>
+            Data:{' '}
+            {source === 'forexfactory' ? (
+              <a href="https://www.forexfactory.com/calendar" target="_blank">Forex Factory</a>
+            ) : (
+              <a href="https://site.financialmodelingprep.com/" target="_blank">Financial Modeling Prep</a>
+            )}
           </span>
           <span className="econ-cal-updated" id="econ-cal-updated">{updatedText}</span>
         </div>
