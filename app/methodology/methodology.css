@@ -569,3 +569,7 @@ footer {
     width: auto;
   }
 }
+
+.mark-inline { display: inline-flex; vertical-align: -3px; margin-right: 4px; }
+.section-card ul { margin: 0 0 1rem 1.2rem; color: var(--gray-light); }
+.section-card ul li { margin-bottom: 0.35rem; }

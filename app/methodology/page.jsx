@@ -1,11 +1,27 @@
 import './methodology.css';
 import Logo from '../components/Logo';
+import SignalMark from '../components/SignalMark';
 import SuggestWidget from '../components/SuggestWidget';
 
 export const metadata = {
-  title: "Methodology | Capital Flow Filter",
-  description: "Deep dive into the Capital Flow Filter methodology. Understand why each input was chosen and how they work together."
+  title: 'Methodology | Capital Flow',
+  description:
+    'How the Capital Flow indicators work: the eight-market capital flow engine, the CF Osc waves, money flow, grades and signals, and how CF Levels builds its zones, opens and volume candles.',
 };
+
+const presets = [
+  ['Crypto', 'DXY, VIX, Gold, US10Y', 'BTC, ETH', 'BTC.D (inverted), TOTAL3'],
+  ['Equities', 'DXY, VIX, US10Y, HYG', 'SPY, QQQ', 'IWM, XLU'],
+  ['Metals', 'DXY, US10Y, VIX, SPX', 'Gold, Silver', 'GDX, TIP'],
+  ['Forex', 'US10Y, VIX, SPX, Gold', 'base and quote currency indexes', 'AUDJPY, Oil'],
+  ['Custom', 'your 4 symbols', 'your 2 symbols', 'your 2 symbols'],
+];
+
+const modes = [
+  ['Scalp', '1m to 15m', '5m, 15m, 1H', 'Macro read as a 1H/4H/1D backdrop at 0.6 weight. On crypto the leader and sector slots switch to order flow: open interest x price, Coinbase premium and perp basis.'],
+  ['Intraday', '30m to 4H', '15m, 1H, 4H', 'The standard mode for most charts.'],
+  ['Swing', 'Daily and above', '4H, 1D, 1W', 'Slower, for position trades.'],
+];
 
 export default function MethodologyPage() {
   return (
@@ -22,44 +38,30 @@ export default function MethodologyPage() {
       </nav>
       <div className="container">
         <div className="page-header">
-          <span className="page-badge">Deep Dive</span>
-          <h1>Methodology</h1>
+          <span className="page-badge">Methodology</span>
+          <h1>How the indicators work</h1>
           <p className="subtitle">
-            Understanding why each input was chosen and how they work together to track capital rotation
+            The capital flow engine, the Capital Flow Oscillator and CF Levels, explained part by part. Nothing here is a
+            black box: both scripts are open source on TradingView.
           </p>
         </div>
+
         <div className="section-card">
-          <h3>The Core Philosophy</h3>
+          <h3>The idea</h3>
           <p>
-            Capital Flow Filter is built on a simple premise:{' '}
-            <strong>price follows money</strong>
-            . Before crypto moves, capital rotates across macro assets, between risk-on and risk-off positions, and within crypto sectors.
+            Price follows money. A wave oscillator tells you when a move is stretched and turning, but not whether the
+            money across markets agrees. The capital flow engine reads eight markets that move crypto (the dollar,
+            volatility, gold, yields, the leaders and where capital sits within crypto) and turns them into one score.
+            The oscillator puts that score under the waves; CF Levels shows where on the price chart a trade has a
+            level to lean on.
           </p>
-          <p>
-            By tracking these flows across 8 carefully selected inputs, we can identify the direction of capital rotation before it fully manifests in price. Each input was chosen based on:
-          </p>
-          <ul style={{ color: "var(--gray-light)", paddingLeft: "1.5rem", marginTop: "1rem" }}>
-            <li>
-              <strong>Correlation</strong>
-              {' '}— Does it consistently lead or coincide with crypto moves?
-            </li>
-            <li>
-              <strong>Data availability</strong>
-              {' '}— Is it accessible on TradingView across timeframes?
-            </li>
-            <li>
-              <strong>Signal clarity</strong>
-              {' '}— Does it provide clear directional information?
-            </li>
-            <li>
-              <strong>Non-redundancy</strong>
-              {' '}— Does it add unique information vs other inputs?
-            </li>
-          </ul>
         </div>
-        <h2>Current Inputs (v4.5.1)</h2>
+
+        <h2>1. The capital flow engine</h2>
+        <h3>The eight inputs (crypto preset)</h3>
         <p>
-          The indicator tracks 8 assets across 3 categories. Each is analyzed for rate-of-change across multiple timeframes, then weighted by its recent predictive accuracy.
+          Each input has a preset direction: for crypto a rising dollar, VIX, gold or yields counts against you, and
+          rising BTC.D means money leaving the alts.
         </p>
         <div className="input-category">
           <div className="category-header">
@@ -262,319 +264,145 @@ export default function MethodologyPage() {
             </div>
           </div>
         </div>
-        <h2>Alternative Inputs Under Consideration</h2>
-        <p>
-          We're continuously evaluating additional inputs that could improve signal accuracy or enable instrument-specific tuning. Here's what's on our radar:
-        </p>
-        <h3>Macro Alternatives</h3>
+
+        <h3>Other markets</h3>
+        <p>The basket switches with the chart&apos;s instrument (Market = Auto), or you can pick one.</p>
         <table className="alt-table">
           <thead>
-            <tr>
-              <th>Input</th>
-              <th>Use Case</th>
-              <th>Trade-off vs Current</th>
-              <th>Status</th>
-            </tr>
+            <tr><th>Market</th><th>Macro</th><th>Leaders</th><th>Sectors</th></tr>
           </thead>
           <tbody>
-            <tr>
-              <td className="ticker">USDT.D</td>
-              <td>Stablecoin dominance as crypto-native fear gauge</td>
-              <td>More reactive than DXY but noisier on lower TFs</td>
-              <td>
-                <span className="status testing">Testing</span>
-              </td>
-            </tr>
-            <tr>
-              <td className="ticker">MOVE</td>
-              <td>Bond market volatility (like VIX for bonds)</td>
-              <td>May lead crypto better during rate-driven moves</td>
-              <td>
-                <span className="status planned">Planned</span>
-              </td>
-            </tr>
-            <tr>
-              <td className="ticker">TLT</td>
-              <td>Long-term treasury ETF as risk-off proxy</td>
-              <td>More direct yield play; Gold has inflation angle</td>
-              <td>
-                <span className="status planned">Planned</span>
-              </td>
-            </tr>
-            <tr>
-              <td className="ticker">US02Y</td>
-              <td>2-year yields (more Fed sensitive)</td>
-              <td>Faster reaction to Fed; 10Y shows structural trends</td>
-              <td>
-                <span className="status planned">Planned</span>
-              </td>
-            </tr>
-            <tr>
-              <td className="ticker">SPX / NDX</td>
-              <td>Direct equity correlation</td>
-              <td>Crypto increasingly trades like tech stocks</td>
-              <td>
-                <span className="status testing">Testing</span>
-              </td>
-            </tr>
+            {presets.map(([m, macro, lead, sec]) => (
+              <tr key={m}><td><strong>{m}</strong></td><td>{macro}</td><td>{lead}</td><td>{sec}</td></tr>
+            ))}
           </tbody>
         </table>
-        <h3>Crypto Alternatives</h3>
-        <table className="alt-table">
-          <thead>
-            <tr>
-              <th>Input</th>
-              <th>Use Case</th>
-              <th>Trade-off vs Current</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td className="ticker">SOL</td>
-              <td>L1 rotation leader, retail activity proxy</td>
-              <td>Could complement ETH for alt rotation signals</td>
-              <td>
-                <span className="status testing">Testing</span>
-              </td>
-            </tr>
-            <tr>
-              <td className="ticker">TOTAL2</td>
-              <td>All alts including ETH</td>
-              <td>Better when ETH leads rotation vs TOTAL3</td>
-              <td>
-                <span className="status planned">Planned</span>
-              </td>
-            </tr>
-            <tr>
-              <td className="ticker">OTHERS.D</td>
-              <td>Non-top-10 dominance</td>
-              <td>Better for small cap alt season detection</td>
-              <td>
-                <span className="status planned">Planned</span>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-        <h3>On-Chain / Derivatives (Future)</h3>
-        <table className="alt-table">
-          <thead>
-            <tr>
-              <th>Input</th>
-              <th>Use Case</th>
-              <th>Trade-off</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td className="ticker">Funding Rates</td>
-              <td>Leverage sentiment, crypto-native fear gauge</td>
-              <td>Could replace VIX for pure crypto analysis</td>
-              <td>
-                <span className="status planned">Planned</span>
-              </td>
-            </tr>
-            <tr>
-              <td className="ticker">Open Interest</td>
-              <td>Positioning and conviction levels</td>
-              <td>Shows leverage buildup before liquidation cascades</td>
-              <td>
-                <span className="status planned">Planned</span>
-              </td>
-            </tr>
-            <tr>
-              <td className="ticker">Exchange Flows</td>
-              <td>Direct accumulation/distribution</td>
-              <td>Most direct signal but data availability varies</td>
-              <td>
-                <span className="status planned">Planned</span>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-        <h2>Instrument-Specific Presets (Roadmap)</h2>
-        <p>
-          Different assets respond to different inputs. A BTC-focused trader needs heavy macro weighting, while an alt trader cares more about sector rotation. We're building presets for this:
-        </p>
-        <div className="presets-grid">
-          <div className="preset-card">
-            <div className="preset-icon">₿</div>
-            <div className="preset-name">BTC Macro</div>
-            <p className="preset-desc">Heavy macro weighting for BTC trading</p>
-            <div className="preset-inputs">
-              <span className="preset-input">DXY 1.5x</span>
-              {' '}
-              <span className="preset-input">VIX 1.5x</span>
-              {' '}
-              <span className="preset-input">US10Y 1.2x</span>
-              {' '}
-              <span className="preset-input">SPX</span>
-            </div>
-            <span className="preset-badge">Coming Soon</span>
-          </div>
-          <div className="preset-card">
-            <div className="preset-icon">⟠</div>
-            <div className="preset-name">ETH Balanced</div>
-            <p className="preset-desc">Balanced macro + DeFi rotation signals</p>
-            <div className="preset-inputs">
-              <span className="preset-input">BTC</span>
-              {' '}
-              <span className="preset-input">BTC.D</span>
-              {' '}
-              <span className="preset-input">DXY</span>
-              {' '}
-              <span className="preset-input">TOTAL3</span>
-            </div>
-            <span className="preset-badge">Coming Soon</span>
-          </div>
-          <div className="preset-card">
-            <div className="preset-icon">🚀</div>
-            <div className="preset-name">Alt Season</div>
-            <p className="preset-desc">Sector rotation focus for altcoin trading</p>
-            <div className="preset-inputs">
-              <span className="preset-input">BTC.D 1.5x</span>
-              {' '}
-              <span className="preset-input">TOTAL3 1.5x</span>
-              {' '}
-              <span className="preset-input">ETH</span>
-              {' '}
-              <span className="preset-input">OTHERS.D</span>
-            </div>
-            <span className="preset-badge">Coming Soon</span>
-          </div>
-          <div className="preset-card">
-            <div className="preset-icon">◎</div>
-            <div className="preset-name">L1 Rotation</div>
-            <p className="preset-desc">Track capital flow between L1 chains</p>
-            <div className="preset-inputs">
-              <span className="preset-input">ETH</span>
-              {' '}
-              <span className="preset-input">SOL</span>
-              {' '}
-              <span className="preset-input">BTC.D</span>
-              {' '}
-              <span className="preset-input">TOTAL3</span>
-            </div>
-            <span className="preset-badge">Coming Soon</span>
-          </div>
-          <div className="preset-card">
-            <div className="preset-icon">🎰</div>
-            <div className="preset-name">Degen Mode</div>
-            <p className="preset-desc">Max sensitivity for meme/small cap trading</p>
-            <div className="preset-inputs">
-              <span className="preset-input">OTHERS.D</span>
-              {' '}
-              <span className="preset-input">Funding</span>
-              {' '}
-              <span className="preset-input">TOTAL3</span>
-              {' '}
-              <span className="preset-input">USDT.D</span>
-            </div>
-            <span className="preset-badge">Coming Soon</span>
-          </div>
-          <div className="preset-card">
-            <div className="preset-icon">🏛️</div>
-            <div className="preset-name">TradFi Correlated</div>
-            <p className="preset-desc">For when crypto trades like tech stocks</p>
-            <div className="preset-inputs">
-              <span className="preset-input">SPX 1.5x</span>
-              {' '}
-              <span className="preset-input">NDX</span>
-              {' '}
-              <span className="preset-input">VIX</span>
-              {' '}
-              <span className="preset-input">DXY</span>
-            </div>
-            <span className="preset-badge">Coming Soon</span>
-          </div>
-        </div>
+
+        <h3>From inputs to a score</h3>
         <div className="framework-box">
-          <div className="framework-title">Input Evaluation Framework</div>
-          <p style={{ marginBottom: "1rem" }}>When evaluating new inputs, we ask:</p>
           <ul className="framework-list">
-            <li>
-              <strong>Predictive value:</strong>
-              {' '}Does it lead crypto price action or just coincide?
-            </li>
-            <li>
-              <strong>Consistency:</strong>
-              {' '}Does it work across different market regimes?
-            </li>
-            <li>
-              <strong>Timeframe stability:</strong>
-              {' '}Is it reliable on both scalp and swing timeframes?
-            </li>
-            <li>
-              <strong>Data quality:</strong>
-              {' '}Is it available on TradingView with clean, continuous data?
-            </li>
-            <li>
-              <strong>Uniqueness:</strong>
-              {' '}Does it add information not captured by existing inputs?
-            </li>
-            <li>
-              <strong>Interpretability:</strong>
-              {' '}Is the signal logic clear and explainable?
-            </li>
+            <li><span><strong>Flow:</strong> for each input, the rate of change over 14 bars, smoothed with an EMA of the same length.</span></li>
+            <li><span><strong>Three timeframes:</strong> each input is read on three timeframes, weighted 1, 2 and 3 so the higher timeframe counts most. Which three depends on the mode (below).</span></li>
+            <li><span><strong>Signal:</strong> a flow beyond a threshold (0.5% by default; volatility-scaled in Scalp mode) counts as bullish or bearish for the market you are on.</span></li>
+            <li><span><strong>Accuracy weighting:</strong> each input is scored on how often it agreed with price over a lookback (200 bars on a 1H chart). An input that has been right or wrong most of the time gets up to full weight; one at a coin flip gets 20%. One that has been wrong most of the time has its sign flipped.</span></li>
+            <li><span><strong>Groups:</strong> macro, leaders and sectors are combined with group weights (on BTC: 1.2, 1.0 and 0.8).</span></li>
+            <li><span><strong>Score:</strong> the weighted result, from &minus;100% to +100%, lightly smoothed. The status box shows it with how many of the eight markets agree.</span></li>
+            <li><span><strong>Flips:</strong> capital flow only changes side when the score holds past ±20% for 2 bars. That cuts the whipsaw of a simple zero cross.</span></li>
           </ul>
         </div>
-        <h2>Development Roadmap</h2>
+        <table className="alt-table">
+          <thead>
+            <tr><th>Mode</th><th>Charts</th><th>Data read</th><th>Notes</th></tr>
+          </thead>
+          <tbody>
+            {modes.map(([m, charts, tfs, notes]) => (
+              <tr key={m}><td><strong>{m}</strong></td><td>{charts}</td><td>{tfs}</td><td>{notes}</td></tr>
+            ))}
+          </tbody>
+        </table>
+
+        <h2>2. Capital Flow Oscillator</h2>
         <div className="section-card">
-          <div className="roadmap-item">
-            <div className="roadmap-phase">
-              <span className="phase-badge now">Now</span>
-            </div>
-            <div className="roadmap-content">
-              <h4>v4.5.x — Performance Tracking</h4>
-              <p>
-                Built-in win rate tracking, timeframe scanning, and self-calibrating correlation weights. Currently live.
-              </p>
-            </div>
-          </div>
-          <div className="roadmap-item">
-            <div className="roadmap-phase">
-              <span className="phase-badge next">Next</span>
-            </div>
-            <div className="roadmap-content">
-              <h4>v4.6 — Alternative Input Testing</h4>
-              <p>
-                Add USDT.D, SOL, and SPX as optional inputs. Compare performance against current set. User-selectable inputs.
-              </p>
-            </div>
-          </div>
-          <div className="roadmap-item">
-            <div className="roadmap-phase">
-              <span className="phase-badge next">Next</span>
-            </div>
-            <div className="roadmap-content">
-              <h4>v4.7 — Instrument Presets</h4>
-              <p>
-                Pre-configured input combinations optimized for BTC, ETH, alts, and specific trading styles.
-              </p>
-            </div>
-          </div>
-          <div className="roadmap-item">
-            <div className="roadmap-phase">
-              <span className="phase-badge future">Future</span>
-            </div>
-            <div className="roadmap-content">
-              <h4>v5.0 — On-Chain Integration</h4>
-              <p>
-                Add funding rates, open interest, and exchange flow data for crypto-native sentiment analysis.
-              </p>
-            </div>
-          </div>
+          <h3>Waves</h3>
+          <p>
+            The fast and slow momentum waves use LazyBear&apos;s open-source WaveTrend formula: distance from an average,
+            scaled by its typical deviation, then smoothed. Lines at ±53 and ±60 mark stretched readings. A soft
+            lavender curve behind them is the same wave one timeframe up (1H on 15m, 4H on 1H, daily on 4H), from closed
+            higher-timeframe bars only.
+          </p>
+          <h3>Money flow</h3>
+          <p>
+            Each lower-timeframe candle inside a bar is split by its body as a share of its range (a full green body
+            counts as all buying), weighted by volume, then smoothed into a curve. We checked this against Binance&apos;s
+            real taker buy and sell volume on BTC and ETH from 15m to 4H: it tracked real flow better than the
+            close-location split and the classic candle-body average (correlation about 0.45 to 0.6, turns agreeing about
+            70 to 75% of the time). It is still an estimate: exact aggressor data needs TradingView&apos;s footprint data.
+          </p>
+          <h3>Yellow wave</h3>
+          <p>
+            By default the gap between the fast and slow waves, which turns before they cross. Optionally (Yellow Wave =
+            VWAP Distance) it shows how far price is from a rolling 50-bar VWAP, or a session VWAP, in standard
+            deviations, so the way it curves through zero shows whether price is pulling away from where the volume
+            traded or being drawn back.
+          </p>
+          <h3>Grades</h3>
+          <p>
+            Every wave cross is scored on five checks: the wave was stretched (touched ±53 in the last 5 bars), the
+            higher-timeframe wave agrees, money flow agrees, capital flow agrees, and there was a recent divergence.
+            Only turns from a stretched wave can grade above C.
+          </p>
+          <ul>
+            <li><span className="mark-inline"><SignalMark kind="grade_a" size={16} /></span> <strong>A grade:</strong> stretched plus at least 3 of the other 4, a dot with a thin ring</li>
+            <li><span><strong>B grade:</strong> stretched plus 2 more, an outlined dot</span></li>
+            <li><span><strong>C grade:</strong> the rest, a small dot (none on small crosses near zero)</span></li>
+          </ul>
+          <h3>Capital Flow signal <span className="mark-inline"><SignalMark kind="capital_flow" size={18} /></span></h3>
+          <p>
+            A gold dot in a gold ring when three things line up on one bar: the wave turns from a stretched level, money
+            flow is turning the same way (against 3 bars ago), and capital flow is confirmed on the same side with the
+            score agreeing. It is rare by design.
+          </p>
+          <h3>Blue Wave <span className="mark-inline"><SignalMark kind="blue_wave" size={16} /></span></h3>
+          <p>
+            A deep first dip (past ±53, the deepest in the last 40 bars), then a shallower second one (at most 80% as
+            deep) without the wave bouncing far past zero in between. It fires when the second dip turns and money flow
+            has moved the trade&apos;s way over the last 5 bars. One signal per first dip.
+          </p>
+          <h3>Divergences</h3>
+          <p>
+            Price swings are compared with the wave, RSI and money flow at the same points, for regular and hidden
+            divergences, with a strength of 1 to 3 for how many agree. Lines are drawn when the wave itself diverges and at
+            least two agree; hidden ones count towards the grades without a line.
+          </p>
+          <h3>Flow exit <span className="mark-inline"><SignalMark kind="exit" size={16} /></span></h3>
+          <p>A grey x when capital flow turns against the last graded long or short: a prompt to review the trade.</p>
         </div>
+
+        <h2>3. CF Levels</h2>
+        <div className="section-card">
+          <h3>Volume zones</h3>
+          <p>
+            A swing high or low needs 10 lower highs or higher lows on each side. The zone is the swing candle from its
+            wick to its body, kept between half and one ATR tall. Its label gives the dollar volume of the swing candle
+            and the candles either side of it (volume x price), and that volume&apos;s share of the last 500 bars. Zones
+            that overlap stay as separate see-through boxes, so the overlap shows darker, with one label for the cluster
+            (x2, x3). A zone is removed once a candle closes through it.
+          </p>
+          <h3>Opens and regains</h3>
+          <p>
+            Daily, weekly, monthly, quarterly and yearly opens are drawn at their exact prices; only identical prices
+            share a tag. A regain is a candle closing back above an open after price had closed below it for at least 2
+            candles (a loss is the reverse), so chop around a level doesn&apos;t count.
+          </p>
+          <h3>Structure and volume candles</h3>
+          <p>
+            HH, HL, LH and LL tags use a longer swing (20 bars each side) than the zones, so only the main swings are
+            tagged. Candles are coloured by the PVSRA method: climax (at least double the average volume of the last 10
+            candles, or the biggest volume x range of them) in green or red, rising volume (150%) in blue or violet, the
+            rest grey.
+          </p>
+        </div>
+
+        <h2>4. Data and repainting</h2>
+        <div className="framework-box">
+          <ul className="framework-list">
+            <li><span><strong>Closed bars only</strong> for higher-timeframe and capital flow data, so past signals stay where they were drawn. The current bar moves until it closes.</span></li>
+            <li><span><strong>Swings are confirmed late by design:</strong> CF Levels zones and structure tags appear 10 or 20 bars after the swing, and divergences 2 bars after.</span></li>
+            <li><span><strong>Macro markets have hours.</strong> The dollar, VIX and yields only move during their sessions, so capital flow changes less at weekends.</span></li>
+            <li><span><strong>Volume differs by exchange.</strong> Dollar volumes and money flow come from the chart&apos;s own data.</span></li>
+            <li><span><strong>No published track record.</strong> These are tools for reading the chart, not a system with promised results.</span></li>
+          </ul>
+        </div>
+
         <div className="cta-section">
-          <h3>Help Shape the Methodology</h3>
-          <p style={{ color: "var(--gray-light)" }}>
-            Have ideas for inputs we should test? Trading a specific instrument and want a custom preset? Let us know.
+          <h3>See it on a chart</h3>
+          <p style={{ color: 'var(--gray-light)' }}>
+            Both indicators are free on TradingView. The playbook shows one way to use them together.
           </p>
           <div className="cta-buttons">
-            <a href="https://t.me/fivedaytrader" target="_blank" className="btn btn-primary">Join the Discussion</a>
+            <a href="/#install" className="btn btn-primary">Get the indicators</a>
             {' '}
-            <a href="/strategies" className="btn btn-secondary">View Strategies</a>
+            <a href="/strategies" className="btn btn-secondary">Read the playbook</a>
           </div>
         </div>
       </div>
@@ -584,13 +412,11 @@ export default function MethodologyPage() {
           {' '}
           <a href="/about">About</a>
           {' '}
-          <a href="/methodology">Methodology</a>
+          <a href="/strategies">Playbook</a>
           {' '}
           <a href="/signals">Live Signals</a>
           {' '}
-          <a href="/strategies">Strategies</a>
-          {' '}
-          <a href="/reports">Reports</a>
+          <a href="/disclaimer">Disclaimer</a>
         </div>
         <p className="copyright">Built by traders, for traders.</p>
       </footer>
