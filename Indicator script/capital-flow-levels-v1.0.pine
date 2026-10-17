@@ -6,6 +6,7 @@
 //   once price closes through it.
 // Structure: HH / HL / LH / LL tags on the main swings (a longer swing length than the zones).
 // Opens: daily, weekly, monthly, quarterly and yearly opens, plus optional previous daily / weekly opens.
+// Regains: "DO ↑" when a candle closes back above an open after closes below it ("WO ↓" = lost), with alerts.
 //   Levels at the same price share one line and one tag ("MO Q4").
 // Volume candles (PVSRA): climax candles green / red, rising-volume candles blue / violet, the rest grey.
 // Only plot: the barcolor; everything else is boxes, lines and labels.
@@ -65,6 +66,16 @@ openCol = input.color(#7FB3C4, "Line Colour", inline="oc", group=grpO, display=d
 openWidth = input.int(1, "Width", minval=1, maxval=4, inline="oc", group=grpO, display=display.none)
 rightOffset = input.int(30, "Right Edge Offset (bars)", minval=2, maxval=100, group=grpO, display=display.none,
      tooltip="How far past the last candle lines, zones and their tags reach")
+
+grpR = "Regains"
+showRegains = input.bool(true, "Mark Regains / Losses of the Opens", group=grpR, display=display.none,
+     tooltip="Regain = a candle closes back above an open after price had closed below it; lost = the reverse.\nTagged on the candle, e.g. DO ↑ (regained) or WO ↓ (lost). Only for opens that are switched on above")
+regainMinBars = input.int(2, "Closes on the Other Side First", minval=1, maxval=20, group=grpR, display=display.none,
+     tooltip="Price must have closed this many candles in a row on the other side of the level before a cross counts. Filters out chop around the level")
+regainUpCol = input.color(#2EBD59, "Regained", inline="rc", group=grpR, display=display.none)
+lostCol = input.color(#E5383B, "Lost", inline="rc", group=grpR, display=display.none)
+alertRegains = input.bool(true, "Regain / Lost Alerts", group=grpR, display=display.none,
+     tooltip="Fires through \"Any alert() function call\" once the candle closes")
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // VOLUME ZONES
@@ -233,7 +244,13 @@ var int yBar = na
 var array<float> prevDOpen = array.new<float>()
 var array<int> prevDBar = array.new<int>()
 
-if timeframe.change("D")
+newDay = timeframe.change("D")
+newWeek = timeframe.change("W")
+newMonth = timeframe.change("M")
+newQuarter = timeframe.change("3M")
+newYear = timeframe.change("12M")
+
+if newDay
     if not na(dOpen)
         prevDOpen.unshift(dOpen)
         prevDBar.unshift(dBar)
@@ -242,18 +259,18 @@ if timeframe.change("D")
             prevDBar.pop()
     dOpen := open
     dBar := time
-if timeframe.change("W")
+if newWeek
     pwOpen := wOpen
     pwBar := wBar
     wOpen := open
     wBar := time
-if timeframe.change("M")
+if newMonth
     mOpen := open
     mBar := time
-if timeframe.change("3M")
+if newQuarter
     qOpen := open
     qBar := time
-if timeframe.change("12M")
+if newYear
     yOpen := open
     yBar := time
 
@@ -261,6 +278,79 @@ secs = timeframe.in_seconds()
 // Opens are positioned by time, not bar number: a yearly open can be far more bars back than drawings may reach
 var array<line> openLines = array.new<line>()
 var array<label> openTags = array.new<label>()
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// REGAINS - a close back across an open after at least regainMinBars closes on the other side
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// Returns 1 on a regain, -1 on a loss, 0 otherwise. The var state is kept per call, so each open
+// has its own; it resets when a new period starts (the open itself moves)
+crossOf(float lvl, bool newPeriod) =>
+    var int side = 0
+    var int count = 0
+    int ev = 0
+    if newPeriod
+        side := 0
+        count := 0
+    if not na(lvl)
+        s = close > lvl ? 1 : close < lvl ? -1 : 0
+        if s != 0
+            if s == side
+                count += 1
+            else
+                if side != 0 and count >= regainMinBars
+                    ev := s
+                side := s
+                count := 1
+    ev
+
+doX = crossOf(dOpen, newDay)
+woX = crossOf(wOpen, newWeek)
+moX = crossOf(mOpen, newMonth)
+qoX = crossOf(qOpen, newQuarter)
+yoX = crossOf(yOpen, newYear)
+
+useDO = showDO and secs < timeframe.in_seconds("D")
+useWO = showWO and secs < timeframe.in_seconds("W")
+useMO = showMO and secs < timeframe.in_seconds("M")
+useQO = showQO and secs < timeframe.in_seconds("3M")
+useYO = showYO and secs < timeframe.in_seconds("12M")
+qTag = "Q" + str.tostring(math.ceil(month(time) / 3.0))
+
+tagsFor(int dir) =>
+    string t = ""
+    t += useDO and doX == dir ? " DO" : ""
+    t += useWO and woX == dir ? " WO" : ""
+    t += useMO and moX == dir ? " MO" : ""
+    t += useQO and qoX == dir ? " " + qTag : ""
+    t += useYO and yoX == dir ? " YO" : ""
+    str.trim(t)
+
+regainTags = tagsFor(1)
+lostTags = tagsFor(-1)
+
+if showRegains and regainTags != ""
+    label.new(bar_index, low, regainTags + " ↑", yloc=yloc.belowbar, style=label.style_label_up, color=noFill,
+         textcolor=regainUpCol, size=size.tiny)
+if showRegains and lostTags != ""
+    label.new(bar_index, high, lostTags + " ↓", yloc=yloc.abovebar, style=label.style_label_down, color=noFill,
+         textcolor=lostCol, size=size.tiny)
+
+levelName(string tag) =>
+    tag == "DO" ? "daily open" : tag == "WO" ? "weekly open" : tag == "MO" ? "monthly open" : tag == "YO" ? "yearly open" : "quarterly open (" + tag + ")"
+
+describe(string tags) =>
+    parts = str.split(tags, " ")
+    string out = ""
+    for [i, p] in parts
+        out += (i == 0 ? "" : i == parts.size() - 1 ? " and " : ", ") + levelName(p)
+    out
+
+tfLabel = timeframe.isminutes ? (timeframe.multiplier % 60 == 0 ? str.tostring(timeframe.multiplier / 60) + "H" : timeframe.period + "m") : timeframe.period
+if alertRegains and regainTags != ""
+    alert("🟢 Regained the " + describe(regainTags) + " · " + syminfo.ticker + " " + tfLabel + "\nClosed at " + str.tostring(close, format.mintick) + ", back above after " + str.tostring(regainMinBars) + "+ closes below", alert.freq_once_per_bar_close)
+if alertRegains and lostTags != ""
+    alert("🔴 Lost the " + describe(lostTags) + " · " + syminfo.ticker + " " + tfLabel + "\nClosed at " + str.tostring(close, format.mintick) + ", below it after " + str.tostring(regainMinBars) + "+ closes above", alert.freq_once_per_bar_close)
 
 // Adds a level, or appends its tag when another level already sits at that price
 addLevel(array<float> prices, array<int> starts, array<string> tags, float p, int b, string tag) =>
