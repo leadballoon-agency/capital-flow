@@ -992,8 +992,11 @@ h1 {
 
 .signal-icon {
   font-size: 1.5rem;
-  width: 40px;
-  text-align: center;
+  min-width: 44px;
+  display: inline-flex;
+  justify-content: center;
+  gap: 4px;
+  flex-shrink: 0;
 }
 
 .signal-info h4 {

@@ -1,15 +1,16 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import SignalMark from './SignalMark';
 
 // Delayed signals feed: shows signals from 24+ hours ago (from /api/signals)
 
+// CF Osc alerts get the chart's own marks; older alert types keep their emoji
+const MARKS = ['capital_flow', 'grade_a', 'grade_b', 'blue_wave', 'exit'];
+
 function getSignalIcon(signalType, direction) {
-  if (signalType === 'capital_flow') return '◉';
-  if (signalType === 'grade_a' || signalType === 'grade_b') return direction === 'bearish' ? '▼' : '▲';
-  if (signalType === 'blue_wave') return '◆';
+  if (MARKS.includes(signalType)) return <SignalMark kind={signalType} dir={direction} size={20} />;
   if (signalType === 'target') return '◇';
-  if (signalType === 'exit') return '×';
   if (signalType === 'full_send') return '🚀';
   if (signalType === 'confluence') return '⭐';
   if (signalType === 'manipulation') return '🐋';

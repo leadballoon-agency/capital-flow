@@ -1,3 +1,4 @@
+import SignalMark from '../components/SignalMark';
 import './home.css';
 import Logo from '../components/Logo';
 import ScrollToTop from '../components/ScrollToTop';
@@ -119,28 +120,28 @@ export default function SignalsPage() {
           </div>
           <div className="signal-grid">
             <div className="signal-card">
-              <span className="signal-icon" style={{ color: "var(--brand)" }}>◉</span>
+              <span className="signal-icon"><SignalMark kind="capital_flow" dir="bullish" size={20} /><SignalMark kind="capital_flow" dir="bearish" size={20} /></span>
               <div className="signal-info">
                 <h4>Capital Flow long / short</h4>
-                <p>The signature signal: momentum turns from a stretched level, money flow turns with it, and capital flow is on the same side.</p>
+                <p>The signature signal, a gold ring around the dot: momentum turns from a stretched level, money flow turns with it, and capital flow is on the same side.</p>
               </div>
             </div>
             <div className="signal-card">
-              <span className="signal-icon"><span style={{ color: "var(--green)" }}>▲</span><span style={{ color: "var(--red)" }}>▼</span></span>
+              <span className="signal-icon"><SignalMark kind="grade_a" dir="bullish" size={20} /><SignalMark kind="grade_a" dir="bearish" size={20} /></span>
               <div className="signal-info">
                 <h4>A-grade long / short</h4>
-                <p>A wave turn that passes the strongest checks: stretched wave, higher-timeframe wave, money flow, capital flow, recent divergence.</p>
+                <p>A dot with a green or red ring: a wave turn that passes the strongest checks: stretched wave, higher-timeframe wave, money flow, capital flow, recent divergence.</p>
               </div>
             </div>
             <div className="signal-card">
-              <span className="signal-icon" style={{ color: "#4aa3ff" }}>◆</span>
+              <span className="signal-icon"><SignalMark kind="blue_wave" size={20} /></span>
               <div className="signal-info">
                 <h4>Blue Wave long / short</h4>
                 <p>A deep dip, then a shallower second one, with money flow already moving the trade's way.</p>
               </div>
             </div>
             <div className="signal-card">
-              <span className="signal-icon" style={{ color: "var(--gray-light)" }}>×</span>
+              <span className="signal-icon"><SignalMark kind="exit" size={20} /></span>
               <div className="signal-info">
                 <h4>Capital flow turned against</h4>
                 <p>The macro and crypto inputs have flipped against the last long or short. A prompt to review it, not an automatic exit.</p>
