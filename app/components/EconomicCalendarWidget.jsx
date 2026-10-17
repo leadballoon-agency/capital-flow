@@ -63,6 +63,7 @@ export default function EconomicCalendarWidget() {
         if (cancelled) return;
 
         if (!data.upcoming || data.upcoming.length === 0) {
+          setEvents((data.recent || []).slice(0, 4));
           setStatus('empty');
           return;
         }
@@ -94,7 +95,14 @@ export default function EconomicCalendarWidget() {
   if (status === 'loading') {
     list = <div className="econ-cal-empty">Loading events...</div>;
   } else if (status === 'empty') {
-    list = <div className="econ-cal-empty">No high-impact events this week</div>;
+    list = (
+      <>
+        <div className="econ-cal-empty">No more high-impact events this week{events.length ? '. Most recent:' : ''}</div>
+        {events.map((event, i) => (
+          <CalendarEvent key={`${event.date}-${event.title}-${i}`} event={event} />
+        ))}
+      </>
+    );
   } else if (status === 'error') {
     list = <div className="econ-cal-empty">Failed to load calendar</div>;
   } else {

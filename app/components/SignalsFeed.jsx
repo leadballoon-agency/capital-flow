@@ -67,7 +67,10 @@ export default function SignalsFeed() {
       {signals === undefined && <Empty title="Loading signal feed..." />}
       {signals === null && <Empty title="Signal feed coming soon" note="Join Telegram for live signals now" />}
       {signals?.length === 0 && (
-        <Empty title="No delayed signals available yet" note="Signals will appear here 24 hours after delivery" />
+        <Empty
+          title="No CF Osc alerts in the feed yet"
+          note="The channel only posts the strongest signals on BTC 1H, so some days are quiet. Each one appears here 24 hours after Telegram gets it."
+        />
       )}
       {signals?.map((signal, i) => (
         <div className="feed-item" key={signal.timestamp + i}>

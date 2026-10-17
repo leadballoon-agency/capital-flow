@@ -36,6 +36,7 @@ export default function SignalsPage() {
             <a href="#calendar">Calendar</a>
             {' '}
             <a href="/">Oscillator</a>
+            <a href="/#levels">CF Levels</a>
             {' '}
             <a href="/reports">Reports</a>
             {' '}
@@ -96,7 +97,7 @@ export default function SignalsPage() {
             </div>
             <a href="https://t.me/fivedaytrader" target="_blank" className="view-all-link">Want real-time? Join Telegram →</a>
           </div>
-          <p className="feed-subtitle">Every alert the Telegram channel received, shown here 24 hours later. Posts from before 16 October 2026 came from the older Capital Flow Filter overlay.</p>
+          <p className="feed-subtitle">Every alert the Telegram channel received, shown here 24 hours later.</p>
           <SignalsFeed />
           <div className="feed-cta">
             <p>

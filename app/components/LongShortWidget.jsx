@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import './long-short-widget.css';
 
-// One 1H / 1D bar row
+// One bar row (now / 24 hours ago)
 function BarRow({ period, label, data }) {
   const longPct = data ? data.longPct : 50;
   const shortPct = data ? data.shortPct : 50;
@@ -36,7 +36,7 @@ function BarRow({ period, label, data }) {
   );
 }
 
-// Trend comparison (1H vs 1D)
+// Trend: now vs 24 hours ago
 function getTrend(data1H, data1D) {
   const diff = data1H.longPct - data1D.longPct;
   const absDiff = Math.abs(diff).toFixed(1);
@@ -59,17 +59,12 @@ export default function LongShortWidget() {
   useEffect(() => {
     let cancelled = false;
 
-    // Fetch both 1H and 1D data
     async function fetchAllData() {
       try {
-        const [res1H, res1D] = await Promise.all([
-          fetch('/api/long-short-ratio?period=1H'),
-          fetch('/api/long-short-ratio?period=1D')
-        ]);
-
+        // OKX's 1H and 1D series both start with the same latest reading, so compare now with 24 hours ago
+        const res1H = await fetch('/api/long-short-ratio?period=1H');
         const json1H = await res1H.json();
-        const json1D = await res1D.json();
-        // The original threw (and showed the error text) when a payload had no numbers
+        const json1D = json1H && json1H.prev24;
         for (const d of [json1H, json1D]) {
           if (!d || typeof d.longPct !== 'number' || typeof d.shortPct !== 'number') {
             throw new Error('Invalid long/short payload');
@@ -123,8 +118,8 @@ export default function LongShortWidget() {
         </div>
 
         <div className="ls-bars-container">
-          <BarRow period="1h" label="1H" data={data1H} />
-          <BarRow period="1d" label="1D" data={data1D} />
+          <BarRow period="1h" label="Now" data={data1H} />
+          <BarRow period="1d" label="24h ago" data={data1D} />
         </div>
 
         <div className="ls-trend-section">

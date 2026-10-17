@@ -1,5 +1,6 @@
 // Delayed Signals Feed API
-// Returns signals older than 24 hours for the public feed
+// Returns signals older than 24 hours for the public feed. Only CF Osc alerts (first line "... · BTCUSDT.P 1H");
+// the old Capital Flow Filter overlay posts ("| BTCUSDT 60 |", before 16 Oct 2026) are left out
 
 import { neon } from '@neondatabase/serverless';
 import { parseSignalMessage } from '../../lib/parseSignal';
@@ -38,6 +39,7 @@ export default async function handler(req, res) {
         ticker
       FROM signals
       WHERE timestamp < NOW() - INTERVAL '24 hours'
+        AND split_part(message, E'\n', 1) LIKE '%·%'
       ORDER BY timestamp DESC
       LIMIT 20
     `;

@@ -22,6 +22,7 @@ export default async function handler(req, res) {
   try {
     let ratio, longPct, shortPct, timestamp;
     let source = 'okx';
+    let prev24 = null;
 
     // Try OKX API first (not geo-blocked in US)
     try {
@@ -36,6 +37,12 @@ export default async function handler(req, res) {
           const latestEntry = okxData.data[0];
           timestamp = parseInt(latestEntry[0]);
           ratio = parseFloat(latestEntry[1]);
+          // The same series 24 entries back (24 hours on 1H, 24 days on 1D), for the trend
+          const prevEntry = okxData.data[24];
+          if (prevEntry) {
+            const r = parseFloat(prevEntry[1]);
+            prev24 = { longPct: Math.round((r / (r + 1)) * 1000) / 10, shortPct: Math.round((1 / (r + 1)) * 1000) / 10, timestamp: parseInt(prevEntry[0]) };
+          }
 
           // Convert ratio to percentages: ratio = long/short
           // If ratio is 1.71, that means for every 1 short, there are 1.71 longs
@@ -111,6 +118,7 @@ export default async function handler(req, res) {
     return res.status(200).json({
       symbol: 'BTCUSDT',
       period: okxPeriod,
+      prev24,
       longPct: Math.round(longPct * 10) / 10,    // e.g., 66.2
       shortPct: Math.round(shortPct * 10) / 10,  // e.g., 33.8
       ratio: Math.round(ratio * 100) / 100,       // e.g., 1.96

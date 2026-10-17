@@ -53,8 +53,9 @@
   font-size: 0.75rem;
   font-weight: 700;
   color: #666;
-  width: 28px;
+  width: 52px;
   flex-shrink: 0;
+  white-space: nowrap;
 }
 
 .ls-bar-wrapper {
@@ -222,7 +223,7 @@
 
   .ls-period-label {
     font-size: 0.6875rem;
-    width: 24px;
+    width: 46px;
   }
 
   .ls-bar {
@@ -284,7 +285,7 @@
 
   .ls-period-label {
     font-size: 0.625rem;
-    width: 20px;
+    width: 42px;
   }
 
   .ls-bar {
