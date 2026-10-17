@@ -1,6 +1,7 @@
 import './osc.css';
 import Logo from './components/Logo';
 import HeroVisual from './components/HeroVisual';
+import LevelsVisual from './components/LevelsVisual';
 
 export const metadata = {
   title: 'Capital Flow Oscillator | Free TradingView Indicator',
@@ -27,6 +28,14 @@ const legend = [
   { sw: { background: 'var(--red)' }, title: 'Divergence and RSI cue.', text: 'Divergence lines (bold when wave, RSI and money flow all agree), and a wave edge that changes colour at RSI extremes.' },
 ];
 
+const levels = [
+  { sw: { background: '#E5383B', opacity: 0.55 }, title: 'Volume zones.', text: 'Supply and demand zones drawn from the candles at each swing. The label gives the dollar volume traded as the swing formed and its share of recent volume, so you can see which levels have real money behind them. Where zones overlap the area shows darker and the label counts them (x2, x3): more overlap, a stronger level. A zone goes once price closes through it.' },
+  { sw: { background: '#7FB3C4' }, title: 'Opens.', text: 'Daily, weekly, monthly, quarterly and yearly opens, each on its own line at its exact price, because a close a few dollars either side can matter. When opens sit close together their tags are set side by side so they stay readable.' },
+  { sw: { background: '#2EBD59' }, title: 'Regains and losses.', text: '"DO ↑" marks the candle that closes back above the daily open after closing below it, and "WO ↓" the one that loses the weekly open. It takes two closes on the other side first, so chop around a level doesn’t count. Optional alerts.' },
+  { sw: { background: '#8C919C' }, title: 'Market structure.', text: 'HH, HL, LH and LL tags on the main swings, so you can see the trend at a glance.' },
+  { sw: { background: 'linear-gradient(90deg, #00E676 0 25%, #FF1744 25% 50%, #2962FF 50% 75%, #E040FB 75%)' }, title: 'Volume candles.', text: 'PVSRA colours: green or red when volume is at least double the average of the last 10 candles, blue or violet at 150%, grey for the rest. Only candles with real volume behind them stand out.' },
+];
+
 const mfTest = [
   { name: 'CF Osc (volume × body / range)', corr: '0.45–0.60', turns: '70–75%', best: true },
   { name: 'Close-location split (our old method)', corr: '0.25–0.45', turns: '60–70%' },
@@ -45,6 +54,8 @@ const faqs = [
   ['Where do the waves come from?', 'The waves use the public WaveTrend formula by LazyBear, and the layout takes ideas from VuManChu’s open-source oscillator. The capital flow engine, the grading, the Capital Flow signal and the money flow method are our own.'],
   ['How accurate is the money flow?', 'Roughly right, not exact. It tracked real buy/sell volume better than the alternatives we tested, but true aggressor data needs TradingView’s footprint data on paid plans. Treat it as a guide to who is in control, not a precise count.'],
   ['How often does the Capital Flow signal fire?', 'Rarely, by design. All three conditions have to line up on the same bar, so some days it won’t appear at all. The graded dots cover the everyday turns.'],
+  ['Do I need CF Levels as well?', 'No. Each works on its own. The oscillator sits under the chart and handles timing; CF Levels sits on the price chart and marks the zones and opens. They’re designed to be used together.'],
+  ['Where do the zone numbers come from?', 'From the chart’s own candle volume, not an order book. The dollar figure is the volume traded on the swing candle and the candles either side of it; the percentage is that volume’s share of the last 500 candles.'],
   ['Is this financial advice?', 'No. Everything here is educational. Please read the full disclaimer before using any signal.'],
 ];
 
@@ -60,6 +71,7 @@ export default function HomePage() {
             <a href="#signal">The signal</a>
             <a href="#pane">Reading it</a>
             <a href="#money-flow">Money flow</a>
+            <a href="#levels">CF Levels</a>
             <a href="#install">Install</a>
             <a href="#faq">FAQ</a>
             <a href="/signals">Live signals</a>
@@ -276,18 +288,29 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section aria-labelledby="companion-h">
+      <section id="levels" aria-labelledby="levels-h">
         <div className="wrap">
-          <div className="card companion">
-            <div>
-              <span className="eyebrow">Optional companion</span>
-              <h3 id="companion-h">Capital Flow Filter overlay</h3>
-              <p>
-                The same engine on your price chart, with a panel that shows which inputs agree. You don&apos;t need it:
-                the oscillator carries the capital flow band and flip dots on its own.
-              </p>
-            </div>
-            <a href="/methodology" className="btn btn-ghost">How the engine works</a>
+          <div className="section-head">
+            <span className="eyebrow">New · the price-chart companion</span>
+            <h2 id="levels-h">CF Levels: where price is likely to react.</h2>
+            <p className="lead">
+              The oscillator tells you when momentum, money and macro line up. CF Levels goes on the price chart and
+              shows where: the zones with money behind them, the opens traders watch, and the moment price takes one
+              back. It&apos;s free too, and doesn&apos;t need the oscillator to work.
+            </p>
+          </div>
+          <div className="anatomy">
+            <LevelsVisual />
+            <ul className="legend-list">
+              {levels.map((l) => (
+                <li key={l.title}>
+                  <span className="sw" style={l.sw} />
+                  <span>
+                    <b>{l.title}</b> {l.text}
+                  </span>
+                </li>
+              ))}
+            </ul>
           </div>
         </div>
       </section>
@@ -307,8 +330,9 @@ export default function HomePage() {
             <div className="card step">
               <h3>Add the oscillator</h3>
               <p>
-                Go to Indicators and search <code>Capital Flow Oscillator</code>. Until it&apos;s in the public library,
-                get the script link from our Telegram channel.
+                Go to Indicators and search <code>Capital Flow Oscillator</code>, then add <code>Capital Flow Levels</code>{' '}
+                to the price chart. Until they&apos;re in the public library, get the script links from our Telegram
+                channel.
               </p>
             </div>
             <div className="card step">
@@ -322,7 +346,7 @@ export default function HomePage() {
           </div>
           <div style={{ textAlign: 'center', marginTop: 32 }}>
             <a href={TELEGRAM} target="_blank" rel="noopener" className="btn btn-primary">
-              Get the script link on Telegram
+              Get the script links on Telegram
             </a>
           </div>
         </div>

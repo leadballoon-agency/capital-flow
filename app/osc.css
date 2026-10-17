@@ -246,6 +246,8 @@ tr.best td { color: var(--text); }
 tr.best td:first-child { color: var(--green); font-weight: 600; }
 
 /* Companion */
-.companion { display: grid; grid-template-columns: 1fr auto; gap: 24px; align-items: center; }
-@media (max-width: 760px) { .companion { grid-template-columns: 1fr; } }
-.companion p { color: var(--muted-2); margin-top: 6px; }
+
+/* CF Levels illustration */
+.levels-visual svg { display: block; width: 100%; height: auto; }
+.lv-zone { font-family: 'JetBrains Mono', monospace; font-size: 10px; }
+.lv-tag { font-family: 'JetBrains Mono', monospace; font-size: 9px; }
