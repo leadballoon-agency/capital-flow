@@ -18,11 +18,11 @@ const TELEGRAM = 'https://t.me/fivedaytrader';
 
 const legend = [
   { sw: { background: 'var(--blue)' }, title: 'Momentum waves.', text: 'WaveTrend maths (LazyBear\'s open-source formula), or a "Cloud Position" view inside the Keltner cloud.' },
-  { sw: { background: '#b4a7d6' }, title: 'Higher-timeframe wave.', text: 'A soft lavender line behind the waves: 1H on 15m charts, 4H on 1H, daily on 4H. Closed bars only.' },
+  { sw: { background: '#b4a7d6' }, title: 'Higher-timeframe wave.', text: 'A soft lavender curve behind the waves: 1H on 15m charts, 4H on 1H, daily on 4H. Closed bars only, smoothed into one continuous line.' },
   { sw: { background: 'var(--green)', opacity: 0.6 }, title: 'Money flow.', text: 'Buy vs sell volume estimated from lower-timeframe candles, smoothed into a curve rather than a sawtooth.' },
   { sw: { background: 'var(--yellow)', opacity: 0.7 }, title: 'Yellow wave.', text: 'A second, smoother read of momentum, drawn behind the money flow. Or switch it to VWAP Distance: how far price is from its volume-weighted average price, where the way it curves through zero is the tell.' },
   { sw: { background: '#00a862' }, title: 'Capital flow band.', text: 'Along the bottom. It changes shade only when the reading holds for 3 bars, and green or red dots mark flips (±20% for 2 bars). A tag at the right edge reads "CAPITAL FLOW IN", "OUT", "leaning" or "neutral".' },
-  { sw: { background: 'radial-gradient(circle, var(--green) 0 33%, transparent 36% 56%, var(--green) 58% 70%, transparent 72%)', borderRadius: '50%' }, title: 'Graded dots.', text: 'A small dot on every wave cross. A = a thin green or red ring around the dot, B = outlined dot, C = small dot. Small by design, so they don’t bury the waves.' },
+  { sw: { background: 'radial-gradient(circle, var(--green) 0 33%, transparent 36% 56%, var(--green) 58% 70%, transparent 72%)', borderRadius: '50%' }, title: 'Graded dots.', text: 'A dot on the wave crosses that matter. A = a thin green or red ring around the dot, B = outlined dot, C = small dot. Small crosses near zero get no dot, because that’s mostly chop. Small by design, so they don’t bury the waves.' },
   { sw: { background: 'radial-gradient(circle, var(--gold) 0 33%, transparent 36% 55%, var(--gold) 57% 71%, transparent 73%)', borderRadius: '50%' }, title: 'Capital Flow signal.', text: 'A gold dot in a thin gold ring, long or short, when momentum, money flow and capital flow all agree.' },
   { sw: { background: 'var(--blue)', transform: 'rotate(45deg) scale(.7)' }, title: 'Blue Wave.', text: 'A small blue diamond when a shallower second dip turns after a deep first one, with money flow behind it.' },
   { sw: { background: 'var(--red)' }, title: 'Divergence and RSI cue.', text: 'Divergence lines (bold when wave, RSI and money flow all agree), and a wave edge that changes colour at RSI extremes.' },
@@ -382,8 +382,8 @@ export default function HomePage() {
               </p>
             </div>
             <div className="card step">
-              <h3>Set Money Flow Source</h3>
-              <p>Leave it on Volume Delta, the tested default.</p>
+              <h3>Keep the defaults</h3>
+              <p>They&apos;re set for a clean pane: Volume Delta money flow and dots only where turns matter. Everything can be adjusted in the settings.</p>
             </div>
             <div className="card step">
               <h3>Set alerts</h3>
