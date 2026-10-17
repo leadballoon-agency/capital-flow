@@ -1,6 +1,8 @@
 // This Pine Script code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
 // (c) MarkTaylor
 // Capital Flow Oscillator v3.4
+// v3.4 (2026-10-17): TP1 / TP2 marks and alerts removed (the flow exit x stays); status box shows the higher timeframe
+//       as "4H" not "240", and only divergences strong enough to draw, marked "hidden" when they are
 // v3.4 (later): Blue Wave setup - Market Cipher's core strategy: deep anchor wave, smaller trigger wave,
 //       entry on the trigger's turn, smooth money flow behind it (blue diamond + dashed anchor-trigger line)
 // v3.4 (final passes): Capital Flow signal (gold ring on the dot: stretched wave turn + money flow + capital flow agree), thicker labelled band;
@@ -176,7 +178,7 @@ momEdgeLevel = input.int(53, "Momentum Extreme Level", minval=20, maxval=100, gr
      tooltip="Momentum level that counts as stretched (the 'edge') for setups", display=display.none)
 
 keltnerLength = input.int(20, "Keltner Length", minval=5, maxval=50, group="Wave - Cloud Position",
-     tooltip="Keep the same as the overlay so -100/+100 line up with its cloud edges. Also used for TP1/TP2 in both wave types", display=display.none)
+     tooltip="Keep the same as the overlay so -100/+100 line up with its cloud edges.", display=display.none)
 keltnerMult = input.float(2.0, "Keltner Multiplier", minval=0.5, maxval=5.0, step=0.1, group="Wave - Cloud Position", display=display.none)
 waveFastLen = input.int(4, "Wave Smoothing", minval=1, maxval=20, group="Wave - Cloud Position",
      tooltip="Higher = smoother waves, slightly later turns", display=display.none)
@@ -292,7 +294,8 @@ showMcLevels = input.bool(true, "MC-Style Level Lines", group="Visuals",
      tooltip="Cipher B style lines at 100, +/-60 and +/-53 (Momentum wave only)", display=display.none)
 mfTransp = input.int(25, "Money Flow Transparency", minval=0, maxval=80, group="Visuals",
      tooltip="0 = solid, higher = more see-through (v3.3 used 32)", display=display.none)
-showTPMarks = input.bool(false, "Show TP1 / TP2 / Exit Marks", group="Visuals", display=display.none)
+showExitMarks = input.bool(true, "Show Flow Exit Marks", group="Visuals",
+     tooltip="x on the wave when capital flow turns against the last graded setup", display=display.none)
 showDivergence = input.bool(true, "Show Divergences", group="Visuals",
      tooltip="D marks plus a line joining the two wave pivots: wave higher low while price makes a lower low (bull), or the reverse (bear)", display=display.none)
 showKey = input.bool(false, "Show Key", group="Visuals", tooltip="Boxed legend explaining each element. Off by default to keep the pane clean", display=display.none)
@@ -312,7 +315,6 @@ labelPos = input.string("Top Right", "Status Box Position", options=["Top Right"
 alertSetups = input.bool(true, "Setup Alerts (graded)", group="Alerts", display=display.none)
 alertAPlusOnly = input.bool(false, "Only Alert A-Grade Setups", group="Alerts", display=display.none)
 alertDiv = input.bool(false, "Divergence Alerts", group="Alerts", display=display.none)
-alertTP = input.bool(true, "TP1 / TP2 Alerts", group="Alerts", display=display.none)
 alertExit = input.bool(true, "Flow Exit Alerts", group="Alerts", display=display.none)
 alertCooldown = input.int(3, "Setup Alert Cooldown (bars)", minval=1, maxval=50, group="Alerts", display=display.none)
 
@@ -327,7 +329,6 @@ flow_bull = #2EE86B
 flow_bear = #FF4A3D
 dot_bull = #3FFF7F
 dot_bear = #FF4D4D
-tp_color = #00E5FF
 exit_color = #9E9E9E
 div_bull = #2EE86B
 div_bear = #FF4A3D
@@ -742,6 +743,17 @@ if bullDiv
 if bearDiv
     lastBearDivBar := bar_index - 2
     lastBearDivTxt := bearDivTxt
+// The status box only reports divergences strong enough to draw (weaker ones still count for grading)
+var int shownBullDivBar = na
+var int shownBearDivBar = na
+var bool shownBullHidden = false
+var bool shownBearHidden = false
+if bullDiv and bullDivStrength >= divMinStrength
+    shownBullDivBar := bar_index - 2
+    shownBullHidden := str.contains(bullDivTxt, "hidden")
+if bearDiv and bearDivStrength >= divMinStrength
+    shownBearDivBar := bar_index - 2
+    shownBearHidden := str.contains(bearDivTxt, "hidden")
 
 recentBullDiv = not na(lastBullDivBar) and bar_index - lastBullDivBar <= divMemory
 recentBearDiv = not na(lastBearDivBar) and bar_index - lastBearDivBar <= divMemory
@@ -859,7 +871,9 @@ if bwShort
     lastSigBar := bar_index
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// DUAL TP TRACKER - TP1 = basis (wave 0), TP2 = opposite band (wave ±100)
+// TRADE TRACKER - follows the last graded setup until the wave reaches the far band (wave ±100) or
+// capital flow turns against it (the flow exit). TP1 / TP2 marks and alerts were removed 2026-10-17
+// (untested targets); the tracker still ends a trade at the far band so flow exits fire as before
 // ═══════════════════════════════════════════════════════════════════════════════
 
 var int tradeDir = 0
@@ -1058,11 +1072,7 @@ plotchar(cfLong or cfShort ? wt2 : na, "Capital Flow Signal", "○", location.ab
 bwY = bwLong ? wt2 - 14 : bwShort ? wt2 + 14 : na
 plotshape(bwY, "Blue Wave", shape.diamond, location.absolute, bw_color, size=size.tiny, display=display.pane)
 
-tpBox = isClean ? color.new(tp_color, 100) : color.new(tp_color, 20)
-tpText = isClean ? color.new(#E6E9EF, 0) : color.black
-plotshape(showTPMarks and tp1Hit ? wt1 : na, "TP1", shape.labeldown, location.absolute, tpBox, size=size.tiny, text="TP1", textcolor=tpText)
-plotshape(showTPMarks and tp2Hit ? wt1 : na, "TP2", shape.labeldown, location.absolute, tpBox, size=size.tiny, text="TP2", textcolor=tpText)
-plotshape(showTPMarks and flowExit ? wt1 : na, "Flow Exit", shape.xcross, location.absolute, exit_color, size=size.tiny)
+plotshape(showExitMarks and flowExit ? wt1 : na, "Flow Exit", shape.xcross, location.absolute, exit_color, size=size.tiny)
 
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -1087,6 +1097,10 @@ if barstate.islast and showLabel and isClean
     table.cell(cardBox, 1, 0, "Confluence\n" + str.tostring(math.max(bullCount, bearCount)) + " / 8", text_color=#E6E9EF, text_size=size.small, text_halign=text.align_left)
     table.cell(cardBox, 2, 0, "State\n" + stateTxt, text_color=stateCol, text_size=size.small, text_halign=text.align_left)
 
+// "240" -> "4H", "60" -> "1H", "1D", "1W", "1M", "15m"
+tfShort(string tf) =>
+    s = timeframe.in_seconds(tf)
+    s % 2592000 == 0 and s >= 2592000 ? str.tostring(math.round(s / 2592000)) + "M" : s % 604800 == 0 ? str.tostring(math.round(s / 604800)) + "W" : s % 86400 == 0 ? str.tostring(math.round(s / 86400)) + "D" : s % 3600 == 0 ? str.tostring(math.round(s / 3600)) + "H" : str.tostring(math.round(s / 60)) + "m"
 arrowOf(bool upCond) =>
     upCond ? "▲" : "▼"
 // Bars back as clock time ("45m", "5h", "3d", "2w") - easier to read than a bar count
@@ -1097,10 +1111,10 @@ agoTxt(int bars) =>
 if barstate.islast and showLabel and not isClean
     zone = wt1 <= -setupEdge ? " deep OS" : wt1 >= setupEdge ? " deep OB" : wt1 <= -obosLevel ? " OS" : wt1 >= obosLevel ? " OB" : ""
     cfTxt = (flowBull ? "▲ BULL " : flowBear ? "▼ BEAR " : "• NEUTRAL ") + str.tostring(math.round(flowScore * 100)) + "%  " + str.tostring(math.max(bullCount, bearCount)) + "/8"
-    waveTxt = str.tostring(math.round(wt1)) + zone + " " + arrowOf(wt1 > wt2) + (not htfOn or na(htfW1) ? "" : "   HTF " + htfRes + " " + arrowOf(htfW1 > htfW2))
-    divAgeBull = na(lastBullDivBar) ? 9999 : bar_index - lastBullDivBar
-    divAgeBear = na(lastBearDivBar) ? 9999 : bar_index - lastBearDivBar
-    divTxt = math.min(divAgeBull, divAgeBear) <= 30 ? "   " + (divAgeBull <= divAgeBear ? "bull div " + agoTxt(divAgeBull) : "bear div " + agoTxt(divAgeBear)) + " ago" : ""
+    waveTxt = str.tostring(math.round(wt1)) + zone + " " + arrowOf(wt1 > wt2) + (not htfOn or na(htfW1) ? "" : "   HTF " + tfShort(htfRes) + " " + arrowOf(htfW1 > htfW2))
+    divAgeBull = na(shownBullDivBar) ? 9999 : bar_index - shownBullDivBar
+    divAgeBear = na(shownBearDivBar) ? 9999 : bar_index - shownBearDivBar
+    divTxt = math.min(divAgeBull, divAgeBear) <= 30 ? "   " + (divAgeBull <= divAgeBear ? (shownBullHidden ? "hidden " : "") + "bull div " + agoTxt(divAgeBull) : (shownBearHidden ? "hidden " : "") + "bear div " + agoTxt(divAgeBear)) + " ago" : ""
     mfTxt = (moneyFlow > 0 ? "buyers" : "sellers") + (mfRising ? " ↗" : mfFalling ? " ↘" : "") + divTxt
     sigTxt = lastSigShort + (na(lastSigBar) ? "" : "  " + agoTxt(bar_index - lastSigBar) + " ago")
     cfCol = flowBull ? flow_bull : flowBear ? flow_bear : #B2B5BE
@@ -1137,7 +1151,7 @@ if barstate.islast and showKey
     keyRow(5, "Bottom strip: capital flow (green = longs, red = shorts)", color.new(#d1d4dc, 0))
     keyRow(6, "Outlined dot: B-grade turn (3 of 5 checks)" + (showSmallDots ? "   Plain dot: C-grade" : ""), dot_bull)
     keyRow(7, "Green / red ring: A-grade (4-5 of: stretched, HTF, money flow, capital flow, divergence)", dot_bull)
-    keyRow(8, "TP1 / TP2 / x: targets and flow exit", tp_color)
+    keyRow(8, "x: flow exit (capital flow turned against the last setup)", exit_color)
     keyRow(9, "Lines: divergence (bold = wave, RSI and flow agree)", div_bear)
     keyRow(10, "Lavender wave: higher-timeframe wave", #B39DDB)
     keyRow(11, "Gold ring: Capital Flow signal (stretched wave turn + money flow + capital flow agree)", cf_color)
@@ -1154,8 +1168,6 @@ canAlert = bar_index - lastSetupAlertBar >= alertCooldown
 
 fireLong = alertSetups and canAlert and (alertAPlusOnly ? longAPlus : longSetup)
 fireShort = alertSetups and canAlert and (alertAPlusOnly ? shortAPlus : shortSetup)
-fireTP1 = alertTP and tp1Hit
-fireTP2 = alertTP and tp2Hit
 fireExit = alertExit and flowExit
 
 if fireLong or fireShort
@@ -1190,10 +1202,6 @@ if alertDiv and bullDiv and bullDivStrength >= divMinStrength
     alert("📈 Bullish divergence · " + tickerText + "\n" + priceText + (str.contains(lastBullDivTxt, "hidden") ? "\nHidden divergence: price made a higher low while momentum made a lower low (uptrend continuation)" : "\nPrice made a lower low but momentum did not") + " · strength " + str.tostring(bullDivStrength) + " of 3", alert.freq_once_per_bar_close)
 if alertDiv and bearDiv and bearDivStrength >= divMinStrength
     alert("📉 Bearish divergence · " + tickerText + "\n" + priceText + (str.contains(lastBearDivTxt, "hidden") ? "\nHidden divergence: price made a lower high while momentum made a higher high (downtrend continuation)" : "\nPrice made a higher high but momentum did not") + " · strength " + str.tostring(bearDivStrength) + " of 3", alert.freq_once_per_bar_close)
-if fireTP1
-    alert("🎯 Target 1 reached · " + tickerText + "\n" + priceText + "\nThe last " + tradeWord + " signal has reached the middle of the Keltner channel. Consider moving your stop to breakeven.", alert.freq_once_per_bar_close)
-if fireTP2
-    alert("🎯 Target 2 reached · " + tickerText + "\n" + priceText + "\nThe last " + tradeWord + " signal has reached the far edge of the Keltner channel.", alert.freq_once_per_bar_close)
 if alertBW and bwLong
     alert("🔵 BLUE WAVE LONG · " + tickerText + "\n" + priceText + "\nA second, shallower dip (wave " + str.tostring(math.round(bwLTV)) + " after " + str.tostring(math.round(bwLAV)) + ") has turned up with buyers behind it\n" + flowLine, alert.freq_once_per_bar_close)
 if alertCF and cfLong
@@ -1209,8 +1217,6 @@ alertcondition(fireLong, title="Graded LONG", message="Graded long signal on {{t
 alertcondition(fireShort, title="Graded SHORT", message="Graded short signal on {{ticker}} {{interval}} (B or A grade)")
 alertcondition(bullDiv and bullDivStrength >= divMinStrength, title="Bull Divergence", message="Bullish divergence on {{ticker}} {{interval}}")
 alertcondition(bearDiv and bearDivStrength >= divMinStrength, title="Bear Divergence", message="Bearish divergence on {{ticker}} {{interval}}")
-alertcondition(fireTP1, title="TP1 (Basis)", message="TP1 reached on {{ticker}} {{interval}} - price at Keltner basis")
-alertcondition(fireTP2, title="TP2 (Opposite Band)", message="TP2 reached on {{ticker}} {{interval}} - price at opposite Keltner band")
 alertcondition(flipToBullish, title="Capital Flow Flip Bullish", message="Capital flow flipped BULLISH on {{ticker}} {{interval}}")
 alertcondition(flipToBearish, title="Capital Flow Flip Bearish", message="Capital flow flipped BEARISH on {{ticker}} {{interval}}")
 alertcondition(bwLong, title="Blue Wave LONG", message="Blue Wave long on {{ticker}} {{interval}} - deep anchor wave, smaller trigger wave, smooth money flow")

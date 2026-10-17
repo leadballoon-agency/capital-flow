@@ -1,0 +1,315 @@
+//@version=6
+// Capital Flow Levels v1.0 - the price-chart companion to the CF Osc
+// Volume zones: supply / demand zones drawn from swing candles, labelled with the dollar volume that
+//   traded as the swing formed and that volume's share of recent volume. Zones are translucent, so where
+//   several overlap the area shows darker, and one label gives the cluster total and how many overlap (x3). A zone is removed
+//   once price closes through it.
+// Structure: HH / HL / LH / LL tags on the main swings (a longer swing length than the zones).
+// Opens: daily, weekly, monthly, quarterly and yearly opens, plus optional previous daily / weekly opens.
+//   Levels at the same price share one line and one tag ("MO Q4").
+// Volume candles (PVSRA): climax candles green / red, rising-volume candles blue / violet, the rest grey.
+// Only plot: the barcolor; everything else is boxes, lines and labels.
+indicator("Capital Flow Levels [v1.0]", shorttitle="CF Levels", overlay=true, max_boxes_count=200, max_lines_count=100, max_labels_count=500)
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// INPUTS
+// ═══════════════════════════════════════════════════════════════════════════════
+
+grpZ = "Volume Zones"
+showZones = input.bool(true, "Show Volume Zones", group=grpZ, display=display.none,
+     tooltip="Supply zone = the swing-high candle from its wick to its body; demand zone = the swing-low candle from its wick to its body. Removed once price closes through the far side")
+showZoneData = input.bool(true, "Show $ Volume | % Share", group=grpZ, display=display.none,
+     tooltip="$ = the dollar volume traded on the swing candle and the candles either side of it as the swing formed.\n% = that volume's share of all volume over the share window. Bigger = more money behind the level")
+swingLen = input.int(10, "Swing Length (bars each side)", minval=3, maxval=50, group=grpZ, display=display.none,
+     tooltip="A swing high / low needs this many lower highs / higher lows on each side. Higher = fewer, bigger swings. Zones and structure tags appear once the swing is confirmed (this many bars later)")
+zoneVolBars = input.int(1, "Volume Bars Either Side", minval=0, maxval=5, group=grpZ, display=display.none)
+maxZones = input.int(8, "Max Zones Per Side", minval=1, maxval=40, group=grpZ, display=display.none)
+shareWindow = input.int(500, "% Share Window (bars)", minval=50, maxval=5000, group=grpZ, display=display.none)
+minHeightAtr = input.float(0.5, "Min Zone Height (ATR)", minval=0.05, step=0.05, group=grpZ, display=display.none)
+maxHeightAtr = input.float(1.0, "Max Zone Height (ATR)", minval=0.1, step=0.1, group=grpZ, display=display.none)
+supplyCol = input.color(#E5383B, "Supply", inline="zc", group=grpZ, display=display.none)
+demandCol = input.color(#2EBD59, "Demand", inline="zc", group=grpZ, display=display.none)
+zoneTransp = input.int(80, "Zone Transparency", minval=0, maxval=100, group=grpZ, display=display.none,
+     tooltip="For an average zone. Zones with a bigger volume share are drawn more solid")
+
+grpS = "Structure"
+showStruct = input.bool(true, "Show HH / HL / LH / LL", group=grpS, display=display.none)
+structLen = input.int(20, "Structure Swing Length", minval=3, maxval=100, group=grpS, display=display.none,
+     tooltip="Bars each side for a structure swing. Longer than the zone swing length so only the main swings are tagged")
+structCol = input.color(#8C919C, "Tag Colour", group=grpS, display=display.none)
+
+grpV = "Volume Candles (PVSRA)"
+candleMode = input.string("PVSRA", "Candle Colours", options=["PVSRA", "Highlight Only", "Off"], group=grpV, display=display.none,
+     tooltip="PVSRA: climax candles green / red, rising-volume candles blue / violet, all other candles grey, so only candles with real volume behind them stand out.\nHighlight Only: the same colours on climax / rising candles, other candles keep your own colours.\nOff: no candle colouring")
+volAvgLen = input.int(10, "Average of Previous Bars", minval=3, maxval=100, group=grpV, display=display.none)
+volHi = input.float(2.0, "Climax (x average)", minval=1.1, step=0.1, group=grpV, display=display.none,
+     tooltip="Climax = volume at least this multiple of the average, or volume x candle range the highest of the previous bars")
+volMid = input.float(1.5, "Rising (x average)", minval=1.05, step=0.05, group=grpV, display=display.none)
+volUpHiCol = input.color(#00E676, "Climax Up", inline="vh", group=grpV, display=display.none)
+volDnHiCol = input.color(#FF1744, "Down", inline="vh", group=grpV, display=display.none)
+volUpMidCol = input.color(#2962FF, "Rising Up", inline="vm", group=grpV, display=display.none)
+volDnMidCol = input.color(#E040FB, "Down", inline="vm", group=grpV, display=display.none)
+normUpCol = input.color(#9A9EA8, "Other Up", inline="vn", group=grpV, display=display.none)
+normDnCol = input.color(#4A4E58, "Down", inline="vn", group=grpV, display=display.none)
+
+grpO = "Opens"
+showDO = input.bool(true, "Daily Open (DO)", group=grpO, display=display.none)
+showWO = input.bool(true, "Weekly Open (WO)", group=grpO, display=display.none)
+showMO = input.bool(true, "Monthly Open (MO)", group=grpO, display=display.none)
+showQO = input.bool(true, "Quarterly Open (Q1-Q4)", group=grpO, display=display.none)
+showYO = input.bool(true, "Yearly Open (YO)", group=grpO, display=display.none)
+prevDays = input.int(0, "Previous Daily Opens", minval=0, maxval=10, group=grpO, display=display.none,
+     tooltip="Tagged (1), (2)... = days back")
+showPWO = input.bool(false, "Previous Weekly Open (PWO)", group=grpO, display=display.none)
+openCol = input.color(#7FB3C4, "Line Colour", inline="oc", group=grpO, display=display.none)
+openWidth = input.int(1, "Width", minval=1, maxval=4, inline="oc", group=grpO, display=display.none)
+rightOffset = input.int(30, "Right Edge Offset (bars)", minval=2, maxval=100, group=grpO, display=display.none,
+     tooltip="How far past the last candle lines, zones and their tags reach")
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// VOLUME ZONES
+// ═══════════════════════════════════════════════════════════════════════════════
+
+type Zone
+    float top
+    float bot
+    float vol
+    int left
+    box bx
+
+var array<Zone> supplyZones = array.new<Zone>()
+var array<Zone> demandZones = array.new<Zone>()
+
+atr = ta.atr(14)
+dollarVol = nz(volume) * hlc3
+shareTotal = nz(math.sum(dollarVol, shareWindow), ta.cum(dollarVol))
+
+swingHigh = ta.pivothigh(high, swingLen, swingLen)
+swingLow = ta.pivotlow(low, swingLen, swingLen)
+
+// Dollar volume of the swing candle and the candles either side of it
+swingVolume() =>
+    float v = 0.0
+    for i = math.max(0, swingLen - zoneVolBars) to swingLen + zoneVolBars
+        v += nz(dollarVol[i])
+    v
+
+addZone(array<Zone> zones, float top, float bot, float v, color col) =>
+    bx = showZones ? box.new(bar_index - swingLen, top, bar_index, bot, border_color=color.new(col, 100),
+         bgcolor=color.new(col, zoneTransp), text_size=size.small, text_color=col,
+         text_halign=text.align_right, text_valign=text.align_center) : na
+    zones.push(Zone.new(top, bot, v, bar_index - swingLen, bx))
+    if zones.size() > maxZones
+        old = zones.shift()
+        box.delete(old.bx)
+
+zoneVol = swingVolume()
+pivAtr = nz(atr[swingLen], high[swingLen] - low[swingLen])
+
+if not na(swingHigh)
+    top = high[swingLen]
+    bot = math.min(open[swingLen], close[swingLen])
+    bot := math.min(math.max(bot, top - pivAtr * maxHeightAtr), top - pivAtr * minHeightAtr)
+    addZone(supplyZones, top, bot, zoneVol, supplyCol)
+
+if not na(swingLow)
+    bot = low[swingLen]
+    top = math.max(open[swingLen], close[swingLen])
+    top := math.max(math.min(top, bot + pivAtr * maxHeightAtr), bot + pivAtr * minHeightAtr)
+    addZone(demandZones, top, bot, zoneVol, demandCol)
+
+// Remove zones price has closed through
+if supplyZones.size() > 0
+    for i = supplyZones.size() - 1 to 0
+        z = supplyZones.get(i)
+        if close > z.top
+            box.delete(z.bx)
+            supplyZones.remove(i)
+if demandZones.size() > 0
+    for i = demandZones.size() - 1 to 0
+        z = demandZones.get(i)
+        if close < z.bot
+            box.delete(z.bx)
+            demandZones.remove(i)
+
+fmtMoney(float v) =>
+    pre = syminfo.currency == "USD" or syminfo.currency == "USDT" or syminfo.currency == "USDC" ? "$" : ""
+    v >= 1e9 ? pre + str.tostring(v / 1e9, "#.##") + "B" : v >= 1e6 ? pre + str.tostring(v / 1e6, "#.##") + "M" : v >= 1e3 ? pre + str.tostring(v / 1e3, "#.#") + "K" : pre + str.tostring(v, "#")
+
+// Stretch zones to the right edge and shade each by its volume share. Overlapping zones form a cluster
+// with one label: the cluster's total volume and share, and how many zones overlap (x3)
+styleZones(array<Zone> zones, color col) =>
+    n = zones.size()
+    if n > 0
+        avgShare = (2 * zoneVolBars + 1) / shareWindow * 100   // share an average zone holds
+        bots = array.new<float>()
+        for z in zones
+            bots.push(z.bot)
+        idx = bots.sort_indices(order.ascending)
+        int k = 0
+        while k < n
+            // Sweep upwards: the cluster grows while the next zone starts below the cluster's top
+            float clusterTop = zones.get(idx.get(k)).top
+            float clusterVol = 0.0
+            int count = 0
+            int best = idx.get(k)
+            int m = k
+            while m < n and (m == k or zones.get(idx.get(m)).bot < clusterTop)
+                z = zones.get(idx.get(m))
+                clusterTop := math.max(clusterTop, z.top)
+                clusterVol += z.vol
+                count += 1
+                if z.vol > zones.get(best).vol
+                    best := idx.get(m)
+                share = shareTotal > 0 ? z.vol / shareTotal * 100 : 0.0
+                strength = math.min(3.0, share / avgShare)
+                if not na(z.bx)
+                    box.set_right(z.bx, bar_index + rightOffset)
+                    box.set_bgcolor(z.bx, color.new(col, math.round(math.max(55, math.min(92, zoneTransp + 8 - strength * 8)))))
+                    box.set_text(z.bx, "")
+                m += 1
+            clusterShare = shareTotal > 0 ? clusterVol / shareTotal * 100 : 0.0
+            bx = zones.get(best).bx
+            if showZoneData and not na(bx)
+                box.set_text(bx, fmtMoney(clusterVol) + " | " + str.tostring(clusterShare, "#.##") + "%" + (count > 1 ? "  x" + str.tostring(count) : ""))
+            k := m
+
+if barstate.islast
+    styleZones(supplyZones, supplyCol)
+    styleZones(demandZones, demandCol)
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// VOLUME CANDLES (PVSRA) - climax = 200% of the previous 10 bars' average volume, or the biggest volume x range of
+// those bars; rising = 150%. Other candles grey in PVSRA mode
+// ═══════════════════════════════════════════════════════════════════════════════
+
+volAvg = ta.sma(volume, volAvgLen)[1]
+spreadVol = volume * (high - low)
+isUp = close >= open
+maxSpreadVol = ta.highest(spreadVol, volAvgLen)[1]   // global, so it runs on every bar
+isClimax = volume >= volAvg * volHi or spreadVol >= maxSpreadVol
+isRising = volume >= volAvg * volMid
+volCandleCol = candleMode == "Off" or na(volume) or na(volAvg) ? na : isClimax ? (isUp ? volUpHiCol : volDnHiCol) : isRising ? (isUp ? volUpMidCol : volDnMidCol) : candleMode == "PVSRA" ? (isUp ? normUpCol : normDnCol) : na
+barcolor(volCandleCol, title="Volume Candles", editable=false)
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// STRUCTURE - HH / LH on swing highs, HL / LL on swing lows
+// ═══════════════════════════════════════════════════════════════════════════════
+
+structHigh = ta.pivothigh(high, structLen, structLen)
+structLow = ta.pivotlow(low, structLen, structLen)
+var float lastSwingHigh = na
+var float lastSwingLow = na
+noFill = color.new(color.black, 100)
+
+if not na(structHigh)
+    if showStruct and not na(lastSwingHigh)
+        label.new(bar_index - structLen, structHigh, structHigh > lastSwingHigh ? "HH" : "LH", style=label.style_label_down,
+             color=noFill, textcolor=structCol, size=size.small)
+    lastSwingHigh := structHigh
+
+if not na(structLow)
+    if showStruct and not na(lastSwingLow)
+        label.new(bar_index - structLen, structLow, structLow > lastSwingLow ? "HL" : "LL", style=label.style_label_up,
+             color=noFill, textcolor=structCol, size=size.small)
+    lastSwingLow := structLow
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// OPENS
+// ═══════════════════════════════════════════════════════════════════════════════
+
+var float dOpen = na
+var int dBar = na
+var float wOpen = na
+var int wBar = na
+var float pwOpen = na
+var int pwBar = na
+var float mOpen = na
+var int mBar = na
+var float qOpen = na
+var int qBar = na
+var float yOpen = na
+var int yBar = na
+var array<float> prevDOpen = array.new<float>()
+var array<int> prevDBar = array.new<int>()
+
+if timeframe.change("D")
+    if not na(dOpen)
+        prevDOpen.unshift(dOpen)
+        prevDBar.unshift(dBar)
+        if prevDOpen.size() > 10
+            prevDOpen.pop()
+            prevDBar.pop()
+    dOpen := open
+    dBar := time
+if timeframe.change("W")
+    pwOpen := wOpen
+    pwBar := wBar
+    wOpen := open
+    wBar := time
+if timeframe.change("M")
+    mOpen := open
+    mBar := time
+if timeframe.change("3M")
+    qOpen := open
+    qBar := time
+if timeframe.change("12M")
+    yOpen := open
+    yBar := time
+
+secs = timeframe.in_seconds()
+// Opens are positioned by time, not bar number: a yearly open can be far more bars back than drawings may reach
+var array<line> openLines = array.new<line>()
+var array<label> openTags = array.new<label>()
+
+// Adds a level, or appends its tag when another level already sits at that price
+addLevel(array<float> prices, array<int> starts, array<string> tags, float p, int b, string tag) =>
+    if not na(p) and not na(b)
+        int found = -1
+        if prices.size() > 0
+            for k = 0 to prices.size() - 1
+                if math.abs(prices.get(k) - p) <= syminfo.mintick * 0.5
+                    found := k
+        if found >= 0
+            tags.set(found, tags.get(found) + " " + tag)
+            starts.set(found, math.min(starts.get(found), b))
+        else
+            prices.push(p)
+            starts.push(b)
+            tags.push(tag)
+
+if barstate.islast
+    for l in openLines
+        line.delete(l)
+    for t in openTags
+        label.delete(t)
+    openLines.clear()
+    openTags.clear()
+
+    // Gather levels; ones at the same price share a line and a tag
+    prices = array.new<float>()
+    starts = array.new<int>()
+    tags = array.new<string>()
+
+    if showYO and secs < timeframe.in_seconds("12M")
+        addLevel(prices, starts, tags, yOpen, yBar, "YO")
+    if showQO and secs < timeframe.in_seconds("3M")
+        addLevel(prices, starts, tags, qOpen, qBar, "Q" + str.tostring(math.ceil(month(time) / 3.0)))
+    if showMO and secs < timeframe.in_seconds("M")
+        addLevel(prices, starts, tags, mOpen, mBar, "MO")
+    if showWO and secs < timeframe.in_seconds("W")
+        addLevel(prices, starts, tags, wOpen, wBar, "WO")
+    if showPWO and secs < timeframe.in_seconds("W")
+        addLevel(prices, starts, tags, pwOpen, pwBar, "PWO")
+    if showDO and secs < timeframe.in_seconds("D")
+        addLevel(prices, starts, tags, dOpen, dBar, "DO")
+    if prevDays > 0 and secs < timeframe.in_seconds("D") and prevDOpen.size() > 0
+        for k = 0 to math.min(prevDays, prevDOpen.size()) - 1
+            addLevel(prices, starts, tags, prevDOpen.get(k), prevDBar.get(k), "(" + str.tostring(k + 1) + ")")
+
+    if prices.size() > 0
+        for k = 0 to prices.size() - 1
+            x2 = time + rightOffset * secs * 1000
+            openLines.push(line.new(starts.get(k), prices.get(k), x2, prices.get(k), xloc=xloc.bar_time, color=color.new(openCol, 30), width=openWidth))
+            openTags.push(label.new(x2, prices.get(k), tags.get(k), xloc=xloc.bar_time, style=label.style_label_left, color=noFill,
+                 textcolor=openCol, size=size.small))

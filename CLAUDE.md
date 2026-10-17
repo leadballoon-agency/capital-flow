@@ -176,6 +176,15 @@ Auto-detects based on chart timeframe:
 
   So the 3H/4H edge rests on an accidental, fragile interaction. The code is left as written, with a comment warning against "simplifying" it. Treat the 3H/4H numbers as unproven.
 
+## Capital Flow Levels (v1.0, the price-chart companion)
+
+`Indicator script/capital-flow-levels-v1.0.pine`, TradingView "Capital Flow Levels [v1.0]" (legend "CF Levels"), built 2026-10-17 to replace the CF Filter overlay on the chart as the CF Osc's price-chart partner. Modelled on what the user uses in their AI Charting Tools indicator:
+- **Volume zones:** supply / demand from swing candles (wick to body, 0.5-1 ATR tall), labelled "$ volume | % share" (dollar volume of the swing candle +/-1 bar, share of the last 500 bars). Overlapping zones stay as separate translucent boxes (overlap shows darker; the user sees overlap as stronger S/R) with one label per cluster plus "x3". Removed when price closes through.
+- **Structure:** HH / HL / LH / LL on main swings (structure length 20, zones use 10).
+- **Opens:** DO / WO / MO / Q / YO plus optional previous days and PWO; equal levels share a tag ("Q4 MO"). Drawn with xloc.bar_time (bar-index drawings failed on 15m: the yearly open was beyond the 1,577-bar drawing buffer).
+- **Volume candles (PVSRA):** climax (200% of the previous 10 bars' average, or the highest volume x range) green / red, rising (150%) blue / violet, the rest grey; "Highlight Only" keeps the user's own colours.
+- No plots except the barcolor.
+
 ## The Oscillator (Capital Flow Oscillator v3.4)
 
 A Market Cipher B / VuManChu Cipher B replacement, Classic (MC-style) look by default:
@@ -193,7 +202,7 @@ A Market Cipher B / VuManChu Cipher B replacement, Classic (MC-style) look by de
 - **Capital Flow signal (v3.4, the signature signal):** a thin gold ring around the dot (replaced a ✦ star the user found "too cartoonish"). It fires when momentum, money and macro agree on one bar: the wave turns from a stretched level (touched the setup edge), money flow is turning the same way (vs 3 bars ago), and capital flow is on the same side (confirmed flip state and score). Named "Capital Flow" by the user. Status box shows "Capital Flow long/short" in gold; alerts "Capital Flow LONG/SHORT". The capital flow band is thicker (-101 to -115), with stronger shades and a right-edge tag ("CAPITAL FLOW IN / OUT / leaning / neutral"), because capital flow is what no other Cipher-style oscillator has
 - **Blue Wave setup (v3.4):** Market Cipher's core strategy. The anchor is the deepest fast-wave dip in the 40 bars before the current dip, and must reach past ±53 ("Anchor Depth"). The current dip (the trigger) must be at most 0.8x as deep, and the bounce between them must stay ≤20 past zero. The signal fires on the trigger's turn (light blue crosses dark blue) if money flow has moved the trade's way over 5 bars. Shown as a blue diamond plus a dashed anchor-trigger line; the status box shows "Blue Wave long/short"; alerts "Blue Wave LONG/SHORT". One signal per anchor (later dips off the same anchor don't fire again). In the lab, before that rule (BTC 1H, last ~6 weeks) it fired 3 longs and 5 shorts; a stricter "no money flow wobble" rule fired zero times, so it was dropped. Making room: series-coloured plotshapes count as 2 plots, and the Setup/Signal Score/Trade State/Money Flow/Wave Value data exports were removed (only Flow Score is left); removing the Stoch RSI freed ~4 plots
 - Plot budget is at the 64 limit (v3.4 hit 65 once; a transparent "Cross Dot Outline" plot was removed)
-- TP1/TP2 marks still exist but are off by default
+- TP1/TP2 marks and alerts were removed 2026-10-17 (untested targets); the trade tracker still ends a setup at the far band, so the flow exit (x) fires as before. The status box shows the higher timeframe as "4H" (not "240") and only divergences strong enough to draw, prefixed "hidden" when they are
 
 The user wants it to replace Cipher B as a discretionary tool, not to be tuned by backtests. Keep dots small (the user found the big ones too large).
 
