@@ -7,7 +7,8 @@
 // Structure: HH / HL / LH / LL tags on the main swings (a longer swing length than the zones).
 // Opens: daily, weekly, monthly, quarterly and yearly opens, plus optional previous daily / weekly opens.
 // Regains: "DO ↑" when a candle closes back above an open after closes below it ("WO ↓" = lost), with alerts.
-//   Levels at or near the same price share one line and one tag ("WO MO Q4").
+//   Each open keeps its own line at its exact price; identical prices share a tag ("Q4 MO"), and tags that
+//   would overlap are set side by side.
 // Volume candles (PVSRA): climax candles green / red, rising-volume candles blue / violet, the rest grey.
 // Only plot: the barcolor; everything else is boxes, lines and labels.
 indicator("Capital Flow Levels [v1.0]", shorttitle="CF Levels", overlay=true, max_boxes_count=200, max_lines_count=100, max_labels_count=500)
@@ -64,8 +65,8 @@ prevDays = input.int(0, "Previous Daily Opens", minval=0, maxval=10, group=grpO,
 showPWO = input.bool(false, "Previous Weekly Open (PWO)", group=grpO, display=display.none)
 openCol = input.color(#7FB3C4, "Line Colour", inline="oc", group=grpO, display=display.none)
 openWidth = input.int(1, "Width", minval=1, maxval=4, inline="oc", group=grpO, display=display.none)
-mergeAtr = input.float(0.25, "Merge Opens Closer Than (ATR)", minval=0, step=0.05, group=grpO, display=display.none,
-     tooltip="Opens closer together than this share one line and one tag (e.g. \"WO MO Q4\") so tags never print on top of each other")
+nearAtr = input.float(0.25, "Stagger Tags Closer Than (ATR)", minval=0, step=0.05, group=grpO, display=display.none,
+     tooltip="Every open keeps its own line at its exact price. Tags of opens closer together than this are set side by side so they never print on top of each other. Hover a tag for the exact price")
 rightOffset = input.int(30, "Right Edge Offset (bars)", minval=2, maxval=100, group=grpO, display=display.none,
      tooltip="How far past the last candle lines, zones and their tags reach")
 
@@ -354,15 +355,16 @@ if alertRegains and regainTags != ""
 if alertRegains and lostTags != ""
     alert("🔴 Lost the " + describe(lostTags) + " · " + syminfo.ticker + " " + tfLabel + "\nClosed at " + str.tostring(close, format.mintick) + ", below it after " + str.tostring(regainMinBars) + "+ closes above", alert.freq_once_per_bar_close)
 
-mergeTol = math.max(syminfo.mintick * 0.5, nz(atr) * mergeAtr)
+nearTol = nz(atr) * nearAtr
 
-// Adds a level, or appends its tag when another level already sits at (or very near) that price
+// Adds a level, or appends its tag when another level sits at exactly that price (only identical prices merge:
+// a close a few dollars either side of an open matters)
 addLevel(array<float> prices, array<int> starts, array<string> tags, float p, int b, string tag) =>
     if not na(p) and not na(b)
         int found = -1
         if prices.size() > 0
             for k = 0 to prices.size() - 1
-                if math.abs(prices.get(k) - p) <= mergeTol
+                if math.abs(prices.get(k) - p) <= syminfo.mintick * 0.5
                     found := k
         if found >= 0
             tags.set(found, tags.get(found) + " " + tag)
@@ -401,9 +403,17 @@ if barstate.islast
         for k = 0 to math.min(prevDays, prevDOpen.size()) - 1
             addLevel(prices, starts, tags, prevDOpen.get(k), prevDBar.get(k), "(" + str.tostring(k + 1) + ")")
 
+    // Lowest price first; a tag within nearTol of the one below it moves one slot to the right
     if prices.size() > 0
-        for k = 0 to prices.size() - 1
-            x2 = time + rightOffset * secs * 1000
-            openLines.push(line.new(starts.get(k), prices.get(k), x2, prices.get(k), xloc=xloc.bar_time, color=color.new(openCol, 30), width=openWidth))
-            openTags.push(label.new(x2, prices.get(k), tags.get(k), xloc=xloc.bar_time, style=label.style_label_left, color=noFill,
-                 textcolor=openCol, size=size.small))
+        idxs = prices.sort_indices(order.ascending)
+        int slot = 0
+        float prevP = na
+        for j = 0 to idxs.size() - 1
+            k = idxs.get(j)
+            p = prices.get(k)
+            slot := not na(prevP) and p - prevP <= nearTol ? slot + 1 : 0
+            prevP := p
+            x2 = time + (rightOffset + slot * 8) * secs * 1000
+            openLines.push(line.new(starts.get(k), p, x2, p, xloc=xloc.bar_time, color=color.new(openCol, 30), width=openWidth))
+            openTags.push(label.new(x2, p, tags.get(k), xloc=xloc.bar_time, style=label.style_label_left, color=noFill,
+                 textcolor=openCol, size=size.small, tooltip=tags.get(k) + "  " + str.tostring(p, format.mintick)))
