@@ -1,7 +1,8 @@
 // This Pine Script code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
 // (c) MarkTaylor
 // Capital Flow Oscillator v3.4
-// v3.4 (2026-10-17): Capital Flow signal is a gold dot in a gold ring (was the green / red dot in a gold ring);
+// v3.4 (2026-10-17): the fast wave's edge line hides when the fast wave slips inside the slow wave;
+//       Capital Flow signal is a gold dot in a gold ring (was the green / red dot in a gold ring);
 //       TP1 / TP2 marks and alerts removed (the flow exit x stays); status box shows the higher timeframe
 //       as "4H" not "240", and only divergences strong enough to draw, marked "hidden" when they are
 // v3.4 (later): Blue Wave setup - Market Cipher's core strategy: deep anchor wave, smaller trigger wave,
@@ -955,8 +956,11 @@ plot(isClean ? na : wt2, "Slow Wave", color=color.new(wave_slow, 8), style=plot.
 rsiCue = ta.rsi(close, rsiCueLen)
 rsiHot = rsiCueStyle == "Wave Edge" and (rsiCue > rsiOB or rsiCue < rsiOS)
 edgeColor = rsiCueStyle == "Wave Edge" and rsiCue > rsiOB ? rsi_ob : rsiCueStyle == "Wave Edge" and rsiCue < rsiOS ? rsi_os : #9AD3FF
-plot(isClean ? na : wt1, "Fast Wave Edge", color=color.new(#9AD3FF, 0), linewidth=1)
-plot(not isClean and rsiHot ? wt1 : na, "RSI Edge", color=color.new(edgeColor, 0), linewidth=2, style=plot.style_linebr, display=display.pane)
+// Only where the light wave shows: once the fast wave slips inside the dark slow wave its fill is hidden,
+// and an edge line left on top read as a stray white line over the dark wave
+fastShows = wt1 >= 0 ? wt1 >= wt2 : wt1 <= wt2
+plot(not isClean and fastShows ? wt1 : na, "Fast Wave Edge", color=color.new(#9AD3FF, 0), linewidth=1, style=plot.style_linebr)
+plot(not isClean and rsiHot and fastShows ? wt1 : na, "RSI Edge", color=color.new(edgeColor, 0), linewidth=2, style=plot.style_linebr, display=display.pane)
 
 // Clean: slow wave as a thin deep-blue line, fast wave as a bright line with a soft glow
 clean_fast = rsiHot ? edgeColor : #4DA3FF
