@@ -1,11 +1,37 @@
 import './strategies.css';
 import Logo from '../components/Logo';
+import SignalMark from '../components/SignalMark';
 import SuggestWidget from '../components/SuggestWidget';
 
 export const metadata = {
-  title: "Trading Strategies | Capital Flow Filter",
-  description: "Proven trading strategies using the Capital Flow Filter indicator. Learn how to trade with the Keltner Cloud Edge strategy."
+  title: 'The Capital Flow Playbook | Capital Flow',
+  description:
+    'A discretionary playbook for the CF Osc and CF Levels: the Capital Flow signal gives the direction, demand and supply zones give the location, and the entry comes on a lower timeframe.',
 };
+
+const pairs = [
+  ['Daily', '4H or 1H', 'Swing trades over days to weeks'],
+  ['4H', '1H or 15m', 'Trades over a day or two'],
+  ['1H', '15m or 5m', 'Intraday trades'],
+  ['15m', '3m or 1m', 'Scalps: quick in and out, so be strict about the stop'],
+];
+
+const standAside = [
+  ['🏃', 'Price has already left', 'The signal fired between zones and price ran without pulling back. There’s no level to lean on, so let it go. Another one will come.'],
+  ['⚖️', 'Capital flow is neutral or turning', 'If the band at the bottom of the CF Osc is grey, or the × has appeared, the permission has gone.'],
+  ['🧱', 'The zone has already broken', 'Once price closes through a zone, CF Levels removes it. Don’t trade a level that has stopped being one.'],
+  ['📅', 'A big release is due', 'Rate decisions, CPI and jobs data can blow through any level. Check the economic calendar first and step back around the release.'],
+  ['↕️', 'The higher timeframe disagrees', 'A long on 15m against a gold short on 4H is fighting the bigger flow. Trade with the higher timeframe, or not at all.'],
+];
+
+const checklist = [
+  'A Capital Flow signal (gold dot) on the higher timeframe, and no × since',
+  'Price at a demand zone (longs) or supply zone (shorts) on the entry timeframe',
+  'A trigger: a close back out of the zone, a regain of the daily open, or a graded dot the same way',
+  'Stop just beyond the zone, decided before you enter',
+  'Target at the next opposite zone or a key open, and the reward is worth the risk',
+  'No high-impact release in the next hour or two',
+];
 
 export default function StrategiesPage() {
   return (
@@ -22,417 +48,284 @@ export default function StrategiesPage() {
       </nav>
       <div className="container">
         <div className="page-header">
-          <span className="page-badge">Strategy Guide</span>
-          <h1>Trading Strategies</h1>
-          <p className="subtitle">Proven setups using the Capital Flow Filter indicator</p>
-        </div>
-        <div className="strategy-card" id="cloud-edge">
-          <div className="strategy-header">
-            <span className="strategy-badge">82% Win Rate Observed</span>
-            <h2 className="strategy-title">Cloud Edge Trading</h2>
-            <p className="strategy-subtitle">Use the Keltner Channel as dynamic support/resistance based on flow direction</p>
-          </div>
-          <div className="strategy-content">
-            <h2>The Core Concept</h2>
-            <p>
-              The Keltner Channel (the "cloud") acts as{' '}
-              <strong>dynamic support and resistance</strong>
-              . But here's the key insight: which edge matters depends on the{' '}
-              <strong>flow direction</strong>
-              .
-            </p>
-            <p>
-              When capital is flowing bullish (green cloud), the{' '}
-              <strong>bottom of the cloud becomes support</strong>
-              . When capital is flowing bearish (red cloud), the{' '}
-              <strong>top of the cloud becomes resistance</strong>
-              .
-            </p>
-            <div className="rules-box">
-              <div className="rule-card long">
-                <div className="rule-header long">Long Setup</div>
-                <ul className="rule-list">
-                  <li>Flow is GREEN (bullish)</li>
-                  <li>Price touches BOTTOM of cloud</li>
-                  <li>Enter long on bounce</li>
-                  <li>Target: Previous swing high or top of cloud</li>
-                  <li>Stop: Below the cloud</li>
-                </ul>
-              </div>
-              <div className="rule-card short">
-                <div className="rule-header short">Short Setup</div>
-                <ul className="rule-list">
-                  <li>Flow is RED (bearish)</li>
-                  <li>Price touches TOP of cloud</li>
-                  <li>Enter short on rejection</li>
-                  <li>Target: Previous swing low or bottom of cloud</li>
-                  <li>Stop: Above the cloud</li>
-                </ul>
-              </div>
-            </div>
-            <h2>Backtest Results</h2>
-            <p>We analyzed this strategy across multiple timeframes using recent BTC price action:</p>
-            <table className="stats-table">
-              <thead>
-                <tr>
-                  <th>Timeframe</th>
-                  <th>Winning Trades</th>
-                  <th>Losing/Choppy</th>
-                  <th>Win Rate</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>15-minute</td>
-                  <td>6</td>
-                  <td>1</td>
-                  <td className="highlight">86%</td>
-                </tr>
-                <tr>
-                  <td>5-minute</td>
-                  <td>4</td>
-                  <td>1</td>
-                  <td className="highlight">80%</td>
-                </tr>
-                <tr>
-                  <td>1-hour</td>
-                  <td>4</td>
-                  <td>1</td>
-                  <td className="highlight">80%</td>
-                </tr>
-                <tr className="total-row">
-                  <td>Total</td>
-                  <td>14</td>
-                  <td>3</td>
-                  <td className="highlight">82%</td>
-                </tr>
-              </tbody>
-            </table>
-            <h2>Key Observations</h2>
-            <div className="observations">
-              <div className="observation">
-                <span className="observation-icon">📏</span>
-                <div className="observation-content">
-                  <div className="observation-title">Cloud thickness = conviction</div>
-                  <p className="observation-text">
-                    The strategy works best when the cloud is thick. Thick cloud means high conviction flow—entries off the edges are more reliable.
-                  </p>
-                </div>
-              </div>
-              <div className="observation">
-                <span className="observation-icon">⚠️</span>
-                <div className="observation-content">
-                  <div className="observation-title">Thin clouds = danger zone</div>
-                  <p className="observation-text">
-                    When the cloud is thin or flipping frequently, expect choppy conditions. These are the whipsaw zones where the strategy breaks down.
-                  </p>
-                </div>
-              </div>
-              <div className="observation">
-                <span className="observation-icon">📈</span>
-                <div className="observation-content">
-                  <div className="observation-title">Trending markets are ideal</div>
-                  <p className="observation-text">
-                    The big red cloud moves (drops from $97k to $89k) gave multiple clean short entries from the top. Sustained flow direction = sustained edge.
-                  </p>
-                </div>
-              </div>
-              <div className="observation">
-                <span className="observation-icon">🔄</span>
-                <div className="observation-content">
-                  <div className="observation-title">First touch after flip is highest probability</div>
-                  <p className="observation-text">
-                    When flow changes color, the first touch of the new "support/resistance" edge often produces the strongest bounce or rejection.
-                  </p>
-                </div>
-              </div>
-              <div className="observation">
-                <span className="observation-icon">🎯</span>
-                <div className="observation-content">
-                  <div className="observation-title">The flip dot is your bias change signal</div>
-                  <p className="observation-text">
-                    When you see the flow flip from green to red (or vice versa), that's your cue to switch your bias and start looking for entries from the opposite edge.
-                  </p>
-                </div>
-              </div>
-            </div>
-            <h2>Best Timeframes</h2>
-            <p>
-              This strategy works across all timeframes but shines on{' '}
-              <strong>lower timeframes (1m-15m)</strong>
-              {' '}for scalping:
-            </p>
-            <ul style={{ color: "var(--gray-light)", paddingLeft: "1.5rem", marginBottom: "1.5rem" }}>
-              <li>
-                <strong>1m-5m:</strong>
-                {' '}Quick scalps, multiple opportunities per session
-              </li>
-              <li>
-                <strong>15m:</strong>
-                {' '}Sweet spot—enough signals with cleaner moves
-              </li>
-              <li>
-                <strong>1H:</strong>
-                {' '}Fewer but larger moves, good for swing entries
-              </li>
-              <li>
-                <strong>4H+:</strong>
-                {' '}Use for bias, but fewer cloud edge touches
-              </li>
-            </ul>
-            <div className="warning-box">
-              <p>
-                <strong>When to avoid this strategy:</strong>
-                {' '}During low-volume periods (weekends, holidays), when the cloud is very thin, or when you see frequent flow flips within a short period. These conditions indicate indecision and increase whipsaw risk.
-              </p>
-            </div>
-            <h2>Entry Checklist</h2>
-            <ol style={{ color: "var(--gray-light)", paddingLeft: "1.5rem", marginBottom: "1.5rem" }}>
-              <li>
-                <strong>Confirm flow direction</strong>
-                {' '}— Is the cloud green or red?
-              </li>
-              <li>
-                <strong>Check cloud thickness</strong>
-                {' '}— Thick = good, thin = caution
-              </li>
-              <li>
-                <strong>Wait for edge touch</strong>
-                {' '}— Price must reach the cloud edge
-              </li>
-              <li>
-                <strong>Look for reaction</strong>
-                {' '}— A bounce (green) or rejection (red)
-              </li>
-              <li>
-                <strong>Enter on confirmation candle</strong>
-                {' '}— Don't front-run the touch
-              </li>
-              <li>
-                <strong>Set stop beyond cloud</strong>
-                {' '}— If price breaks through, you're wrong
-              </li>
-            </ol>
-            <div className="highlight-box">
-              <p>
-                <strong>Pro Tip:</strong>
-                {' '}Combine this with higher timeframe bias. If the 1H flow is green and you're scalping the 5m, prioritize long setups off the bottom of the 5m cloud. Trading with the higher timeframe flow increases your win rate.
-              </p>
-            </div>
-          </div>
-        </div>
-        <div className="strategy-card" id="dual-tp">
-          <div className="strategy-header">
-            <span className="strategy-badge">100% Win Rate on 4H (6/6 trades)</span>
-            <h2 className="strategy-title">Dual Take-Profit System</h2>
-            <p className="strategy-subtitle">Maximize gains with TP1 at middle band, TP2 at opposite band</p>
-          </div>
-          <div className="strategy-content">
-            <h2>The Strategy</h2>
-            <p>
-              Building on Cloud Edge Trading, this system uses{' '}
-              <strong>two take-profit levels</strong>
-              {' '}to lock in profits while letting winners run. The middle Keltner band (basis) acts as TP1, and the opposite outer band becomes TP2.
-            </p>
-            <div className="rules-box">
-              <div className="rule-card long">
-                <div className="rule-header long">Long Trade Management</div>
-                <ul className="rule-list">
-                  <li>Entry: Bottom of Keltner (green flow)</li>
-                  <li>Stop Loss: Below lower band (~1.5%)</li>
-                  <li>TP1 (50%): Middle band (basis)</li>
-                  <li>Move SL to breakeven after TP1</li>
-                  <li>TP2 (50%): Upper band (opposite edge)</li>
-                </ul>
-              </div>
-              <div className="rule-card short">
-                <div className="rule-header short">Short Trade Management</div>
-                <ul className="rule-list">
-                  <li>Entry: Top of Keltner (red flow)</li>
-                  <li>Stop Loss: Above upper band (~1.5%)</li>
-                  <li>TP1 (50%): Middle band (basis)</li>
-                  <li>Move SL to breakeven after TP1</li>
-                  <li>TP2 (50%): Lower band (opposite edge)</li>
-                </ul>
-              </div>
-            </div>
-            <h2>4H BTC Backtest (Dec 2025)</h2>
-            <p>Analyzed 7 trades on the 4H BTCUSDT chart following flow flips:</p>
-            <table className="stats-table">
-              <thead>
-                <tr>
-                  <th>Trade</th>
-                  <th>Type</th>
-                  <th>Entry</th>
-                  <th>TP1</th>
-                  <th>TP2</th>
-                  <th>Result</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>#1</td>
-                  <td style={{ color: "var(--red)" }}>SHORT</td>
-                  <td>$97,500</td>
-                  <td className="highlight">+2.5%</td>
-                  <td className="highlight">+5.0%</td>
-                  <td className="highlight">Full TP</td>
-                </tr>
-                <tr>
-                  <td>#2</td>
-                  <td style={{ color: "var(--green)" }}>LONG</td>
-                  <td>$93,000</td>
-                  <td className="highlight">+2.7%</td>
-                  <td className="highlight">+5.4%</td>
-                  <td className="highlight">Full TP</td>
-                </tr>
-                <tr>
-                  <td>#3</td>
-                  <td style={{ color: "var(--red)" }}>SHORT</td>
-                  <td>$98,500</td>
-                  <td className="highlight">+3.0%</td>
-                  <td className="highlight">+6.0%</td>
-                  <td className="highlight">Full TP</td>
-                </tr>
-                <tr>
-                  <td>#4</td>
-                  <td style={{ color: "var(--green)" }}>LONG</td>
-                  <td>$88,500</td>
-                  <td className="highlight">+2.3%</td>
-                  <td className="highlight">+4.5%</td>
-                  <td className="highlight">Full TP</td>
-                </tr>
-                <tr>
-                  <td>#5</td>
-                  <td style={{ color: "var(--green)" }}>LONG</td>
-                  <td>$89,500</td>
-                  <td className="highlight">+1.7%</td>
-                  <td>BE</td>
-                  <td style={{ color: "var(--brand)" }}>Partial</td>
-                </tr>
-                <tr>
-                  <td>#6</td>
-                  <td style={{ color: "var(--red)" }}>SHORT</td>
-                  <td>$94,000</td>
-                  <td className="highlight">+2.7%</td>
-                  <td className="highlight">+5.3%</td>
-                  <td className="highlight">Full TP</td>
-                </tr>
-                <tr>
-                  <td>#7</td>
-                  <td style={{ color: "var(--green)" }}>LONG</td>
-                  <td>$89,500</td>
-                  <td className="highlight">+1.7%</td>
-                  <td>Pending</td>
-                  <td style={{ color: "var(--gray)" }}>Open</td>
-                </tr>
-                <tr className="total-row">
-                  <td colSpan="3">6 Closed Trades</td>
-                  <td colSpan="2">Avg Return: ~3.75%</td>
-                  <td className="highlight">100% Win</td>
-                </tr>
-              </tbody>
-            </table>
-            <h2>Performance Breakdown</h2>
-            <div className="observations">
-              <div className="observation">
-                <span className="observation-icon">🎯</span>
-                <div className="observation-content">
-                  <div className="observation-title">TP1 Hit Rate: 100%</div>
-                  <p className="observation-text">Every single trade reached the middle band. This is your "always get paid" level.</p>
-                </div>
-              </div>
-              <div className="observation">
-                <span className="observation-icon">🚀</span>
-                <div className="observation-content">
-                  <div className="observation-title">TP2 Hit Rate: 85%</div>
-                  <p className="observation-text">
-                    5 out of 6 closed trades reached the opposite band. One stopped at breakeven (still profitable from TP1).
-                  </p>
-                </div>
-              </div>
-              <div className="observation">
-                <span className="observation-icon">📊</span>
-                <div className="observation-content">
-                  <div className="observation-title">Average R:R = 3:1</div>
-                  <p className="observation-text">Risking ~1.5% per trade, average return was ~3.75% (50% at TP1 + 50% at TP2).</p>
-                </div>
-              </div>
-              <div className="observation">
-                <span className="observation-icon">🛡️</span>
-                <div className="observation-content">
-                  <div className="observation-title">Zero Losses Before TP1</div>
-                  <p className="observation-text">
-                    No trade was stopped out before hitting TP1. The breakeven move after TP1 protected capital perfectly.
-                  </p>
-                </div>
-              </div>
-            </div>
-            <h2>Why This Works</h2>
-            <p>
-              The Keltner Channel is a{' '}
-              <strong>volatility-based envelope</strong>
-              . Price naturally oscillates between the bands. By entering at one extreme and targeting the middle (TP1) then the opposite extreme (TP2), you're trading WITH the natural market rhythm.
-            </p>
-            <p>
-              The key insight:{' '}
-              <strong>TP1 at the middle band is almost always hit</strong>
-              {' '}because it's just a reversion to the mean. TP2 at the opposite band catches the extended moves when flow is strong.
-            </p>
-            <div className="warning-box">
-              <p>
-                <strong>Critical Rule:</strong>
-                {' '}Always move your stop to breakeven after TP1 hits. This turns every trade into either a winner or a scratch. In our backtest, this rule protected Trade #5 from becoming a loss.
-              </p>
-            </div>
-            <h2>Position Sizing Example</h2>
-            <p>With a $10,000 account risking 1.5% ($150) per trade:</p>
-            <ul style={{ color: "var(--gray-light)", paddingLeft: "1.5rem", marginBottom: "1.5rem" }}>
-              <li>
-                <strong>Entry:</strong>
-                {' '}Full position at cloud edge
-              </li>
-              <li>
-                <strong>TP1 (50%):</strong>
-                {' '}Close half (+$125 on avg)
-              </li>
-              <li>
-                <strong>TP2 (50%):</strong>
-                {' '}Close remaining (+$250 on avg)
-              </li>
-              <li>
-                <strong>Total avg profit:</strong>
-                {' '}$375 per trade (2.5R)
-              </li>
-              <li>
-                <strong>If TP2 stopped at BE:</strong>
-                {' '}Still +$125 (0.8R)
-              </li>
-            </ul>
-            <div className="highlight-box">
-              <p>
-                <strong>Best Timeframe:</strong>
-                {' '}This system shines on{' '}
-                <strong>4H charts</strong>
-                {' '}where flow direction is more sustained and the Keltner bands are wide enough to capture meaningful moves. Lower timeframes work but have more noise.
-              </p>
-            </div>
-          </div>
-        </div>
-        <div className="coming-soon">
-          <div className="coming-soon-icon">🚧</div>
-          <h3>More Strategies Coming Soon</h3>
-          <p>
-            We're documenting additional strategies including Full Confluence plays, Divergence trading, and Manipulation fade setups.
+          <span className="page-badge">Playbook</span>
+          <h1>The Capital Flow playbook</h1>
+          <p className="subtitle">
+            One way to trade with the CF Osc and CF Levels together. It&apos;s a discretionary method, not a system:
+            you read the chart and make the call.
           </p>
         </div>
+
+        <div className="strategy-card" id="idea">
+          <div className="strategy-header">
+            <span className="strategy-badge">The idea</span>
+            <h2 className="strategy-title">Direction, location, timing</h2>
+            <p className="strategy-subtitle">Each indicator answers a different question. Wait until all three have an answer.</p>
+          </div>
+          <div className="strategy-content">
+            <table className="stats-table">
+              <thead>
+                <tr>
+                  <th>Question</th>
+                  <th>Answered by</th>
+                  <th>What you look for</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Which way?</strong></td>
+                  <td>CF Osc</td>
+                  <td>
+                    <span className="mark-inline"><SignalMark kind="capital_flow" size={16} /></span> A Capital Flow signal:
+                    momentum, money flow and macro capital flow agree
+                  </td>
+                </tr>
+                <tr>
+                  <td><strong>Where?</strong></td>
+                  <td>CF Levels</td>
+                  <td>A demand zone for longs or a supply zone for shorts, ideally one with a big volume share or overlapping zones (x2, x3)</td>
+                </tr>
+                <tr>
+                  <td><strong>When?</strong></td>
+                  <td>Both</td>
+                  <td>Price reacting at the zone: a close back out of it, a regain of the daily open (DO ↑), or a graded dot the same way</td>
+                </tr>
+              </tbody>
+            </table>
+            <p>
+              Taking the signal without a level means chasing. Taking a level without the signal means guessing which
+              side of it will hold. Together they give you a reason to trade and a place to put your stop.
+            </p>
+          </div>
+        </div>
+
+        <div className="strategy-card" id="steps">
+          <div className="strategy-header">
+            <span className="strategy-badge">Step by step</span>
+            <h2 className="strategy-title">Five steps, longs and shorts mirrored</h2>
+            <p className="strategy-subtitle">Written for a long; for a short, swap demand for supply and down for up.</p>
+          </div>
+          <div className="strategy-content">
+            <h3>1. Permission: the gold dot</h3>
+            <p>
+              A Capital Flow long on the CF Osc sets the direction. On its own it isn&apos;t an entry. It says longs are
+              worth looking for, and it stays that way until capital flow turns against it (the ×).
+            </p>
+            <h3>2. Location: a demand zone</h3>
+            <p>
+              Look for the nearest demand zone on CF Levels. If the signal fired with price already in a zone, you&apos;re
+              there. If it fired between zones, wait for price to pull back into the zone below. If it runs away instead,
+              there&apos;s no trade.
+            </p>
+            <h3>3. Timing: price reacts</h3>
+            <p>
+              Wait for a candle to close back above the zone, a regain of the daily open (DO ↑), or a graded dot the same
+              way on the entry timeframe. That&apos;s the sign buyers are defending the level.
+            </p>
+            <h3>4. Risk: stop beyond the zone</h3>
+            <p>
+              Put the stop just below the zone. If price closes through it, the zone has failed and so has the trade.
+              Set the target at the next supply zone or a key open (WO, MO) before you enter, and skip the trade if the
+              reward isn&apos;t worth the risk.
+            </p>
+            <h3>5. Management: know when to leave</h3>
+            <p>
+              Close or tighten when the × appears on the CF Osc (capital flow has turned against you), when price reaches
+              the target zone, or when price closes back through your zone.
+            </p>
+            <div className="rules-box">
+              <div className="rule-card long">
+                <div className="rule-header long">Long</div>
+                <ul className="rule-list">
+                  <li>Gold Capital Flow long, no × since</li>
+                  <li>Price at a demand zone</li>
+                  <li>Close back above the zone or DO ↑</li>
+                  <li>Stop below the zone, target the next supply</li>
+                </ul>
+              </div>
+              <div className="rule-card short">
+                <div className="rule-header short">Short</div>
+                <ul className="rule-list">
+                  <li>Gold Capital Flow short, no × since</li>
+                  <li>Price at a supply zone</li>
+                  <li>Close back below the zone or DO ↓</li>
+                  <li>Stop above the zone, target the next demand</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="strategy-card" id="timeframes">
+          <div className="strategy-header">
+            <span className="strategy-badge">Two timeframes</span>
+            <h2 className="strategy-title">Signal on the higher timeframe, entry on the lower</h2>
+            <p className="strategy-subtitle">The bigger picture sets the direction; the smaller one gives a tighter entry.</p>
+          </div>
+          <div className="strategy-content">
+            <p>
+              A gold dot on a higher timeframe carries more weight: more money has to move to turn the flow on a 4H or
+              daily chart. But a stop beyond a 4H zone is wide. Dropping to a lower timeframe for the entry lets you
+              use a smaller zone inside the bigger one, so the stop is tighter and the same target is worth more.
+            </p>
+            <table className="stats-table">
+              <thead>
+                <tr>
+                  <th>Signal on</th>
+                  <th>Entry on</th>
+                  <th>Suits</th>
+                </tr>
+              </thead>
+              <tbody>
+                {pairs.map(([hi, lo, suits]) => (
+                  <tr key={hi}>
+                    <td><strong>{hi}</strong></td>
+                    <td>{lo}</td>
+                    <td>{suits}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <h3>How it works</h3>
+            <div className="observations">
+              <div className="observation">
+                <span className="observation-icon">1</span>
+                <div className="observation-content">
+                  <div className="observation-title">Mark the higher-timeframe picture</div>
+                  <p className="observation-text">
+                    A gold Capital Flow long on the 4H, and the 4H demand zone it formed in or above. That zone is your
+                    area of interest; the 4H supply above it is the target.
+                  </p>
+                </div>
+              </div>
+              <div className="observation">
+                <span className="observation-icon">2</span>
+                <div className="observation-content">
+                  <div className="observation-title">Drop down and wait</div>
+                  <p className="observation-text">
+                    On the 1H or 15m, wait for price to come into the 4H zone. CF Levels on the lower timeframe will often
+                    show a smaller demand zone inside it: that&apos;s where to look for the entry.
+                  </p>
+                </div>
+              </div>
+              <div className="observation">
+                <span className="observation-icon">3</span>
+                <div className="observation-content">
+                  <div className="observation-title">Take the lower-timeframe trigger</div>
+                  <p className="observation-text">
+                    A close back above the small zone, a DO regain, or a graded dot pointing the same way on the lower
+                    timeframe&apos;s CF Osc. Stop below the small zone, target the 4H supply.
+                  </p>
+                </div>
+              </div>
+              <div className="observation">
+                <span className="observation-icon">4</span>
+                <div className="observation-content">
+                  <div className="observation-title">The higher timeframe still rules</div>
+                  <p className="observation-text">
+                    If the 4H shows the × or closes through its zone, the idea is off, whatever the lower timeframe says.
+                    Lower-timeframe signals against the higher-timeframe flow are noise for this playbook.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="strategy-card" id="example">
+          <div className="strategy-header">
+            <span className="strategy-badge">Example</span>
+            <h2 className="strategy-title">BTC 1H, 15 October 2026</h2>
+            <p className="strategy-subtitle">How the pieces lined up at the low. Chosen to explain the method, not as proof that it works.</p>
+          </div>
+          <div className="strategy-content">
+            <figure className="chart-example">
+              <a href="/images/playbook-btc-1h-2026-10-15.jpg" target="_blank" rel="noopener" title="Open full size">
+              <img
+                src="/images/playbook-btc-1h-2026-10-15.jpg"
+                alt="BTC 1H chart with CF Levels zones and opens above, and the CF Osc below showing gold Capital Flow dots at the 15 October low"
+                loading="lazy"
+              />
+              </a>
+              <figcaption>BTCUSDT perpetual (Bitget), 1H, with CF Levels on the chart and the CF Osc underneath. Click to open full size.</figcaption>
+            </figure>
+            <div className="observations">
+              <div className="observation">
+                <span className="observation-icon"><SignalMark kind="capital_flow" size={20} /></span>
+                <div className="observation-content">
+                  <div className="observation-title">Permission</div>
+                  <p className="observation-text">
+                    After the drop from 84k, the CF Osc printed gold Capital Flow long dots near the −60 line: the wave
+                    turned up from deep oversold, money flow turned with it, and capital flow was on the long side.
+                  </p>
+                </div>
+              </div>
+              <div className="observation">
+                <span className="observation-icon">🟩</span>
+                <div className="observation-content">
+                  <div className="observation-title">Location</div>
+                  <p className="observation-text">
+                    The dots formed with price inside the strongest demand on the chart around 79.8k–80.6k, two
+                    overlapping zones holding about 4% of recent volume (x2).
+                  </p>
+                </div>
+              </div>
+              <div className="observation">
+                <span className="observation-icon">↑</span>
+                <div className="observation-content">
+                  <div className="observation-title">Timing and risk</div>
+                  <p className="observation-text">
+                    A strong green climax candle closed back above the zone. The stop would go under the zone, below the
+                    79.8k low; the first target was the supply zone at about 82.1k–82.9k, where price later stalled.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="strategy-card" id="stand-aside">
+          <div className="strategy-header">
+            <span className="strategy-badge">Discipline</span>
+            <h2 className="strategy-title">When to stand aside</h2>
+            <p className="strategy-subtitle">Most of the edge in a discretionary method is in the trades you skip.</p>
+          </div>
+          <div className="strategy-content">
+            <div className="observations">
+              {standAside.map(([icon, title, text]) => (
+                <div className="observation" key={title}>
+                  <span className="observation-icon">{icon}</span>
+                  <div className="observation-content">
+                    <div className="observation-title">{title}</div>
+                    <p className="observation-text">{text}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <h2>Before every trade</h2>
+            <ul className="rule-list checklist">
+              {checklist.map((c) => (
+                <li key={c}>{c}</li>
+              ))}
+            </ul>
+            <div className="warning-box">
+              <p>
+                There&apos;s no published track record for this playbook. It&apos;s a way of reading the chart, not a
+                promise of results. Size every trade so that being wrong is affordable.
+              </p>
+            </div>
+          </div>
+        </div>
+
         <div className="cta-section">
-          <h3>Get Real-Time Signals</h3>
-          <p style={{ color: "var(--gray-light)" }}>Join our Telegram channel for live Capital Flow signals and strategy discussions.</p>
+          <h3>Get the indicators</h3>
+          <p style={{ color: 'var(--gray-light)' }}>
+            Both are free on TradingView. The Telegram channel posts the CF Osc&apos;s Capital Flow and A-grade signals on BTC 1H.
+          </p>
           <div className="cta-buttons">
-            <a href="https://t.me/fivedaytrader" target="_blank" className="btn btn-primary">Join Telegram</a>
+            <a href="/#install" className="btn btn-primary">Install the indicators</a>
             {' '}
-            <a href="/about" className="btn btn-secondary">Learn More</a>
+            <a href="https://t.me/fivedaytrader" target="_blank" rel="noopener" className="btn btn-secondary">Join Telegram</a>
           </div>
         </div>
       </div>
@@ -440,17 +333,17 @@ export default function StrategiesPage() {
         <div className="footer-links">
           <a href="/">Home</a>
           {' '}
-          <a href="/about">About</a>
-          {' '}
-          <a href="/reports">Reports</a>
+          <a href="/#levels">CF Levels</a>
           {' '}
           <a href="/signals">Live Signals</a>
           {' '}
-          <a href="/strategies">Strategies</a>
+          <a href="/about">About</a>
+          {' '}
+          <a href="/disclaimer">Disclaimer</a>
         </div>
-        <p className="copyright" style={{ maxWidth: "500px", margin: "0 auto 1rem", fontSize: "0.7rem" }}>
-          <strong style={{ color: "var(--brand)" }}>Disclaimer:</strong>
-          {' '}These strategies are for educational purposes. Past performance does not guarantee future results. Always manage your risk.
+        <p className="copyright" style={{ maxWidth: '500px', margin: '0 auto 1rem', fontSize: '0.7rem' }}>
+          <strong style={{ color: 'var(--brand)' }}>Disclaimer:</strong>
+          {' '}Educational only, not financial advice. Trading involves substantial risk.
         </p>
         <p className="copyright">Built by traders, for traders.</p>
       </footer>
