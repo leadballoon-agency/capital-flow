@@ -252,8 +252,8 @@ showFlipDots = input.bool(true, "Show Capital Flow Flip Dots", group="Visuals",
      tooltip="Green/red dots on the bottom band where capital flow flips - the same bars as the overlay's Bull/Bear Flip dots", display=display.none)
 showSmallDots = input.bool(true, "Show C-Grade Dots", group="Visuals",
      tooltip="Small green/red dot on every other wave cross (C grade). B and A turns get their own dots", display=display.none)
-dotMinLevel = input.int(0, "Hide Cross Dots Inside ±", minval=0, maxval=80, group="Visuals",
-     tooltip="Crosses near zero are mostly noise - hide their dots", display=display.none)
+dotMinLevel = input.int(20, "Hide Cross Dots Inside ±", minval=0, maxval=80, group="Visuals",
+     tooltip="C-grade dots on crosses near zero are mostly chop - hidden inside this level (A, B and gold dots always show). 0 = a dot on every cross", display=display.none)
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // INPUTS - MONEY FLOW
@@ -273,8 +273,8 @@ mfUseVolume = input.bool(true, "Weight by Volume", group="Money Flow",
      tooltip="Bigger-volume candles count more. Ignored on symbols without volume", display=display.none)
 showLevelLines = input.bool(true, "Level Lines", group="Visuals",
      tooltip="Lines at 100, +/-60 and +/-53 (Momentum wave only)", display=display.none)
-mfTransp = input.int(25, "Money Flow Transparency", minval=0, maxval=80, group="Visuals",
-     tooltip="0 = solid, higher = more see-through (v3.3 used 32)", display=display.none)
+mfTransp = input.int(40, "Money Flow Transparency", minval=0, maxval=80, group="Visuals",
+     tooltip="0 = solid, higher = more see-through, so the waves read first", display=display.none)
 showExitMarks = input.bool(true, "Show Flow Exit Marks", group="Visuals",
      tooltip="x on the wave when capital flow turns against the last graded setup", display=display.none)
 showDivergence = input.bool(true, "Show Divergences", group="Visuals",
@@ -981,12 +981,13 @@ softCap(float x, float cap) =>
     e = math.exp(2 * x / cap)
     cap * (e - 1) / (e + 1)
 vwapDist = na(vwapZ) ? na : softCap(vwapZ * 12, 30)
-momEma = ta.ema(momentum, 3)
+// Super smoother rather than a 3-bar EMA: the EMA left small flame-like spikes around zero
+momEma = superSmooth(nz(momentum), 5)
 // Super smoother (as the money flow): removes the bar-to-bar jitter with little lag, so the curve through zero reads cleanly
 vwapEma = superSmooth(nz(vwapDist), 10)
 useVwap = yellowSource == "VWAP Distance" and not na(vwapDist)
 momentumDisplay = (useVwap ? vwapEma : momEma) * momScale
-plot(showMomentum and (not isClean or cleanYellow) ? momentumDisplay : na, "Momentum", color=color.new(momentum_color, 8), style=plot.style_area, display=display.pane)
+plot(showMomentum and (not isClean or cleanYellow) ? momentumDisplay : na, "Momentum", color=color.new(momentum_color, 35), style=plot.style_area, display=display.pane)
 
 // Classic: money flow on top of the waves and the yellow momentum
 mfColor = moneyFlow >= 0 ? color.new(flow_bull, mfTransp) : color.new(flow_bear, mfTransp)
