@@ -24,6 +24,7 @@ capital-flow/                   # Next.js 16 (React 19) app on Vercel since 2026
 ├── next.config.mjs             # Redirects: old /*.html addresses -> clean routes, /oscillator and /suite.html -> /
 ├── vercel.json                 # framework: nextjs + the daily economic-alerts cron
 ├── Indicator script/
+│   ├── capital-flow-levels-v1.0.pine        # CF Levels: volume zones, structure, opens, regains, PVSRA candles (on the chart since 2026-10-17)
 │   ├── mdx-capital-flow-filter-v4.6.0.txt   # CURRENT overlay (Pine v6, standalone)
 │   ├── mdx-capital-flow-filter-v4.5.x.txt   # Previous versions (4.5.0 - 4.5.2)
 │   ├── cf-filter-strategy-v4.6.0.txt        # Backtest (strategy) version of v4.6.0
@@ -33,6 +34,7 @@ capital-flow/                   # Next.js 16 (React 19) app on Vercel since 2026
 │   └── INDICATOR-IMPROVEMENTS.md            # Feature wishlist & roadmap
 ├── Capital Flow Oscillator/
 │   ├── capital-flow-oscillator-v3.4.pine    # CURRENT oscillator (Market Cipher B / VuManChu replacement)
+│   ├── TRADINGVIEW-DESCRIPTION.md           # Publish settings, pre-publish checklist and description (draft 2026-10-17)
 │   ├── capital-flow-oscillator-v1.2-v3.3    # Previous versions
 │   └── capital-flow-combined-strategy-v1.0.pine  # Backtest of the v2.1 Cloud Edge playbook (retired, off the chart)
 ├── public/                     # Static assets only (no HTML pages since the React port)
@@ -204,6 +206,8 @@ A Market Cipher B / VuManChu Cipher B replacement, Classic (MC-style) look by de
 - **Blue Wave setup (v3.4):** Market Cipher's core strategy. The anchor is the deepest fast-wave dip in the 40 bars before the current dip, and must reach past ±53 ("Anchor Depth"). The current dip (the trigger) must be at most 0.8x as deep, and the bounce between them must stay ≤20 past zero. The signal fires on the trigger's turn (light blue crosses dark blue) if money flow has moved the trade's way over 5 bars. Shown as a blue diamond plus a dashed anchor-trigger line; the status box shows "Blue Wave long/short"; alerts "Blue Wave LONG/SHORT". One signal per anchor (later dips off the same anchor don't fire again). In the lab, before that rule (BTC 1H, last ~6 weeks) it fired 3 longs and 5 shorts; a stricter "no money flow wobble" rule fired zero times, so it was dropped. Making room: series-coloured plotshapes count as 2 plots, and the Setup/Signal Score/Trade State/Money Flow/Wave Value data exports were removed (only Flow Score is left); removing the Stoch RSI freed ~4 plots
 - Plot budget is at the 64 limit (v3.4 hit 65 once; a transparent "Cross Dot Outline" plot was removed)
 - TP1/TP2 marks and alerts were removed 2026-10-17 (untested targets); the trade tracker still ends a setup at the far band, so the flow exit (x) fires as before. The status box shows the higher timeframe as "4H" (not "240") and only divergences strong enough to draw, prefixed "hidden" when they are
+
+**Publishing (2026-10-17):** the user thinks CF Osc is nearly good enough to publish. `Capital Flow Oscillator/TRADINGVIEW-DESCRIPTION.md` has the publish settings, the description and a pre-publish checklist (rename the "Cipher B" money flow option and drop Cipher wording, title without the version tag, check defaults). The user clicks Publish.
 
 The user wants it to replace Cipher B as a discretionary tool, not to be tuned by backtests. Keep dots small (the user found the big ones too large).
 
