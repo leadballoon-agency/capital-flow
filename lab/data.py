@@ -23,7 +23,7 @@ DATA_DIR = Path(__file__).parent / "data"
 DATA_DIR.mkdir(exist_ok=True)
 
 BINANCE = "https://data-api.binance.vision/api/v3/klines"
-INTERVAL_MS = {"15m": 900_000, "1h": 3_600_000, "4h": 14_400_000, "1d": 86_400_000}
+INTERVAL_MS = {"5m": 300_000, "15m": 900_000, "1h": 3_600_000, "4h": 14_400_000, "1d": 86_400_000}
 
 
 def _cache(name: str) -> Path:
@@ -44,7 +44,14 @@ def binance(symbol: str, interval: str = "1h", start: str = "2018-01-01", max_ag
     if _fresh(path, max_age_h):
         return pd.read_pickle(path)
 
-    start_ms = int(pd.Timestamp(start, tz="UTC").timestamp() * 1000)
+    # Top up an existing cache with only the missing candles instead of re-downloading from `start`
+    cached = pd.read_pickle(path) if path.exists() else None
+    # (a cache that starts after `start` is kept too: the coin may simply have listed later)
+    if cached is not None and len(cached):
+        start_ms = int(cached.index[-1].timestamp() * 1000) + INTERVAL_MS[interval]
+    else:
+        cached = None
+        start_ms = int(pd.Timestamp(start, tz="UTC").timestamp() * 1000)
     rows = []
     while True:
         r = requests.get(BINANCE, params={"symbol": symbol, "interval": interval,
@@ -65,6 +72,9 @@ def binance(symbol: str, interval: str = "1h", start: str = "2018-01-01", max_ag
     df["close_time"] = df.index + pd.Timedelta(milliseconds=INTERVAL_MS[interval])
     # drop the still-forming last bar
     df = df[df["close_time"] <= pd.Timestamp.now(tz="UTC")]
+    if cached is not None:
+        df = pd.concat([cached, df])
+        df = df[~df.index.duplicated(keep="last")].sort_index()
     df.to_pickle(path)
     return df
 
