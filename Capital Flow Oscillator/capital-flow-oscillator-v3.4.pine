@@ -263,8 +263,8 @@ mfLength = input.int(60, "Money Flow Length", minval=5, maxval=200, group="Money
      tooltip="Bars averaged. Higher = slower", display=display.none)
 mfSmooth = input.int(12, "Money Flow Smoothing", minval=1, maxval=50, group="Money Flow",
      tooltip="Extra low-lag smoothing (super smoother) on top of the average. Higher = smoother curve. 1 = off", display=display.none)
-mfMult = input.float(200.0, "Money Flow Height", minval=10.0, maxval=400.0, step=10.0, group="Money Flow",
-     tooltip="Money flow is scaled to its own typical size; 200 = a typical reading of about 24", display=display.none)
+mfMult = input.float(50.0, "Money Flow Height", minval=10.0, maxval=400.0, step=10.0, group="Money Flow",
+     tooltip="Money flow is scaled to its own typical size; 50 (the default) = a typical reading of about 6, with peaks around 15-20", display=display.none)
 mfSource = input.string("Volume Delta", "Money Flow Source", options=["Volume Delta", "Candle Pressure", "Classic Body Average"], group="Money Flow",
      tooltip="Volume Delta: buying vs selling volume, estimated from the lower-timeframe candles inside each bar (volume x body / range). Closest of these to real exchange buy/sell volume when tested.\nCandle Pressure: candle body as a share of its range, through our smoothing.\nClassic Body Average: the classic open-source formula - a plain 60-bar SMA of body/range x 150, shifted down 2.5. Ignores volume, smoothing and normalising; Length and Height still apply. Tracked real buy/sell volume worst of the three when tested.\nVolume Delta falls back to Candle Pressure where lower-timeframe data is missing", display=display.none)
 mfLtfInput = input.string("Auto", "Delta Timeframe", options=["Auto", "1", "5", "15", "60"], group="Money Flow",
@@ -629,7 +629,7 @@ mfRaw = mfSmooth > 1 ? superSmooth(mfAvg, mfSmooth) : mfAvg
 mfTypical = ta.sma(math.abs(mfRaw), 200)
 isClassicMF = mfSource == "Classic Body Average"
 // Classic body average (VuManChu's open-source formula): sma((close - open) / (high - low) * 150, 60) - 2.5
-classicMF = ta.sma(candlePressure * 150 * mfMult / 200, mfLength) - 2.5
+classicMF = ta.sma(candlePressure * 150 * mfMult / 50, mfLength) - 2.5   // at the default height of 50 this is the original scale
 moneyFlow = isClassicMF ? classicMF : mfTypical > 0 ? mfRaw / mfTypical * mfMult * 0.12 : mfRaw * mfMult
 mfRising = moneyFlow > moneyFlow[3]
 mfFalling = moneyFlow < moneyFlow[3]
