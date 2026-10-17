@@ -73,6 +73,8 @@ rightOffset = input.int(30, "Right Edge Offset (bars)", minval=2, maxval=100, gr
 grpR = "Regains"
 showRegains = input.bool(true, "Mark Regains / Losses of the Opens", group=grpR, display=display.none,
      tooltip="Regain = a candle closes back above an open after price had closed below it; lost = the reverse.\nTagged on the candle, e.g. DO ↑ (regained) or WO ↓ (lost). Only for opens that are switched on above")
+regainDays = input.int(3, "Tag Regains From the Last (days)", minval=1, maxval=365, group=grpR, display=display.none,
+     tooltip="Older regain / lost tags are left off so the chart history stays clean. Alerts are not affected")
 regainMinBars = input.int(2, "Closes on the Other Side First", minval=1, maxval=20, group=grpR, display=display.none,
      tooltip="Price must have closed this many candles in a row on the other side of the level before a cross counts. Filters out chop around the level")
 regainUpCol = input.color(#2EBD59, "Regained", inline="rc", group=grpR, display=display.none)
@@ -179,7 +181,8 @@ styleZones(array<Zone> zones, color col) =>
                 strength = math.min(3.0, share / avgShare)
                 if not na(z.bx)
                     box.set_right(z.bx, bar_index + rightOffset)
-                    box.set_bgcolor(z.bx, color.new(col, math.round(math.max(55, math.min(92, zoneTransp + 8 - strength * 8)))))
+                    // Capped at 68 so the strongest zone reads stronger without drowning out the chart
+                    box.set_bgcolor(z.bx, color.new(col, math.round(math.max(68, math.min(92, zoneTransp + 8 - strength * 8)))))
                     box.set_text(z.bx, "")
                 m += 1
             clusterShare = shareTotal > 0 ? clusterVol / shareTotal * 100 : 0.0
@@ -332,10 +335,11 @@ tagsFor(int dir) =>
 regainTags = tagsFor(1)
 lostTags = tagsFor(-1)
 
-if showRegains and regainTags != ""
+recentBar = time >= timenow - regainDays * 86400000
+if showRegains and recentBar and regainTags != ""
     label.new(bar_index, low, regainTags + " ↑", yloc=yloc.belowbar, style=label.style_label_up, color=noFill,
          textcolor=regainUpCol, size=size.tiny)
-if showRegains and lostTags != ""
+if showRegains and recentBar and lostTags != ""
     label.new(bar_index, high, lostTags + " ↓", yloc=yloc.abovebar, style=label.style_label_down, color=noFill,
          textcolor=lostCol, size=size.tiny)
 
