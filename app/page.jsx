@@ -4,12 +4,12 @@ import HeroVisual from './components/HeroVisual';
 import LevelsVisual from './components/LevelsVisual';
 
 export const metadata = {
-  title: 'Capital Flow Oscillator | Free TradingView Indicator',
+  title: 'Capital Flow | Two free TradingView indicators, the whole picture',
   description:
-    'A free wave oscillator with a cross-market capital flow engine built in. Graded dots, the Capital Flow signal, Blue Wave setups and money flow tested against real buy/sell volume.',
+    'CF Levels shows where price is likely to react; the Capital Flow Oscillator shows when, with momentum, real money flow and a cross-market capital flow engine. Both free, and together they fit the free plan.',
   openGraph: {
-    title: 'Capital Flow Oscillator: free TradingView indicator',
-    description: 'Momentum, money flow and macro capital flow in one pane. Free, standalone, no repaint.',
+    title: 'Capital Flow: two free TradingView indicators',
+    description: 'Zones, opens and volume on the price chart; momentum, money flow and macro capital flow underneath. Free, no repaint.',
     type: 'website',
   },
 };
@@ -87,22 +87,24 @@ export default function HomePage() {
           <div>
             <div className="pill">
               <span className="dot" />
-              Free on TradingView · Capital Flow Oscillator v3.4
+              Free on TradingView · two indicators, one complete setup
             </div>
             <h1>
-              Momentum waves, with <span>the money behind them</span>.
+              Two indicators. <span>The whole picture.</span>
             </h1>
             <p className="lead">
-              The Capital Flow Oscillator gives you the wave oscillator you know: waves, money flow and
-              divergence dots. It adds a cross-market capital flow engine that reads the dollar, volatility, gold,
-              yields, BTC, ETH, dominance and altcoin cap, so you can see whether the bigger flows agree with the turn.
+              CF Levels goes on the price chart and shows where price is likely to react: zones with the money behind
+              them, the opens traders watch, and the moment price takes one back. The Capital Flow Oscillator goes
+              underneath and shows when: momentum waves, real money flow, and a capital flow engine that reads eight
+              markets, from the dollar to altcoins.
             </p>
             <div className="hero-ctas">
-              <a href="#install" className="btn btn-primary">Get the free indicator</a>
-              <a href="#signal" className="btn btn-ghost">See the Capital Flow signal</a>
+              <a href="#install" className="btn btn-primary">Get both indicators</a>
+              <a href="#suite" className="btn btn-ghost">See how they fit together</a>
             </div>
             <div className="chips">
               <span>100% free</span>
+              <span>Fits the free plan&apos;s 2-indicator limit</span>
               <span>Closed-bar data, no repaint</span>
               <span>No paid dependencies</span>
               <span>Crypto, equities, metals, forex</span>
@@ -111,6 +113,50 @@ export default function HomePage() {
           <HeroVisual />
         </div>
       </header>
+
+      <section id="suite" aria-labelledby="suite-h">
+        <div className="wrap">
+          <div className="section-head center">
+            <span className="eyebrow">The suite</span>
+            <h2 id="suite-h">Built as a pair, for a free account.</h2>
+            <p className="lead">
+              TradingView&apos;s free plan allows two indicators per chart. These two cover what usually takes five or
+              six: levels and volume on the chart, timing and the bigger flows underneath.
+            </p>
+          </div>
+          <div className="grid-2">
+            <div className="card product">
+              <span className="kind">On the price chart</span>
+              <h3>CF Levels</h3>
+              <p>Where price is likely to react.</p>
+              <ul className="ticks">
+                <li><b>Volume zones</b> with the dollar volume behind each one; overlaps show stronger</li>
+                <li><b>Opens</b>: daily, weekly, monthly, quarterly, yearly, at their exact prices</li>
+                <li><b>Regains and losses</b> of the opens, with alerts</li>
+                <li><b>Structure</b>: HH, HL, LH, LL on the main swings</li>
+                <li><b>Volume candles</b>: the candles that carried real volume stand out</li>
+              </ul>
+              <a href="#levels" className="btn btn-ghost">More on CF Levels</a>
+            </div>
+            <div className="card product">
+              <span className="kind">Under the chart</span>
+              <h3>Capital Flow Oscillator</h3>
+              <p>When momentum, money and macro line up.</p>
+              <ul className="ticks">
+                <li><b>Momentum waves</b> with a higher-timeframe wave behind them</li>
+                <li><b>Money flow</b> from buying vs selling volume, tested against real exchange data</li>
+                <li><b>Capital flow</b> from eight markets: dollar, VIX, gold, yields, BTC, ETH, dominance, altcoins</li>
+                <li><b>Graded dots</b> and the gold <b>Capital Flow signal</b>, plus Blue Wave and divergences</li>
+                <li><b>Alerts</b> in plain English, and a status box that sums it up</li>
+              </ul>
+              <a href="#signal" className="btn btn-ghost">More on the oscillator</a>
+            </div>
+          </div>
+          <p style={{ textAlign: 'center', marginTop: 28, color: 'var(--muted-2)' }}>
+            How to use them together: <a href="/strategies" style={{ color: 'var(--brand-light)' }}>the Capital Flow playbook</a>.
+          </p>
+        </div>
+      </section>
 
       <section className="problem" aria-labelledby="why">
         <div className="wrap">
@@ -328,7 +374,7 @@ export default function HomePage() {
               <p>Open any symbol on TradingView. BTCUSDT on the 15m to 4H is a good place to start.</p>
             </div>
             <div className="card step">
-              <h3>Add the oscillator</h3>
+              <h3>Add both indicators</h3>
               <p>
                 Go to Indicators and search <code>Capital Flow Oscillator</code>, then add <code>Capital Flow Levels</code>{' '}
                 to the price chart. Until they&apos;re in the public library, get the script links from our Telegram
@@ -382,10 +428,10 @@ export default function HomePage() {
 
       <section className="final" aria-labelledby="final-h">
         <div className="wrap">
-          <h2 id="final-h">Put capital flow under your chart. It&apos;s free.</h2>
-          <p className="lead">One pane: momentum, money flow and macro. Use it to filter your own setups.</p>
+          <h2 id="final-h">Two free indicators. The whole picture.</h2>
+          <p className="lead">Levels and volume on the chart, momentum, money flow and macro underneath. Use them to filter your own setups.</p>
           <div className="hero-ctas">
-            <a href="#install" className="btn btn-primary">Get the free indicator</a>
+            <a href="#install" className="btn btn-primary">Get both indicators</a>
             <a href={TELEGRAM} target="_blank" rel="noopener" className="btn btn-ghost">
               Join the Telegram channel
             </a>
@@ -418,7 +464,7 @@ export default function HomePage() {
             <a href="/disclaimer">Disclaimer</a>
           </div>
           <p className="disclosure">
-            The Capital Flow Oscillator is a free, independent project.
+            Capital Flow is a free, independent project: two indicators, free on TradingView.
           </p>
           <p>
             WaveTrend by LazyBear; layout ideas from VuManChu&apos;s open-source oscillator. TradingView is a trademark of

@@ -1,17 +1,18 @@
+// This Pine Script code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// (c) MarkTaylor
 //@version=6
-// Capital Flow Levels v1.0 - the price-chart companion to the CF Osc
-// Volume zones: supply / demand zones drawn from swing candles, labelled with the dollar volume that
-//   traded as the swing formed and that volume's share of recent volume. Zones are translucent, so where
-//   several overlap the area shows darker, and one label gives the cluster total and how many overlap (x3). A zone is removed
-//   once price closes through it.
-// Structure: HH / HL / LH / LL tags on the main swings (a longer swing length than the zones).
-// Opens: daily, weekly, monthly, quarterly and yearly opens, plus optional previous daily / weekly opens.
-// Regains: "DO ↑" when a candle closes back above an open after closes below it ("WO ↓" = lost), with alerts.
-//   Each open keeps its own line at its exact price; identical prices share a tag ("Q4 MO"), and tags that
-//   would overlap are set side by side.
-// Volume candles (PVSRA): climax candles green / red, rising-volume candles blue / violet, the rest grey.
-// Only plot: the barcolor; everything else is boxes, lines and labels.
-indicator("Capital Flow Levels [v1.0]", shorttitle="CF Levels", overlay=true, max_boxes_count=200, max_lines_count=100, max_labels_count=500)
+// Capital Flow Levels
+// The price-chart companion to the Capital Flow Oscillator: where price is likely to react.
+// Volume zones  supply / demand zones from swing candles, labelled with the dollar volume traded as the swing
+//               formed and its share of recent volume. Overlapping zones show darker and share one label (x2, x3).
+//               A zone is removed once price closes through it.
+// Structure     HH / HL / LH / LL tags on the main swings.
+// Opens         daily, weekly, monthly, quarterly and yearly opens (plus optional previous ones), each on its own
+//               line at its exact price; tags that would overlap are set side by side.
+// Regains       "DO ↑" when a candle closes back above an open after closing below it ("WO ↓" = lost), with alerts.
+// Volume        PVSRA-style candles: climax green / red, rising volume blue / violet, the rest grey.
+// Only plot: the bar colour; everything else is boxes, lines and labels.
+indicator("Capital Flow Levels", shorttitle="CF Levels", overlay=true, max_boxes_count=200, max_lines_count=100, max_labels_count=500)
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // INPUTS
