@@ -1,42 +1,19 @@
 // This Pine Script code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
 // (c) MarkTaylor
-// Capital Flow Oscillator v3.4
-// v3.4 (2026-10-17): "Yellow Wave" option: real VWAP distance (rolling N-bar VWAP by default, or anchored daily / weekly /
-//       monthly) or the wave momentum;
-//       the fast wave's edge line hides when the fast wave slips inside the slow wave;
-//       Capital Flow signal is a gold dot in a gold ring (was the green / red dot in a gold ring);
-//       TP1 / TP2 marks and alerts removed (the flow exit x stays); status box shows the higher timeframe
-//       as "4H" not "240", and only divergences strong enough to draw, marked "hidden" when they are
-// v3.4 (later): Blue Wave setup - Market Cipher's core strategy: deep anchor wave, smaller trigger wave,
-//       entry on the trigger's turn, smooth money flow behind it (blue diamond + dashed anchor-trigger line)
-// v3.4 (final passes): Capital Flow signal (gold ring on the dot: stretched wave turn + money flow + capital flow agree), thicker labelled band;
-//       volume delta splits each lower-timeframe candle by body / range (closer to real taker volume),
-//       small dots on every wave cross again, status box top right with clock-time ages, one Blue Wave per anchor;
-//       A-grade = a green / red ring around the dot (the pink A-short dot was too close to the plain red dot);
-//       divergence lines join the wave's own troughs / peaks and are only drawn when the wave itself diverges;
-//       inputs hidden from the legend and alert names (display.none) so alerts read "CF Osc: ..." not a 60-value list;
-//       alert messages rewritten in plain words: signal, symbol + timeframe, price, why, capital flow
-// v3.4: closer to the Market Cipher B look - clean background (pressure tint off by default; when on it follows the confirmed flip state (calm blocks,
-//       no bar-to-bar stripes)), MC-style level lines (100 / 60 / 53),
-//       smaller A-grade dots, money flow slightly see-through (25%) and drawn over the yellow momentum, Stoch RSI and RSI lines removed (the user found them not useful; the RSI wave-edge cue stays)
-// v3.3: capital flow pressure tint behind the waves and green/red flip dots, matching the CF Filter v4.6
-//       overlay's cloud and flip dots (same score, same +/-20% for 2 bars flip rule)
-// v3.2: smoother money flow (volume-weighted EMA + Ehlers super smoother - no bar-to-bar sawtooth),
-//       one shared divergence routine for bull and bear swings; "Cipher B" money flow source
-//       (VuManChu's exact formula) for side-by-side comparison
-// v3.1: cleaner look - smooth HTF wave line, continuous capital flow band, divergence lines without
-//       text tags, compact readout, softer money flow
-// v3.0: money flow from real buy/sell volume (lower-timeframe volume delta), a higher-timeframe
-//       wave behind the main waves, every signal graded A/B/C on confluence, a divergence engine
-//       (regular + hidden on wave, RSI and money flow, with strength) and a plain-English readout
-// Wave = momentum (default) or where price sits inside the Keltner cloud (-100 bottom edge, +100 top edge)
-// Area = money flow (buying/selling pressure on this chart)
-// Strip = capital flow regime (macro + leaders + sectors, basket set by the Market preset) - gates the setups
-// Dots = wave turns; big dots = Cloud Edge setups (edge touch + turn + flow agrees)
-// Wave edge colour = RSI overbought / oversold cue; lines = divergence
+// Capital Flow Oscillator
+// A wave oscillator with a cross-market capital flow engine built in.
+// Waves      momentum waves (LazyBear's open-source WaveTrend formula), or where price sits in the Keltner cloud
+// Lavender   the same wave one timeframe up (closed bars only)
+// Green/red  money flow: buying vs selling volume estimated from lower-timeframe candles (body / range)
+// Yellow     wave momentum (fast minus slow wave), or distance from a rolling or session VWAP
+// Bottom     capital flow band: macro + leaders + sectors (basket set by the Market preset), dots = confirmed flips
+// Dots       every wave cross, graded A (green / red ring), B (outlined) or C (small);
+//            gold dot in a gold ring = Capital Flow signal; blue diamond = Blue Wave; x = flow exit; lines = divergence
+// Credits    WaveTrend by LazyBear; layout ideas and the classic body-average money flow formula from VuManChu's
+//            open-source oscillator
 
 //@version=6
-indicator("Capital Flow Oscillator [v3.4]", shorttitle="CF Osc", overlay=false, max_labels_count=500, max_lines_count=300)
+indicator("Capital Flow Oscillator", shorttitle="CF Osc", overlay=false, max_labels_count=500, max_lines_count=300)
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // INPUTS - MODE
@@ -228,7 +205,7 @@ divDrawHidden = input.bool(false, "Draw Hidden Divergences", group="Divergence",
      tooltip="Hidden divergences always count towards signal grades; this only controls whether their lines are drawn", display=display.none)
 divMemory = input.int(12, "Divergence Counts for Grading (bars)", minval=2, maxval=50, group="Divergence", display=display.none)
 
-// Blue Wave (Market Cipher's core setup): a deep anchor wave, then a smaller trigger wave,
+// Blue Wave: a deep anchor wave, then a smaller trigger wave,
 // entry where the trigger turns (light blue -> dark blue), with smooth money flow behind it
 showCF = input.bool(true, "Show Capital Flow Signals", group="Capital Flow Signal",
      tooltip="The signature signal: momentum, money and macro agree.\nA wave turn from a stretched level (past the setup edge), money flow turning the same way, and capital flow on the same side (confirmed flip state + score). Shown as a thin gold ring around the dot", display=display.none)
@@ -236,7 +213,7 @@ alertCF = input.bool(true, "Capital Flow Signal Alerts", group="Capital Flow Sig
 showBlueWave = input.bool(true, "Show Blue Wave Setups", group="Blue Wave",
      tooltip="Blue diamond (below the wave for longs, above for shorts) where a deep anchor wave is followed by a smaller trigger wave and the trigger turns. A dashed blue line links the anchor and trigger", display=display.none)
 bwAnchorDepth = input.int(53, "Anchor Depth", minval=20, maxval=100, group="Blue Wave",
-     tooltip="The anchor wave must reach past this level (53 = the inner MC line, 60 = the outer one)", display=display.none)
+     tooltip="The anchor wave must reach past this level (53 = the inner level line, 60 = the outer one)", display=display.none)
 bwTriggerRatio = input.float(0.8, "Trigger Max Size (x anchor)", minval=0.3, maxval=1.0, step=0.05, group="Blue Wave",
      tooltip="The trigger wave must be at most this fraction as deep as the anchor - noticeably smaller", display=display.none)
 bwMaxBounce = input.int(20, "Max Bounce Between Waves", minval=-40, maxval=60, group="Blue Wave",
@@ -254,11 +231,11 @@ alertBW = input.bool(true, "Blue Wave Alerts", group="Blue Wave", display=displa
 // ═══════════════════════════════════════════════════════════════════════════════
 
 displayStyle = input.string("Classic", "Display Style", options=["Clean", "Classic"], group="Visuals",
-     tooltip="Clean: thin glowing wave lines, soft money-flow wash, solid capital flow band, fewer marks, score cards\nClassic: Market Cipher-style filled waves with the bright yellow momentum area", display=display.none)
+     tooltip="Clean: thin glowing wave lines, soft money-flow wash, solid capital flow band, fewer marks, score cards\nClassic: filled waves with the bright yellow momentum area", display=display.none)
 isClean = displayStyle == "Clean"
 cleanYellow = input.bool(false, "Show Yellow Momentum in Clean Style", group="Visuals", display=display.none)
 showMomentum = input.bool(true, "Show Yellow Momentum Area", group="Visuals",
-     tooltip="MC-style yellow area: the gap between the fast and slow waves. Flips sign slightly before the waves cross", display=display.none)
+     tooltip="Yellow area: the gap between the fast and slow waves (or distance from VWAP, see Yellow Wave). Flips sign slightly before the waves cross", display=display.none)
 momScale = input.float(1.0, "Yellow Momentum Height", minval=0.2, maxval=2.0, step=0.1, group="Visuals",
      tooltip="Lower = slimmer yellow area, so more of the money flow shows through", display=display.none)
 showMoneyFlow = input.bool(true, "Show Money Flow Area", group="Visuals", display=display.none)
@@ -274,7 +251,7 @@ pressureStrength = input.float(1.0, "Pressure Tint Strength", minval=0.2, maxval
 showFlipDots = input.bool(true, "Show Capital Flow Flip Dots", group="Visuals",
      tooltip="Green/red dots on the bottom band where capital flow flips - the same bars as the overlay's Bull/Bear Flip dots", display=display.none)
 showSmallDots = input.bool(true, "Show C-Grade Dots", group="Visuals",
-     tooltip="Small green/red dot on every other wave cross (C grade), like Cipher B's small dots. B and A turns get their own dots", display=display.none)
+     tooltip="Small green/red dot on every other wave cross (C grade). B and A turns get their own dots", display=display.none)
 dotMinLevel = input.int(0, "Hide Cross Dots Inside ±", minval=0, maxval=80, group="Visuals",
      tooltip="Crosses near zero are mostly noise - hide their dots", display=display.none)
 
@@ -288,14 +265,14 @@ mfSmooth = input.int(12, "Money Flow Smoothing", minval=1, maxval=50, group="Mon
      tooltip="Extra low-lag smoothing (super smoother) on top of the average. Higher = smoother curve. 1 = off", display=display.none)
 mfMult = input.float(200.0, "Money Flow Height", minval=10.0, maxval=400.0, step=10.0, group="Money Flow",
      tooltip="Money flow is scaled to its own typical size; 200 = a typical reading of about 24", display=display.none)
-mfSource = input.string("Volume Delta", "Money Flow Source", options=["Volume Delta", "Candle Pressure", "Cipher B"], group="Money Flow",
-     tooltip="Volume Delta: buying vs selling volume, estimated from the lower-timeframe candles inside each bar (volume x body / range). Closest of these to real exchange buy/sell volume when tested.\nCandle Pressure: candle body as a share of its range, through our smoothing.\nCipher B: VuManChu Cipher B's exact formula - a plain 60-bar SMA of body/range x 150, shifted down 2.5. Ignores volume, smoothing and normalising; Length and Height still apply (60 and 200 = theirs). Tracked real buy/sell volume worst of the three when tested.\nVolume Delta falls back to Candle Pressure where lower-timeframe data is missing", display=display.none)
+mfSource = input.string("Volume Delta", "Money Flow Source", options=["Volume Delta", "Candle Pressure", "Classic Body Average"], group="Money Flow",
+     tooltip="Volume Delta: buying vs selling volume, estimated from the lower-timeframe candles inside each bar (volume x body / range). Closest of these to real exchange buy/sell volume when tested.\nCandle Pressure: candle body as a share of its range, through our smoothing.\nClassic Body Average: the classic open-source formula - a plain 60-bar SMA of body/range x 150, shifted down 2.5. Ignores volume, smoothing and normalising; Length and Height still apply. Tracked real buy/sell volume worst of the three when tested.\nVolume Delta falls back to Candle Pressure where lower-timeframe data is missing", display=display.none)
 mfLtfInput = input.string("Auto", "Delta Timeframe", options=["Auto", "1", "5", "15", "60"], group="Money Flow",
      tooltip="Lower timeframe used for volume delta. Auto aims for ~12-24 lower-timeframe candles per bar", display=display.none)
 mfUseVolume = input.bool(true, "Weight by Volume", group="Money Flow",
      tooltip="Bigger-volume candles count more. Ignored on symbols without volume", display=display.none)
-showMcLevels = input.bool(true, "MC-Style Level Lines", group="Visuals",
-     tooltip="Cipher B style lines at 100, +/-60 and +/-53 (Momentum wave only)", display=display.none)
+showLevelLines = input.bool(true, "Level Lines", group="Visuals",
+     tooltip="Lines at 100, +/-60 and +/-53 (Momentum wave only)", display=display.none)
 mfTransp = input.int(25, "Money Flow Transparency", minval=0, maxval=80, group="Visuals",
      tooltip="0 = solid, higher = more see-through (v3.3 used 32)", display=display.none)
 showExitMarks = input.bool(true, "Show Flow Exit Marks", group="Visuals",
@@ -324,7 +301,7 @@ alertCooldown = input.int(3, "Setup Alert Cooldown (bars)", minval=1, maxval=50,
 
 // Added last so every earlier input keeps its position (saved settings and alerts map inputs by order)
 yellowSource = input.string("Wave Momentum", "Yellow Wave", options=["Wave Momentum", "VWAP Distance"], group="Yellow Wave",
-     tooltip="Wave Momentum: the gap between the fast and slow waves (what Cipher-style oscillators label \"VWAP\"). Turns before the waves cross.\nVWAP Distance: how far price is from its real volume-weighted average price, in standard deviations (the VWAP band width). Above zero = trading above VWAP; ~11 = 1 sd, ~20 = 2 sd, ~25 = 3 sd. Watch how it crosses zero", display=display.none)
+     tooltip="Wave Momentum: the gap between the fast and slow waves (what some oscillators label \"VWAP\"). Turns before the waves cross.\nVWAP Distance: how far price is from its real volume-weighted average price, in standard deviations (the VWAP band width). Above zero = trading above VWAP; ~11 = 1 sd, ~20 = 2 sd, ~25 = 3 sd. Watch how it crosses zero", display=display.none)
 vwapAnchor = input.string("Rolling", "VWAP Anchor", options=["Rolling", "Auto", "Daily", "Weekly", "Monthly"], group="Yellow Wave",
      tooltip="Rolling: VWAP of the last N candles, recalculated every bar. No resets, so it moves like a wave and crosses zero regularly on any timeframe.\nAuto / Daily / Weekly / Monthly: the classic session VWAP that resets each period (Auto: daily up to 1H, weekly up to 4H, monthly above)", display=display.none)
 vwapLen = input.int(50, "Rolling VWAP Length (bars)", minval=5, maxval=500, group="Yellow Wave", display=display.none)
@@ -650,10 +627,10 @@ mfAvg = ta.ema(pressure * mfWeight, mfLength) / ta.ema(mfWeight, mfLength)
 mfRaw = mfSmooth > 1 ? superSmooth(mfAvg, mfSmooth) : mfAvg
 // Normalised to its own typical size so volume delta and candle pressure draw at the same height
 mfTypical = ta.sma(math.abs(mfRaw), 200)
-isCipherMF = mfSource == "Cipher B"
-// VuManChu Cipher B: sma((close - open) / (high - low) * 150, 60) - 2.5
-cipherMF = ta.sma(candlePressure * 150 * mfMult / 200, mfLength) - 2.5
-moneyFlow = isCipherMF ? cipherMF : mfTypical > 0 ? mfRaw / mfTypical * mfMult * 0.12 : mfRaw * mfMult
+isClassicMF = mfSource == "Classic Body Average"
+// Classic body average (VuManChu's open-source formula): sma((close - open) / (high - low) * 150, 60) - 2.5
+classicMF = ta.sma(candlePressure * 150 * mfMult / 200, mfLength) - 2.5
+moneyFlow = isClassicMF ? classicMF : mfTypical > 0 ? mfRaw / mfTypical * mfMult * 0.12 : mfRaw * mfMult
 mfRising = moneyFlow > moneyFlow[3]
 mfFalling = moneyFlow < moneyFlow[3]
 
@@ -773,7 +750,7 @@ recentBearDiv = not na(lastBearDivBar) and bar_index - lastBearDivBar <= divMemo
 // GRADED SIGNALS - every wave turn scored on 5 checks: A = 4-5, B = 3, C = 0-2
 // ═══════════════════════════════════════════════════════════════════════════════
 
-// A turn must come from a stretched wave (recent edge touch) to grade above C - like Cipher B's OB/OS dots
+// A turn must come from a stretched wave (recent edge touch) to grade above C
 longScore = (touchedLower ? 1 : 0) + (htfUp ? 1 : 0) + (mfRising ? 1 : 0) + (flowBull ? 1 : 0) + (recentBullDiv ? 1 : 0)
 shortScore = (touchedUpper ? 1 : 0) + (htfDn ? 1 : 0) + (mfFalling ? 1 : 0) + (flowBear ? 1 : 0) + (recentBearDiv ? 1 : 0)
 longScore := touchedLower ? longScore : math.min(longScore, 2)
@@ -925,16 +902,16 @@ else if tradeDir == -1
 // PLOTTING - LEVELS
 // ═══════════════════════════════════════════════════════════════════════════════
 
-// MC-style levels: 100 cap, 60 solid, 53 (momentum extreme) faint - only on the Momentum wave
-mcLevels = isMomentum and showMcLevels
-mc_line = #D1D4DC
+// Level lines: 100 cap, 60 solid, 53 (momentum extreme) faint - only on the Momentum wave
+levelLines = isMomentum and showLevelLines
+level_line = #D1D4DC
 hline(0, "Zero", color=color.new(level_color, 40), linestyle=hline.style_solid)
-hline(obosLevel, "Overbought", color=mcLevels ? color.new(mc_line, 55) : color.new(level_color, 55), linestyle=mcLevels ? hline.style_solid : hline.style_dotted)
-hline(-obosLevel, "Oversold", color=mcLevels ? color.new(mc_line, 55) : color.new(level_color, 55), linestyle=mcLevels ? hline.style_solid : hline.style_dotted)
-hline(momEdgeLevel, "Momentum Extreme High", color=mcLevels ? color.new(mc_line, 75) : na, linestyle=hline.style_solid)
-hline(-momEdgeLevel, "Momentum Extreme Low", color=mcLevels ? color.new(mc_line, 75) : na, linestyle=hline.style_solid)
-hline(100, "Top", color=mcLevels ? color.new(mc_line, 55) : na, linestyle=hline.style_solid)
-hline(-100, "Bottom", color=mcLevels ? color.new(mc_line, 75) : na, linestyle=hline.style_solid)
+hline(obosLevel, "Overbought", color=levelLines ? color.new(level_line, 55) : color.new(level_color, 55), linestyle=levelLines ? hline.style_solid : hline.style_dotted)
+hline(-obosLevel, "Oversold", color=levelLines ? color.new(level_line, 55) : color.new(level_color, 55), linestyle=levelLines ? hline.style_solid : hline.style_dotted)
+hline(momEdgeLevel, "Momentum Extreme High", color=levelLines ? color.new(level_line, 75) : na, linestyle=hline.style_solid)
+hline(-momEdgeLevel, "Momentum Extreme Low", color=levelLines ? color.new(level_line, 75) : na, linestyle=hline.style_solid)
+hline(100, "Top", color=levelLines ? color.new(level_line, 55) : na, linestyle=hline.style_solid)
+hline(-100, "Bottom", color=levelLines ? color.new(level_line, 75) : na, linestyle=hline.style_solid)
 hline(100, "Upper Cloud Edge", color=isMomentum ? na : color.new(flow_bear, 55), linestyle=hline.style_dashed)
 hline(-100, "Lower Cloud Edge", color=isMomentum ? na : color.new(flow_bull, 55), linestyle=hline.style_dashed)
 
@@ -942,7 +919,7 @@ hline(-100, "Lower Cloud Edge", color=isMomentum ? na : color.new(flow_bull, 55)
 // PLOTTING - WAVES & FLOW
 // ═══════════════════════════════════════════════════════════════════════════════
 
-// MC-style layering: light fast wave underneath, dark slow wave on top,
+// Layering: light fast wave underneath, dark slow wave on top,
 // so the light leading edge shows wherever the fast wave runs ahead
 // Money flow: where each candle closed within its range (+1 = closed on the high,
 // -1 = closed on the low), optionally volume-weighted, averaged over mfLength bars
@@ -957,7 +934,7 @@ plot(showHtfWave and htfOn ? htfLine : na, "HTF Wave", color=color.new(htf_col, 
 // Clean: money flow is a soft wash BEHIND the wave lines
 plot(isClean and showMoneyFlow ? moneyFlow : na, "Money Flow (Clean)", color=moneyFlow >= 0 ? color.new(flow_bull, 78) : color.new(flow_bear, 78), style=plot.style_area, display=display.pane)
 
-// Classic: MC-style layering - light fast wave underneath, dark slow wave on top
+// Classic: light fast wave underneath, dark slow wave on top
 plot(isClean ? na : wt1, "Fast Wave", color=color.new(wave_fast, 5), style=plot.style_area, display=display.pane)
 plot(isClean ? na : wt2, "Slow Wave", color=color.new(wave_slow, 8), style=plot.style_area, display=display.pane)
 
@@ -977,7 +954,7 @@ plot(isClean ? wt2 : na, "Slow Wave (Clean)", color=color.new(#3B5FC4, 0), linew
 plot(isClean ? wt1 : na, "Fast Wave Glow", color=color.new(clean_fast, 82), linewidth=7, display=display.pane)
 plot(isClean ? wt1 : na, "Fast Wave (Clean)", color=color.new(clean_fast, 0), linewidth=2, display=display.pane)
 
-// Yellow momentum behind the money flow, MC-style (lightly smoothed so it doesn't flicker)
+// Yellow momentum behind the money flow (lightly smoothed so it doesn't flicker)
 // Real VWAP option: price's distance from the anchored VWAP in standard deviations of price around it (the VWAP band
 // width), so it reads the same on 3m and 4H. ATRs were the wrong ruler: on 3m the day's drift is many ATRs and the
 // area pinned at the pane edge. The divisor never drops below one ATR(50) (no spikes just after a reset). Kept low
@@ -1025,7 +1002,7 @@ if rawStep == rawStep[1] and rawStep == rawStep[2]   // new shade must hold for 
     bandStep := rawStep
 cleanStripColor = bandStep > 0 ? color.new(flow_bull, bandStep == 3 ? 5 : bandStep == 2 ? 35 : 60) :
      bandStep < 0 ? color.new(flow_bear, bandStep == -3 ? 5 : bandStep == -2 ? 35 : 60) : color.new(level_color, 70)
-// Thicker than v3.3 so capital flow - the part no other Cipher-style oscillator has - reads at a glance
+// Thick enough that capital flow - the part other wave oscillators don't have - reads at a glance
 pBandTop = plot(showFlowStrip and stripStyle == "Band" ? -101 : na, "Flow Band Top", color=na, display=display.pane, editable=false)
 pBandBot = plot(showFlowStrip and stripStyle == "Band" ? -115 : na, "Flow Band Bottom", color=na, display=display.pane, editable=false)
 fill(pBandTop, pBandBot, color=cleanStripColor, title="Capital Flow Band")
@@ -1266,11 +1243,3 @@ alertcondition(cfLong, title="Capital Flow LONG", message="Capital Flow long on 
 alertcondition(cfShort, title="Capital Flow SHORT", message="Capital Flow short on {{ticker}} {{interval}} - stretched wave turning down, money flow falling, capital flow bearish")
 alertcondition(bwShort, title="Blue Wave SHORT", message="Blue Wave short on {{ticker}} {{interval}} - deep anchor wave, smaller trigger wave, smooth money flow")
 alertcondition(fireExit, title="Flow Exit", message="Capital flow flipped against the open setup on {{ticker}} {{interval}}")
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// DATA EXPORTS
-// ═══════════════════════════════════════════════════════════════════════════════
-
-plot(flowScore, title="Flow Score", display=display.none)
-// (Setup, Signal Score, Trade State, Money Flow and Wave Value exports removed in v3.4 for Blue Wave - 64-plot limit;
-// money flow and the fast wave are still readable from their visible plots)
