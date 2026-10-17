@@ -1,7 +1,8 @@
 // This Pine Script code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
 // (c) MarkTaylor
 // Capital Flow Oscillator v3.4
-// v3.4 (2026-10-17): "Yellow Wave" option: real VWAP distance (anchored daily / weekly / monthly) or the wave momentum;
+// v3.4 (2026-10-17): "Yellow Wave" option: real VWAP distance (rolling N-bar VWAP by default, or anchored daily / weekly /
+//       monthly) or the wave momentum;
 //       the fast wave's edge line hides when the fast wave slips inside the slow wave;
 //       Capital Flow signal is a gold dot in a gold ring (was the green / red dot in a gold ring);
 //       TP1 / TP2 marks and alerts removed (the flow exit x stays); status box shows the higher timeframe
@@ -324,8 +325,9 @@ alertCooldown = input.int(3, "Setup Alert Cooldown (bars)", minval=1, maxval=50,
 // Added last so every earlier input keeps its position (saved settings and alerts map inputs by order)
 yellowSource = input.string("Wave Momentum", "Yellow Wave", options=["Wave Momentum", "VWAP Distance"], group="Yellow Wave",
      tooltip="Wave Momentum: the gap between the fast and slow waves (what Cipher-style oscillators label \"VWAP\"). Turns before the waves cross.\nVWAP Distance: how far price is from its real volume-weighted average price, in standard deviations (the VWAP band width). Above zero = trading above VWAP; ~11 = 1 sd, ~20 = 2 sd, ~25 = 3 sd. Watch how it crosses zero", display=display.none)
-vwapAnchor = input.string("Auto", "VWAP Anchor", options=["Auto", "Daily", "Weekly", "Monthly"], group="Yellow Wave",
-     tooltip="When the VWAP resets. Auto: daily on charts up to 1H, weekly up to 4H, monthly above", display=display.none)
+vwapAnchor = input.string("Rolling", "VWAP Anchor", options=["Rolling", "Auto", "Daily", "Weekly", "Monthly"], group="Yellow Wave",
+     tooltip="Rolling: VWAP of the last N candles, recalculated every bar. No resets, so it moves like a wave and crosses zero regularly on any timeframe.\nAuto / Daily / Weekly / Monthly: the classic session VWAP that resets each period (Auto: daily up to 1H, weekly up to 4H, monthly above)", display=display.none)
+vwapLen = input.int(50, "Rolling VWAP Length (bars)", minval=5, maxval=500, group="Yellow Wave", display=display.none)
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // COLORS
@@ -982,9 +984,18 @@ plot(isClean ? wt1 : na, "Fast Wave (Clean)", color=color.new(clean_fast, 0), li
 // (the user reads where and how it crosses zero, curving in or out, more than its extremes): a soft ceiling at 30,
 // 1 sd draws at ~11, 2 sd at ~20, 3 sd at ~25
 vwapAnchorTf = vwapAnchor == "Daily" ? "D" : vwapAnchor == "Weekly" ? "W" : vwapAnchor == "Monthly" ? "M" : secs <= 3600 ? "D" : secs <= 14400 ? "W" : "M"
-[vwapValue, vwapUpper, vwapLower] = ta.vwap(hlc3, timeframe.change(vwapAnchorTf), 1.0)
+[anchVwap, anchUpper, anchLower] = ta.vwap(hlc3, timeframe.change(vwapAnchorTf), 1.0)
+// Rolling VWAP over the last vwapLen candles, with the volume-weighted standard deviation of price around it
+// (the sums run on every bar, outside the ternaries, so Pine keeps their history consistent)
+rollVol = math.sum(nz(volume), vwapLen)
+rollPV = math.sum(hlc3 * nz(volume), vwapLen)
+rollPPV = math.sum(nz(volume) * hlc3 * hlc3, vwapLen)
+rollVwap = rollVol > 0 ? rollPV / rollVol : na
+rollSd = rollVol > 0 ? math.sqrt(math.max(rollPPV / rollVol - rollVwap * rollVwap, 0)) : na
+isRolling = vwapAnchor == "Rolling"
+vwapValue = isRolling ? rollVwap : anchVwap
 vwapAtr = ta.atr(50)
-vwapSd = math.max(nz(vwapUpper - vwapValue), nz(vwapAtr))
+vwapSd = math.max(nz(isRolling ? rollSd : anchUpper - anchVwap), nz(vwapAtr))
 vwapZ = not na(vwapValue) and vwapSd > 0 ? (close - vwapValue) / vwapSd : na
 softCap(float x, float cap) =>
     e = math.exp(2 * x / cap)
