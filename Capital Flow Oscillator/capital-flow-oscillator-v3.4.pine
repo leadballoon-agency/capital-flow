@@ -323,7 +323,7 @@ alertCooldown = input.int(3, "Setup Alert Cooldown (bars)", minval=1, maxval=50,
 
 // Added last so every earlier input keeps its position (saved settings and alerts map inputs by order)
 yellowSource = input.string("Wave Momentum", "Yellow Wave", options=["Wave Momentum", "VWAP Distance"], group="Yellow Wave",
-     tooltip="Wave Momentum: the gap between the fast and slow waves (what Cipher-style oscillators label \"VWAP\"). Turns before the waves cross.\nVWAP Distance: how far price is from its real volume-weighted average price, in ATRs. Above zero = trading above VWAP", display=display.none)
+     tooltip="Wave Momentum: the gap between the fast and slow waves (what Cipher-style oscillators label \"VWAP\"). Turns before the waves cross.\nVWAP Distance: how far price is from its real volume-weighted average price, in standard deviations (the VWAP band width). Above zero = trading above VWAP; ~20 = 1 sd, ~35 = 2 sd, ~46 = 3 sd", display=display.none)
 vwapAnchor = input.string("Auto", "VWAP Anchor", options=["Auto", "Daily", "Weekly", "Monthly"], group="Yellow Wave",
      tooltip="When the VWAP resets. Auto: daily on charts up to 1H, weekly up to 4H, monthly above", display=display.none)
 
@@ -976,11 +976,19 @@ plot(isClean ? wt1 : na, "Fast Wave Glow", color=color.new(clean_fast, 82), line
 plot(isClean ? wt1 : na, "Fast Wave (Clean)", color=color.new(clean_fast, 0), linewidth=2, display=display.pane)
 
 // Yellow momentum behind the money flow, MC-style (lightly smoothed so it doesn't flicker)
-// Real VWAP option: price's distance from the anchored VWAP, in ATR(50)s (x12 so it sits at a similar height to the waves)
+// Real VWAP option: price's distance from the anchored VWAP in standard deviations of price around it (the VWAP band
+// width), so it reads the same on 3m and 4H. ATRs were the wrong ruler: on 3m the day's drift is many ATRs and the
+// area pinned at the pane edge. The divisor never drops below one ATR(50) (no spikes just after a reset), and a soft
+// ceiling keeps it inside +/-60: 1 sd draws at ~19, 2 sd at ~34, 3 sd at ~46
 vwapAnchorTf = vwapAnchor == "Daily" ? "D" : vwapAnchor == "Weekly" ? "W" : vwapAnchor == "Monthly" ? "M" : secs <= 3600 ? "D" : secs <= 14400 ? "W" : "M"
-vwapValue = ta.vwap(hlc3, timeframe.change(vwapAnchorTf))
+[vwapValue, vwapUpper, vwapLower] = ta.vwap(hlc3, timeframe.change(vwapAnchorTf), 1.0)
 vwapAtr = ta.atr(50)
-vwapDist = not na(vwapValue) and vwapAtr > 0 ? (close - vwapValue) / vwapAtr * 12 : na
+vwapSd = math.max(nz(vwapUpper - vwapValue), nz(vwapAtr))
+vwapZ = not na(vwapValue) and vwapSd > 0 ? (close - vwapValue) / vwapSd : na
+softCap(float x, float cap) =>
+    e = math.exp(2 * x / cap)
+    cap * (e - 1) / (e + 1)
+vwapDist = na(vwapZ) ? na : softCap(vwapZ * 20, 60)
 momEma = ta.ema(momentum, 3)
 vwapEma = ta.ema(nz(vwapDist), 3)
 useVwap = yellowSource == "VWAP Distance" and not na(vwapDist)
